@@ -1,0 +1,19 @@
+{
+  "rules": {
+    "max-line-length": ["error", 120],
+    "no-unused-vars": "error",
+    "reason-string": ["warn", {"maxLength": 32}],
+    "constructor-syntax": "error",
+    "quotes": ["error", "double"],
+    "const-name-snakecase": "error",
+    "contract-name-camelcase": "error",
+    "event-name-camelcase": "error",
+    "func-param-name-mixedcase": "error",
+    "modifier-name-mixedcase": "error",
+    "private-vars-leading-underscore": ["warn", {"strict":false}],
+    "var-name-mixedcase": "error",
+    "imports-on-top": "error",
+    "visibility-modifier-order": "error",
+    "state-visibility": "error"
+  }
+}

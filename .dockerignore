@@ -1,0 +1,24 @@
+node_modules
+.env
+coverage
+coverage.json
+/typechain
+
+#Hardhat files
+cache
+artifacts
+
+.idea/
+.DS_Store
+abi/
+types/
+.vscode/
+
+#vim
+**/.*.swp
+
+mainnet-deploy-key-store.json
+
+#Foundry files
+out/
+forge-cache

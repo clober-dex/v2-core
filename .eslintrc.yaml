@@ -1,0 +1,33 @@
+root: true
+env:
+    node: true
+parser: '@typescript-eslint/parser'
+parserOptions:
+    sourceType: module
+plugins:
+    - '@typescript-eslint'
+    - prettier
+extends:
+    - eslint:recommended
+    - plugin:@typescript-eslint/eslint-recommended
+    - plugin:prettier/recommended
+    - plugin:import/errors
+    - plugin:import/warnings
+    - plugin:import/typescript
+rules:
+    curly: error
+    no-return-await: error
+    prefer-arrow-callback: error
+    prettier/prettier:
+        - error
+        - arrowParens: always
+          semi: false
+          singleQuote: true
+          trailingComma: all
+    require-await: off
+    no-unused-vars: off
+    '@typescript-eslint/no-unused-vars':
+        - error
+    import/order:
+        - error
+        - newlines-between: always
