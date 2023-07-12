@@ -66,6 +66,7 @@
   "dependencies": {
     "bignumber.js": "^9.1.1",
     "@wagmi/chains": "^0.2.8",
-    "@openzeppelin/contracts": "^4.4.2"
+    "@openzeppelin/contracts": "4.8.3",
+    "@clober/library": "^1.0.0"
   }
 }
