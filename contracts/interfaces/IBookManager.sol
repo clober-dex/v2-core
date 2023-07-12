@@ -9,7 +9,7 @@ interface IBookManager {
         uint8 baseUnitDecimals;
         Currency quote;
         uint8 quoteUnitDecimals;
-        uint24 makerFee;
+        int24 makerFee;
         uint24 takerFee;
         uint24 tickSpacing;
     }
