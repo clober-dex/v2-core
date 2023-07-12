@@ -13,4 +13,36 @@ interface IBookManager {
         uint24 takerFee;
         uint24 tickSpacing;
     }
+
+    struct MakeParams {
+        BookKey key;
+        /// @notice The limit order service provider address to collect fees
+        address provider;
+        uint24 priceIndex;
+        uint64 amount;
+    }
+
+    function make(MakeParams[] memory paramsList) external returns (uint256 id);
+
+    struct TakeParams {
+        BookKey key;
+        uint64 amount;
+    }
+
+    function take(TakeParams[] memory paramsList) external;
+
+    struct ReduceParams {
+        uint256 id;
+        uint64 amount;
+    }
+
+    function reduce(ReduceParams[] memory paramsList) external;
+
+    function cancel(uint256[] memory ids) external;
+
+    function claim(uint256[] memory ids) external;
+
+    function collect(address provider, Currency currency) external;
+
+    function assign(address provider, uint8 status) external;
 }
