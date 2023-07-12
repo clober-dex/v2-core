@@ -8,11 +8,17 @@ contract BookManager is IBookManager {
 
     constructor() {}
 
-    function make(IBookManager.MakeParams[] memory paramsList) external override returns (uint256 orderIndex) {}
+    function make(IBookManager.MakeParams[] memory paramsList) external override returns (uint256 id) {}
 
     function take(IBookManager.TakeParams[] memory paramsList) external override {}
 
     function reduce(IBookManager.ReduceParams[] memory paramsList) external override {}
 
-    function claim(IBookManager.ClaimParams[] memory paramsList) external override {}
+    function cancel(uint256[] memory ids) external override {}
+
+    function claim(uint256[] memory ids) external override {}
+
+    function collect(address provider, Currency currency) external override {}
+
+    function assign(address provider, uint8 status) external override {}
 }

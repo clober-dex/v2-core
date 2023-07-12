@@ -22,7 +22,7 @@ interface IBookManager {
         uint64 amount;
     }
 
-    function make(MakeParams[] memory paramsList) external returns (uint256 orderIndex);
+    function make(MakeParams[] memory paramsList) external returns (uint256 id);
 
     struct TakeParams {
         BookKey key;
@@ -32,16 +32,17 @@ interface IBookManager {
     function take(TakeParams[] memory paramsList) external;
 
     struct ReduceParams {
-        BookKey key;
-        uint256 orderIndex;
+        uint256 id;
+        uint64 amount;
     }
 
     function reduce(ReduceParams[] memory paramsList) external;
 
-    struct ClaimParams {
-        BookKey key;
-        uint256 orderIndex;
-    }
+    function cancel(uint256[] memory ids) external;
 
-    function claim(ClaimParams[] memory paramsList) external;
+    function claim(uint256[] memory ids) external;
+
+    function collect(address provider, Currency currency) external;
+
+    function assign(address provider, uint8 status) external;
 }
