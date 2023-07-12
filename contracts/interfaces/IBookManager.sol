@@ -44,5 +44,9 @@ interface IBookManager {
 
     function collect(address provider, Currency currency) external;
 
-    function assign(address provider, uint8 status) external;
+    function whitelist(address provider) external;
+
+    function blacklist(address provider) external;
+
+    function delist(address provider) external;
 }
