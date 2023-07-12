@@ -5,21 +5,10 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 
 import "../libraries/CurrencyLibrary.sol";
+import "./IBookManager.sol";
 
 interface ILimitOrder is IERC721, IERC721Metadata {
-    function base(uint256 id) external view returns (Currency);
-
-    function baseUnitDecimals(uint256 id) external view returns (uint8);
-
-    function quote(uint256 id) external view returns (Currency);
-
-    function quoteUnitDecimals(uint256 id) external view returns (uint8);
-
-    function makerFee(uint256 id) external view returns (uint24);
-
-    function takerFee(uint256 id) external view returns (uint24);
-
-    function tickSpacing(uint256 id) external view returns (uint24);
+    function bookKey(uint256 id) external view returns (IBookManager.BookKey calldata);
 
     function maker(uint256 id) external view returns (address);
 
