@@ -21,7 +21,6 @@ library Book {
         uint64 claimed;
         uint64 open;
         uint64 bounty;
-        bool locked;
         address owner;
         address provider;
     }
@@ -65,7 +64,6 @@ library Book {
             claimed: 0,
             open: amount,
             bounty: bounty,
-            locked: false,
             owner: owner,
             provider: provider
         });
