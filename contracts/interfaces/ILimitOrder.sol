@@ -37,6 +37,8 @@ interface ILimitOrder is IERC721, IERC721Metadata {
 
     function cancel(uint256 id) external;
 
+    function lock(uint256 id) external;
+
     function fill(uint256 id, uint64 amount) external;
 
     function claim(uint256 id) external;
