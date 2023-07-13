@@ -18,7 +18,7 @@ interface IBookManager {
         BookKey key;
         /// @notice The limit order service provider address to collect fees
         address provider;
-        uint24 priceIndex;
+        uint24 tick;
         uint64 amount;
     }
 

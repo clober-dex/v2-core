@@ -14,7 +14,7 @@ interface ILimitOrder is IERC721, IERC721Metadata {
 
     function provider(uint256 id) external view returns (address);
 
-    function priceIndex(uint256 id) external view returns (uint24);
+    function tick(uint256 id) external view returns (uint24);
 
     function price(uint256 id) external view returns (uint256);
 
