@@ -18,7 +18,7 @@ library Book {
 
     struct Order {
         uint64 initial;
-        uint64 reduced;
+        uint64 claimed;
         uint64 open;
         uint64 bounty;
         bool locked;
@@ -62,7 +62,7 @@ library Book {
         queue.tree.update(index & _MAX_ORDER_M, amount);
         self.orders[index] = Order({
             initial: amount,
-            reduced: 0,
+            claimed: 0,
             open: amount,
             bounty: bounty,
             locked: false,
