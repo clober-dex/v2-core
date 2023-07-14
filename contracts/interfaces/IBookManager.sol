@@ -6,9 +6,8 @@ import "../libraries/Currency.sol";
 interface IBookManager {
     struct BookKey {
         Currency base;
-        uint8 baseUnitDecimals;
+        uint8 unitDecimals;
         Currency quote;
-        uint8 quoteUnitDecimals;
         int24 makerFee;
         uint24 takerFee;
         uint24 tickSpacing;
