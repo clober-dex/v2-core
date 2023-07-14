@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 
-import "../libraries/CurrencyLibrary.sol";
+import "../libraries/Currency.sol";
 import "./IBookManager.sol";
 
 interface ILimitOrder is IERC721, IERC721Metadata {

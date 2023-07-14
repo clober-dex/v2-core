@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import "../libraries/CurrencyLibrary.sol";
+import "../libraries/Currency.sol";
 
 interface IBookManager {
     struct BookKey {
