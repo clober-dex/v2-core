@@ -6,6 +6,6 @@ type Tick is uint24;
 library TickLibrary {
     function toPrice(Tick tick) internal pure returns (uint256) {
         // TODO: implement proper tick to price
-        return tick * 1000;
+        return Tick.unwrap(tick) * 1000;
     }
 }
