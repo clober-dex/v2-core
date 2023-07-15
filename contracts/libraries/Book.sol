@@ -71,4 +71,8 @@ library Book {
     function take(State storage self, uint64 amount) internal {
         // TODO: update totalClaimableOf, add amount
     }
+
+    function spend(State storage self, uint64 amount) internal {
+        // TODO: update totalClaimableOf, add amount
+    }
 }
