@@ -19,23 +19,23 @@ interface IBookManager {
         /// @notice The limit order service provider address to collect fees
         address provider;
         uint24 tick;
-        uint64 amount;
+        uint64 amount; // times 10**unitDecimals to get actual bid amount
     }
 
     function make(MakeParams[] memory paramsList) external returns (OrderId[] ids);
 
     struct TakeParams {
         BookKey key;
-        uint64 amount;
-        uint64 maxIn;
+        uint64 amount; // times 10**unitDecimals to get actual output
+        uint256 maxIn;
     }
 
     function take(TakeParams[] memory paramsList) external;
 
     struct SpendParams {
         BookKey key;
-        uint64 amount;
-        uint64 minOut;
+        uint256 amount;
+        uint64 minOut; // times 10**unitDecimals to get actual output
     }
 
     function spend(SpendParams[] memory paramsList) external;
