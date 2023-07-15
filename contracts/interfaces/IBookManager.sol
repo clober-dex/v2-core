@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "../libraries/Currency.sol";
 import "../libraries/OrderId.sol";
+import "../libraries/Tick.sol";
 
 interface IBookManager {
     struct BookKey {
@@ -16,13 +17,15 @@ interface IBookManager {
 
     struct MakeParams {
         BookKey key;
+        address user;
+        Tick tick;
+        uint64 amount; // times 10**unitDecimals to get actual bid amount
         /// @notice The limit order service provider address to collect fees
         address provider;
-        uint24 tick;
-        uint64 amount; // times 10**unitDecimals to get actual bid amount
+        uint64 bounty;
     }
 
-    function make(MakeParams[] memory paramsList) external returns (OrderId[] ids);
+    function make(MakeParams[] memory paramsList) external returns (OrderId[] memory ids);
 
     struct TakeParams {
         BookKey key;

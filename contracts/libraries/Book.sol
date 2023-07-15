@@ -36,16 +36,16 @@ library Book {
     function make(
         State storage self,
         uint128 n,
-        address owner,
+        address user,
         Tick tick,
         uint64 amount,
-        uint64 bounty,
-        address provider
+        address provider,
+        uint64 bounty
     ) internal returns (OrderId id) {
         // TODO: add tick to heap
 
         Queue storage queue = self.queues[tick];
-        index = queue.index;
+        uint256 index = queue.index;
 
         if (index >= _MAX_ORDER) {
             if (self.orders[index - _MAX_ORDER].open > 0) {
@@ -65,7 +65,7 @@ library Book {
             claimed: 0,
             open: amount,
             bounty: bounty,
-            owner: owner,
+            owner: user,
             provider: provider
         });
     }
