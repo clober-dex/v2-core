@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "../libraries/Currency.sol";
+import "../libraries/OrderId.sol";
 
 interface IBookManager {
     struct BookKey {
@@ -21,7 +22,7 @@ interface IBookManager {
         uint64 amount;
     }
 
-    function make(MakeParams[] memory paramsList) external returns (uint256 id);
+    function make(MakeParams[] memory paramsList) external returns (OrderId[] ids);
 
     struct TakeParams {
         BookKey key;

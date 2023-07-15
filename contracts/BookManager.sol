@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "./libraries/BookId.sol";
 import "./libraries/Book.sol";
+import "./libraries/OrderId.sol";
 
 contract BookManager is IBookManager {
     using BookIdLibrary for IBookManager.BookKey;
@@ -10,7 +11,7 @@ contract BookManager is IBookManager {
 
     constructor() {}
 
-    function make(IBookManager.MakeParams[] memory paramsList) external override returns (uint256 id) {}
+    function make(IBookManager.MakeParams[] memory paramsList) external override returns (OrderId[] ids) {}
 
     function take(IBookManager.TakeParams[] memory paramsList) external override {}
 

@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@clober/library/contracts/SegmentedSegmentTree.sol";
 import "./Tick.sol";
+import "./OrderId.sol";
 
 library Book {
     using SegmentedSegmentTree for SegmentedSegmentTree.Core;
@@ -34,12 +35,13 @@ library Book {
 
     function make(
         State storage self,
+        uint128 n,
         address owner,
         Tick tick,
         uint64 amount,
         uint64 bounty,
         address provider
-    ) internal returns (uint256 index) {
+    ) internal returns (OrderId id) {
         // TODO: add tick to heap
 
         Queue storage queue = self.queues[tick];
