@@ -26,9 +26,18 @@ interface IBookManager {
     struct TakeParams {
         BookKey key;
         uint64 amount;
+        uint64 maxIn;
     }
 
     function take(TakeParams[] memory paramsList) external;
+
+    struct SpendParams {
+        BookKey key;
+        uint64 amount;
+        uint64 minOut;
+    }
+
+    function spend(SpendParams[] memory paramsList) external;
 
     struct ReduceParams {
         uint256 id;
