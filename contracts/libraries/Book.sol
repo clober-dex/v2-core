@@ -2,8 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@clober/library/contracts/SegmentedSegmentTree.sol";
-
-type Tick is uint24; // TODO: create tick library
+import "./Tick.sol";
 
 library Book {
     using SegmentedSegmentTree for SegmentedSegmentTree.Core;
