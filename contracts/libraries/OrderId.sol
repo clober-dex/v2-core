@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "./Tick.sol";
+
 type OrderId is uint256;
 
 library OrderIdLibrary {
     function encode(
         uint128 n,
-        uint24 tick,
+        Tick tick,
         uint256 index
     ) internal pure returns (OrderId id) {
         if (index > type(uint104).max) {
@@ -22,7 +24,7 @@ library OrderIdLibrary {
         pure
         returns (
             uint128 n,
-            uint24 tick,
+            Tick tick,
             uint104 index
         )
     {

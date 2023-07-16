@@ -26,11 +26,11 @@ library Book {
     }
 
     struct State {
-        mapping(Tick => Queue) queues;
+        mapping(Tick tick => Queue) queues;
         // TODO: add heap
         // four values of totalClaimable are stored in one uint256
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
-        mapping(uint256 => Order) orders;
+        mapping(uint256 index => Order) orders;
     }
 
     function make(
@@ -68,6 +68,7 @@ library Book {
             owner: user,
             provider: provider
         });
+        return OrderIdLibrary.encode(n, tick, index);
     }
 
     function take(State storage self, uint64 amount) internal {
