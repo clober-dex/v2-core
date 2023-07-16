@@ -11,8 +11,6 @@ contract BookManager is IBookManager {
 
     mapping(BookId id => Book.State) internal _books; // TODO: public
 
-    uint128 public n;
-
     constructor() {}
 
     function _getBook(BookKey memory key) private view returns (Book.State storage) {
@@ -24,9 +22,15 @@ contract BookManager is IBookManager {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.MakeParams calldata params = paramsList[i];
             Book.State storage book = _getBook(params.key);
-            ids[i] = book.make(n + uint128(i), params.user, params.tick, params.amount, params.provider, params.bounty);
+            ids[i] = book.make(
+                params.key.toId(),
+                params.user,
+                params.tick,
+                params.amount,
+                params.provider,
+                params.bounty
+            );
         }
-        n += uint128(paramsList.length);
     }
 
     function take(IBookManager.TakeParams[] memory paramsList) external override {}

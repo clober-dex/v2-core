@@ -2,20 +2,18 @@
 pragma solidity ^0.8.0;
 
 import "./Tick.sol";
+import "./BookId.sol";
 
 type OrderId is uint256;
 
 library OrderIdLibrary {
     function encode(
-        uint128 n,
+        BookId bookId,
         Tick tick,
-        uint256 index
+        uint40 index
     ) internal pure returns (OrderId id) {
-        if (index > type(uint104).max) {
-            // TODO: revert
-        }
         assembly {
-            id := add(index, add(shl(104, tick), shl(128, n)))
+            id := add(index, add(shl(40, tick), shl(64, bookId)))
         }
     }
 
@@ -23,15 +21,15 @@ library OrderIdLibrary {
         internal
         pure
         returns (
-            uint128 n,
+            BookId bookId,
             Tick tick,
-            uint104 index
+            uint40 index
         )
     {
         assembly {
+            bookId := shr(64, id)
+            tick := shr(40, id)
             index := id
-            tick := shr(104, id)
-            n := shr(128, id)
         }
     }
 }

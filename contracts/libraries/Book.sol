@@ -5,17 +5,21 @@ import "@clober/library/contracts/SegmentedSegmentTree.sol";
 import "./Tick.sol";
 import "./OrderId.sol";
 import "./TotalClaimableMap.sol";
+import "../interfaces/IBookManager.sol";
 
 library Book {
     using SegmentedSegmentTree for SegmentedSegmentTree.Core;
     using TotalClaimableMap for mapping(uint24 => uint256);
 
-    uint256 private constant _MAX_ORDER = 2**15; // 32768
-    uint256 private constant _MAX_ORDER_M = 2**15 - 1; // % 32768
+    error BookAlreadyInitialized();
+    error BookNotInitialized();
+
+    uint256 private constant _MAX_ORDER = 2 ** 15; // 32768
+    uint256 private constant _MAX_ORDER_M = 2 ** 15 - 1; // % 32768
 
     struct Queue {
         SegmentedSegmentTree.Core tree;
-        uint256 index; // index of where the next order would go
+        uint40 index; // index of where the next order would go
     }
 
     struct Order {
@@ -28,11 +32,20 @@ library Book {
     }
 
     struct State {
+        IBookManager.BookKey key;
         mapping(Tick tick => Queue) queues;
         // TODO: add heap
         // four values of totalClaimable are stored in one uint256
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
         mapping(uint256 index => Order) orders;
+    }
+
+    function initialize(
+        State storage self,
+        IBookManager.BookKey calldata key
+    ) internal {
+        if (self.key.unitDecimals != 0) revert BookAlreadyInitialized();
+        self.key = key;
     }
 
     function depth(State storage self, Tick tick) internal view returns (uint64) {
@@ -41,7 +54,7 @@ library Book {
 
     function make(
         State storage self,
-        uint128 n,
+        BookId bookId,
         address user,
         Tick tick,
         uint64 amount,
@@ -51,7 +64,7 @@ library Book {
         // TODO: add tick to heap
 
         Queue storage queue = self.queues[tick];
-        uint256 index = queue.index;
+        uint40 index = queue.index;
 
         if (index >= _MAX_ORDER) {
             if (self.orders[index - _MAX_ORDER].open > 0) {
@@ -74,7 +87,7 @@ library Book {
             owner: user,
             provider: provider
         });
-        return OrderIdLibrary.encode(n, tick, index);
+        return OrderIdLibrary.encode(bookId, tick, index);
     }
 
     function take(State storage self, uint64 amount) internal {

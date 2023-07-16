@@ -7,8 +7,8 @@ import "../libraries/Tick.sol";
 
 interface IBookManager {
     struct BookKey {
-        Currency base;
         uint8 unitDecimals;
+        Currency base;
         Currency quote;
         int24 makerFee;
         uint24 takerFee;
@@ -44,7 +44,7 @@ interface IBookManager {
     function spend(SpendParams[] memory paramsList) external;
 
     struct ReduceParams {
-        uint256 id;
+        OrderId id;
         uint64 amount;
     }
 

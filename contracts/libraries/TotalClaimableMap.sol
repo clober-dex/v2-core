@@ -10,11 +10,19 @@ library TotalClaimableMap {
     using DirtyUint64 for uint64;
     using PackedUint256 for uint256;
 
-    function add(mapping(uint24 => uint256) storage self, Tick tick, uint64 n) internal {
+    function add(
+        mapping(uint24 => uint256) storage self,
+        Tick tick,
+        uint64 n
+    ) internal {
         // TODO: add
     }
 
-    function sub(mapping(uint24 => uint256) storage self, Tick tick, uint64 n) internal {
+    function sub(
+        mapping(uint24 => uint256) storage self,
+        Tick tick,
+        uint64 n
+    ) internal {
         // TODO: sub
     }
 
