@@ -4,9 +4,11 @@ pragma solidity ^0.8.20;
 import "@clober/library/contracts/SegmentedSegmentTree.sol";
 import "./Tick.sol";
 import "./OrderId.sol";
+import "./TotalClaimableMap.sol";
 
 library Book {
     using SegmentedSegmentTree for SegmentedSegmentTree.Core;
+    using TotalClaimableMap for mapping(uint24 => uint256);
 
     uint256 private constant _MAX_ORDER = 2**15; // 32768
     uint256 private constant _MAX_ORDER_M = 2**15 - 1; // % 32768
@@ -31,6 +33,10 @@ library Book {
         // four values of totalClaimable are stored in one uint256
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
         mapping(uint256 index => Order) orders;
+    }
+
+    function depth(State storage self, Tick tick) internal view returns (uint64) {
+        return self.queues[tick].tree.total() - self.totalClaimableOf.get(tick);
     }
 
     function make(
