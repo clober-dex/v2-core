@@ -8,13 +8,23 @@ import "./libraries/OrderId.sol";
 contract BookManager is IBookManager {
     using BookIdLibrary for IBookManager.BookKey;
     using Book for Book.State;
+    using OrderIdLibrary for OrderId;
 
-    mapping(BookId id => Book.State) internal _books; // TODO: public
+    mapping(BookId id => Book.State) internal _books;
 
     constructor() {}
 
     function _getBook(BookKey memory key) private view returns (Book.State storage) {
         return _books[key.toId()];
+    }
+
+    function getBookKey(BookId id) external override view returns (BookKey memory) {
+        return _books[id].key;
+    }
+
+    function getOrder(OrderId id) external override view returns (Book.Order memory) {
+        (BookId bookId,, uint40 index) = id.decode();
+        return _books[bookId].orders[index];
     }
 
     function make(IBookManager.MakeParams[] calldata paramsList) external override returns (OrderId[] memory ids) {

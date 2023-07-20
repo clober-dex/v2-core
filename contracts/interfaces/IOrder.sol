@@ -8,7 +8,7 @@ import "../libraries/Currency.sol";
 import "./IBookManager.sol";
 import "../libraries/Tick.sol";
 
-interface ILimitOrder is IERC721, IERC721Metadata {
+interface IOrder is IERC721, IERC721Metadata {
     function bookKey(uint256 id) external view returns (IBookManager.BookKey calldata);
 
     function maker(uint256 id) external view returns (address);

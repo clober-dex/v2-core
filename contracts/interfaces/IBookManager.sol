@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
+import "../libraries/Book.sol";
 import "../libraries/Currency.sol";
 import "../libraries/OrderId.sol";
 import "../libraries/Tick.sol";
@@ -22,8 +23,12 @@ interface IBookManager {
         uint64 amount; // times 10**unitDecimals to get actual bid amount
         /// @notice The limit order service provider address to collect fees
         address provider;
-        uint64 bounty;
+        uint32 bounty;
     }
+
+    function getBookKey(BookId id) external view returns (BookKey memory);
+
+    function getOrder(OrderId id) external view returns (Book.Order memory);
 
     function make(MakeParams[] memory paramsList) external returns (OrderId[] memory ids);
 

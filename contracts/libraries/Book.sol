@@ -24,10 +24,9 @@ library Book {
 
     struct Order {
         uint64 initial;
-        uint64 claimed;
-        uint64 open;
-        uint64 bounty;
         address owner;
+        uint64 pending; // Unclaimed amount
+        uint32 bounty;
         address provider;
     }
 
@@ -59,7 +58,7 @@ library Book {
         Tick tick,
         uint64 amount,
         address provider,
-        uint64 bounty
+        uint32 bounty
     ) internal returns (OrderId id) {
         // TODO: add tick to heap
 
@@ -67,7 +66,7 @@ library Book {
         uint40 index = queue.index;
 
         if (index >= _MAX_ORDER) {
-            if (self.orders[index - _MAX_ORDER].open > 0) {
+            if (self.orders[index - _MAX_ORDER].pending > 0) {
                 // TODO: throw queue replace error or claim stale order
             }
 
@@ -81,10 +80,9 @@ library Book {
         queue.tree.update(index & _MAX_ORDER_M, amount);
         self.orders[index] = Order({
             initial: amount,
-            claimed: 0,
-            open: amount,
-            bounty: bounty,
             owner: user,
+            pending: amount,
+            bounty: bounty,
             provider: provider
         });
         return OrderIdLibrary.encode(bookId, tick, index);
