@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import "./interfaces/IOrder.sol";
+import "./interfaces/ILimitOrder.sol";
 import "./interfaces/IBookManager.sol";
 import "./libraries/Book.sol";
 import "./libraries/Tick.sol";
 
 // TODO: remove abstract
-abstract contract Order is IOrder {
+abstract contract LimitOrder is ILimitOrder {
     using Book for Book.State;
     using TickLibrary for Tick;
     using OrderIdLibrary for OrderId;
