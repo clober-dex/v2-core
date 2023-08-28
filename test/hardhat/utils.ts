@@ -1,18 +1,9 @@
-import {
-  BigNumber,
-  BigNumberish,
-  ContractReceipt,
-  ContractTransaction,
-} from 'ethers'
+import { BigNumber, BigNumberish, ContractReceipt, ContractTransaction } from 'ethers'
 import { assert, expect } from 'chai'
 
-import { waitForTx } from '../utils/misc'
+import { waitForTx } from '../../utils'
 
-export const expectSmallDiff = (
-  a: BigNumber,
-  b: BigNumber,
-  diff: BigNumberish = 1,
-): void => {
+export const expectSmallDiff = (a: BigNumber, b: BigNumber, diff: BigNumberish = 1): void => {
   if (a.gt(b)) {
     expect(a.sub(b)).to.be.lte(diff)
   } else {
@@ -25,15 +16,9 @@ export type ExpectEvent = {
   args: any[]
 }
 
-export const expectEvent = (
-  receipt: ContractReceipt,
-  expectedEvent: ExpectEvent,
-  index = 0,
-): void => {
+export const expectEvent = (receipt: ContractReceipt, expectedEvent: ExpectEvent, index = 0): void => {
   assert(receipt.events)
-  const event = receipt.events.filter((e) => e.event === expectedEvent.name)[
-    index
-  ]
+  const event = receipt.events.filter((e) => e.event === expectedEvent.name)[index]
   const actualArgs = event.args
   assert(actualArgs)
   expect(actualArgs.length).to.be.equal(expectedEvent.args.length)
@@ -46,9 +31,7 @@ export const expectEvent = (
   })
 }
 
-export const logEvents = async (
-  tx: Promise<ContractTransaction>,
-): Promise<ContractTransaction> => {
+export const logEvents = async (tx: Promise<ContractTransaction>): Promise<ContractTransaction> => {
   const receipt = await waitForTx(tx)
   receipt.events?.forEach((e) => console.log(e))
   return tx
