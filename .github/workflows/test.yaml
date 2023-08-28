@@ -1,11 +1,17 @@
-name: CI
+name: Tests for coupon finance contracts
 on:
   pull_request:
     branches:
       - master
+    paths:
+      - '**/*.sol'
+      - 'test/**/*.ts'
   push:
     branches:
       - master
+    paths:
+      - '**/*.sol'
+      - 'test/**/*.ts'
 
 jobs:
   hardhat-tests:
@@ -39,6 +45,8 @@ jobs:
         run: npm list
       - name: Install Dependencies
         run: npm install --ignore-scripts
+      - name: Hardhat Compile
+        run: npx hardhat compile
       - name: Hardhat test
         run: npm run test:hardhat
 
@@ -79,5 +87,9 @@ jobs:
         run: npm install --ignore-scripts
       - name: Install Forge
         run: forge install
+      - name: Forge Build
+        run: forge build
       - name: Foundry Forge test
         run: npm run test:forge
+        env:
+          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}

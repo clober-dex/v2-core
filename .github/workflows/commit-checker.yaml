@@ -1,0 +1,12 @@
+name: Conventional Commits Check
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  commit-checker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: webiny/action-conventional-commits@v1.1.0

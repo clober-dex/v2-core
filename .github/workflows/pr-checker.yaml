@@ -1,0 +1,20 @@
+name: Pull Request Description Check
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+
+# Action should have write permission to make updates to PR
+permissions:
+  pull-requests: write
+
+jobs:
+  pr-checker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mtfoley/pr-compliance-action@main
+        with:
+          body-regex: '.{10,}'
+          body-fail: true
+          body-comment: 'Please provide a description of your PR.'
+          title-check-enable: false
