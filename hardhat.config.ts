@@ -1,8 +1,10 @@
+import path from 'path'
 import fs from 'fs'
 
 import * as dotenv from 'dotenv'
-// eslint-disable-next-line import/order
 import readlineSync from 'readline-sync'
+import { HardhatConfig } from 'hardhat/types'
+import { arbitrum, hardhat, mainnet } from '@wagmi/chains'
 
 import '@nomiclabs/hardhat-waffle'
 import '@typechain/hardhat'
@@ -11,20 +13,27 @@ import '@nomiclabs/hardhat-ethers'
 import 'hardhat-gas-reporter'
 import 'hardhat-contract-sizer'
 import 'hardhat-abi-exporter'
-import 'solidity-coverage'
-
-import './task/index.ts'
+import '@nomicfoundation/hardhat-verify'
 
 dotenv.config()
-
-import { HardhatConfig } from 'hardhat/types'
-import { arbitrum, localhost, mainnet, polygon } from '@wagmi/chains'
 
 const networkInfos = require('@wagmi/chains')
 const chainIdMap: { [key: string]: string } = {}
 for (const [networkName, networkInfo] of Object.entries(networkInfos)) {
   // @ts-ignore
   chainIdMap[networkInfo.id] = networkName
+}
+
+const SKIP_LOAD = process.env.SKIP_LOAD === 'true'
+
+// Prevent to load scripts before compilation and typechain
+if (!SKIP_LOAD) {
+  const tasksPath = path.join(__dirname, 'task')
+  fs.readdirSync(tasksPath)
+    .filter((pth) => pth.includes('.ts'))
+    .forEach((task) => {
+      require(`${tasksPath}/${task}`)
+    })
 }
 
 let privateKey: string
@@ -36,11 +45,7 @@ const getMainnetPrivateKey = () => {
     if (arg === '--network') {
       network = parseInt(process.argv[parseInt(i) + 1])
       if (network.toString() in chainIdMap && ok !== 'Y') {
-        ok = readlineSync.question(
-          `You are trying to use ${
-            chainIdMap[network.toString()]
-          } network [Y/n] : `,
-        )
+        ok = readlineSync.question(`You are trying to use ${chainIdMap[network.toString()]} network [Y/n] : `)
         if (ok !== 'Y') {
           throw new Error('Network not allowed')
         }
@@ -48,24 +53,22 @@ const getMainnetPrivateKey = () => {
     }
   }
 
-  const prodNetworks = new Set<number>([mainnet.id, polygon.id, arbitrum.id])
+  const prodNetworks = new Set<number>([mainnet.id])
   if (network && prodNetworks.has(network)) {
     if (privateKey) {
       return privateKey
     }
     const keythereum = require('keythereum')
 
-    const KEYSTORE = './clober-deployer-key.json'
+    const KEYSTORE = './deployer-key.json'
     const PASSWORD = readlineSync.question('Password: ', {
       hideEchoBack: true,
     })
     if (PASSWORD !== '') {
       const keyObject = JSON.parse(fs.readFileSync(KEYSTORE).toString())
-      privateKey =
-        '0x' + keythereum.recover(PASSWORD, keyObject).toString('hex')
+      privateKey = '0x' + keythereum.recover(PASSWORD, keyObject).toString('hex')
     } else {
-      privateKey =
-        '0x0000000000000000000000000000000000000000000000000000000000000001'
+      privateKey = '0x0000000000000000000000000000000000000000000000000000000000000001'
     }
     return privateKey
   }
@@ -78,7 +81,6 @@ const config: HardhatConfig = {
       {
         version: '0.8.20',
         settings: {
-          evmVersion: 'london',
           optimizer: {
             enabled: true,
             runs: 1000,
@@ -93,18 +95,34 @@ const config: HardhatConfig = {
     outDir: 'typechain',
     target: 'ethers-v5',
   },
-  etherscan: {
-    apiKey: 'API_KEY',
-    customChains: [],
-  },
   defaultNetwork: 'hardhat',
   networks: {
-    hardhat: {
-      chainId: localhost.id,
+    [arbitrum.id]: {
+      url: arbitrum.rpcUrls.default.http[0],
+      chainId: arbitrum.id,
+      accounts: [getMainnetPrivateKey()],
+      gas: 'auto',
+      gasPrice: 'auto',
+      gasMultiplier: 1,
+      timeout: 3000000,
+      httpHeaders: {},
+      live: true,
+      saveDeployments: true,
+      tags: ['mainnet', 'prod'],
+      companionNetworks: {},
+      verify: {
+        etherscan: {
+          apiKey: process.env.ARBISCAN_API_KEY,
+          apiUrl: 'https://api.arbiscan.io',
+        },
+      },
+    },
+    [hardhat.network]: {
+      chainId: hardhat.id,
       gas: 20000000,
       gasPrice: 250000000000,
       gasMultiplier: 1,
-      hardfork: 'london',
+      hardfork: 'shanghai',
       // @ts-ignore
       // forking: {
       //   enabled: true,
@@ -118,8 +136,7 @@ const config: HardhatConfig = {
         },
       },
       accounts: {
-        mnemonic:
-          'loop curious foster tank depart vintage regret net frozen version expire vacant there zebra world',
+        mnemonic: 'loop curious foster tank depart vintage regret net frozen version expire vacant there zebra world',
         initialIndex: 0,
         count: 10,
         path: "m/44'/60'/0'/0",

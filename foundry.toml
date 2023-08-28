@@ -5,6 +5,9 @@ libs = ['node_modules', 'lib']
 test = 'test/foundry'
 cache_path  = 'forge-cache'
 gas_reports = ["*"]
+solc_version = '0.8.20'
+optimizer = true
+optimizer_runs = 1_000
 
 [fuzz]
 runs = 10_000

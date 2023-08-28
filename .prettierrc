@@ -1,18 +1,8 @@
 {
-  "singleQuote": true,
-  "trailingComma": "all",
   "semi": false,
+  "singleQuote": true,
+  "printWidth": 120,
+  "trailingComma": "all",
   "arrowParens": "always",
-  "endOfLine": "auto",
-  "overrides": [
-    {
-      "files": "*.sol",
-      "options": {
-        "singleQuote": false,
-        "semi": true,
-        "printWidth": 120,
-        "explicitTypes": "always"
-      }
-    }
-  ]
+  "endOfLine": "auto"
 }

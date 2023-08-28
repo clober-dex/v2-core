@@ -1,0 +1,13 @@
+ignore:
+  - "test"
+
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: null
+    patch:
+      default:
+        target: 80%
+        threshold: null
