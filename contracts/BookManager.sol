@@ -55,9 +55,7 @@ contract BookManager is IBookManager {
 
     function collect(address provider, Currency currency) external override {}
 
-    function whitelist(address provider) external override {}
+    function whitelist(address[] provider) external override {}
 
-    function blacklist(address provider) external override {}
-
-    function delist(address provider) external override {}
+    function delist(address[] provider) external override {}
 }

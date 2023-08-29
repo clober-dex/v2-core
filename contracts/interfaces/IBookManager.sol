@@ -11,9 +11,14 @@ interface IBookManager {
         uint8 unitDecimals;
         Currency base;
         Currency quote;
-        int24 makerFee;
-        uint24 takerFee;
         uint24 tickSpacing;
+        FeePolicy makerPolicy;
+        FeePolicy takerPolicy;
+    }
+
+    struct FeePolicy {
+        int24 rate;
+        bool useOutput;
     }
 
     struct MakeParams {
@@ -61,9 +66,7 @@ interface IBookManager {
 
     function collect(address provider, Currency currency) external;
 
-    function whitelist(address provider) external;
+    function whitelist(address[] provider) external;
 
-    function blacklist(address provider) external;
-
-    function delist(address provider) external;
+    function delist(address[] provider) external;
 }
