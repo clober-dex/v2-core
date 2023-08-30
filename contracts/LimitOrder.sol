@@ -47,14 +47,7 @@ abstract contract LimitOrder is ILimitOrder {
         return tick(id).toPrice();
     }
 
-    function amount(uint256 id)
-    external
-    returns (
-        uint64 initial,
-        uint64 reduced,
-        uint64 filled,
-        uint64 claimable
-    ) {}
+    function amount(uint256 id) external returns (uint64 initial, uint64 reduced, uint64 filled, uint64 claimable) {}
 
     function reduce(uint256 id, uint64 amount) external {}
 

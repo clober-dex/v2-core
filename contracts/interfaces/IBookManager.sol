@@ -35,7 +35,7 @@ interface IBookManager {
 
     function getOrder(OrderId id) external view returns (Book.Order memory);
 
-    function make(MakeParams[] memory paramsList) external returns (OrderId[] memory ids);
+    function make(MakeParams[] calldata paramsList) external returns (OrderId[] memory ids);
 
     struct TakeParams {
         BookKey key;
@@ -43,7 +43,7 @@ interface IBookManager {
         uint256 maxIn;
     }
 
-    function take(TakeParams[] memory paramsList) external;
+    function take(TakeParams[] calldata paramsList) external;
 
     struct SpendParams {
         BookKey key;
@@ -51,22 +51,22 @@ interface IBookManager {
         uint64 minOut; // times 10**unitDecimals to get actual output
     }
 
-    function spend(SpendParams[] memory paramsList) external;
+    function spend(SpendParams[] calldata paramsList) external;
 
     struct ReduceParams {
         OrderId id;
         uint64 amount;
     }
 
-    function reduce(ReduceParams[] memory paramsList) external;
+    function reduce(ReduceParams[] calldata paramsList) external;
 
-    function cancel(uint256[] memory ids) external;
+    function cancel(uint256[] calldata ids) external;
 
-    function claim(uint256[] memory ids) external;
+    function claim(uint256[] calldata ids) external;
 
     function collect(address provider, Currency currency) external;
 
-    function whitelist(address[] provider) external;
+    function whitelist(address[] calldata provider) external;
 
-    function delist(address[] provider) external;
+    function delist(address[] calldata provider) external;
 }

@@ -18,7 +18,7 @@ contract BookManager is IBookManager {
         return _books[key.toId()];
     }
 
-    function getBookKey(BookId id) external override view returns (BookKey memory) {
+    function getBookKey(BookId id) external view override returns (BookKey memory) {
         return _books[id].key;
     }
 
@@ -43,19 +43,19 @@ contract BookManager is IBookManager {
         }
     }
 
-    function take(IBookManager.TakeParams[] memory paramsList) external override {}
+    function take(IBookManager.TakeParams[] calldata paramsList) external override {}
 
-    function spend(IBookManager.SpendParams[] memory paramsList) external override {}
+    function spend(IBookManager.SpendParams[] calldata paramsList) external override {}
 
-    function reduce(IBookManager.ReduceParams[] memory paramsList) external override {}
+    function reduce(IBookManager.ReduceParams[] calldata paramsList) external override {}
 
-    function cancel(uint256[] memory ids) external override {}
+    function cancel(uint256[] calldata ids) external override {}
 
-    function claim(uint256[] memory ids) external override {}
+    function claim(uint256[] calldata ids) external override {}
 
     function collect(address provider, Currency currency) external override {}
 
-    function whitelist(address[] provider) external override {}
+    function whitelist(address[] calldata provider) external override {}
 
-    function delist(address[] provider) external override {}
+    function delist(address[] calldata provider) external override {}
 }

@@ -25,14 +25,7 @@ interface ILimitOrder is IERC721, IERC721Metadata {
     /// @return reduced The sum of reductions done to the limit order
     /// @return filled The total amount taken from the limit order
     /// @return claimable The currently available claimable amount from the limit order getting filled
-    function amount(uint256 id)
-        external
-        returns (
-            uint64 initial,
-            uint64 reduced,
-            uint64 filled,
-            uint64 claimable
-        );
+    function amount(uint256 id) external returns (uint64 initial, uint64 reduced, uint64 filled, uint64 claimable);
 
     function reduce(uint256 id, uint64 amount) external;
 
