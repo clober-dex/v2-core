@@ -13,7 +13,6 @@ import '@nomiclabs/hardhat-ethers'
 import 'hardhat-gas-reporter'
 import 'hardhat-contract-sizer'
 import 'hardhat-abi-exporter'
-import '@nomicfoundation/hardhat-verify'
 
 dotenv.config()
 
