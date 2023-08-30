@@ -22,9 +22,9 @@ contract BookManager is IBookManager {
         return _books[id].key;
     }
 
-    function getOrder(OrderId id) external override view returns (Book.Order memory) {
-        (BookId bookId,, uint40 index) = id.decode();
-        return _books[bookId].orders[index];
+    function getOrder(OrderId id) external view override returns (Book.Order memory) {
+        (BookId bookId,,) = id.decode();
+        return _books[bookId].orders[id];
     }
 
     function make(IBookManager.MakeParams[] calldata paramsList) external override returns (OrderId[] memory ids) {
@@ -32,14 +32,9 @@ contract BookManager is IBookManager {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.MakeParams calldata params = paramsList[i];
             Book.State storage book = _getBook(params.key);
-            ids[i] = book.make(
-                params.key.toId(),
-                params.user,
-                params.tick,
-                params.amount,
-                params.provider,
-                params.bounty
-            );
+            Book.Order memory order;
+            (ids[i], order) =
+                book.make(params.key.toId(), params.user, params.tick, params.amount, params.provider, params.bounty);
         }
     }
 
