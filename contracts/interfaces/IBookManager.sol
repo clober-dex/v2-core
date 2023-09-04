@@ -13,9 +13,9 @@ interface IBookManager {
     error NotSettled();
 
     struct BookKey {
-        uint8 unitDecimals;
         Currency base;
         Currency quote;
+        uint8 unitDecimals;
         uint24 tickSpacing;
         FeePolicy makerPolicy;
         FeePolicy takerPolicy;

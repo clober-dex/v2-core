@@ -117,7 +117,7 @@ library Book {
 
     function take(State storage self, BookId bookId, address user, uint64 requestedRawAmount, Tick limitTick)
         internal
-        returns (uint256 baseAmount, uint256 rawAmount)
+        returns (uint256 baseAmount, uint64 rawAmount)
     {
         while (!self.heap.isEmpty()) {
             Tick tick = self.heap.root();
@@ -183,13 +183,13 @@ library Book {
         canceledAmount = self.reduce(id, 0);
     }
 
-    function claim(State storage self, OrderId id) internal returns (uint256 claimedAmount) {
+    function claim(State storage self, OrderId id) internal returns (uint64 claimedRaw, uint256 claimedAmount) {
         Order storage order = self.orders[id];
         (, Tick tick, uint40 orderIndex) = id.decode();
-        uint64 claimableRawAmount = _calculateClaimableRawAmount(self, order.pending, tick, orderIndex);
-        order.pending -= claimableRawAmount;
-        self.totalClaimableOf.sub(tick, claimableRawAmount);
-        claimedAmount = tick.rawToBase(claimableRawAmount, false);
+        claimedRaw = _calculateClaimableRawAmount(self, order.pending, tick, orderIndex);
+        order.pending -= claimedRaw;
+        self.totalClaimableOf.sub(tick, claimedRaw);
+        claimedAmount = tick.rawToBase(claimedRaw, false);
     }
 
     function cleanHeap(State storage self) internal {

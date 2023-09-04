@@ -15,6 +15,8 @@ contract BookManager is IBookManager {
     using OrderIdLibrary for OrderId;
     using LockDataLibrary for LockData;
 
+    int256 private constant _RATE_PRECISION = 10 ** 6;
+
     LockData public override lockData;
 
     mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public override currencyDelta;
@@ -60,8 +62,13 @@ contract BookManager is IBookManager {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.MakeParams calldata params = paramsList[i];
             Book.State storage book = _getBook(params.key);
+            int256 fee;
             ids[i] =
                 book.make(params.key.toId(), params.user, params.tick, params.amount, params.provider, params.bounty);
+            uint256 quoteAmount = uint256(params.amount) * params.key.unitDecimals;
+            if (!params.key.makerPolicy.useOutput) {
+                (quoteAmount, fee) = _calculateFee(quoteAmount, params.key.makerPolicy.rate);
+            }
         }
     }
 
@@ -69,10 +76,17 @@ contract BookManager is IBookManager {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.TakeParams calldata params = paramsList[i];
             Book.State storage book = _getBook(params.key);
-            (uint256 baseAmount, uint256 rawAmount) =
-                book.take(params.key.toId(), msg.sender, params.amount, params.limit);
-            // todo: calculate fee
             // todo: check slippage
+            BookId bookId = params.key.toId();
+            (uint256 baseAmount, uint256 quoteAmount) = book.take(bookId, msg.sender, params.amount, params.limit);
+            quoteAmount *= params.key.unitDecimals;
+            int256 fee;
+            if (params.key.takerPolicy.useOutput) {
+                (quoteAmount, fee) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
+            } else {
+                (baseAmount, fee) = _calculateFee(baseAmount, params.key.takerPolicy.rate);
+            }
+            // todo add fee to reserves
             // todo: account delta
         }
     }
@@ -81,8 +95,19 @@ contract BookManager is IBookManager {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.SpendParams calldata params = paramsList[i];
             Book.State storage book = _getBook(params.key);
-            (uint256 baseAmount, uint256 rawAmount) =
-                book.spend(params.key.toId(), msg.sender, params.amount, params.limit);
+            BookId bookId = params.key.toId();
+            uint256 amountToRequest = params.amount;
+            int256 fee;
+            if (!params.key.takerPolicy.useOutput) {
+                (amountToRequest, fee) = _calculateFee(amountToRequest, params.key.takerPolicy.rate);
+            }
+            (uint256 baseAmount, uint256 quoteAmount) = book.spend(bookId, msg.sender, amountToRequest, params.limit);
+            quoteAmount *= params.key.unitDecimals;
+            if (params.key.takerPolicy.useOutput) {
+                (quoteAmount, fee) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
+            }
+            // todo add fee to reserves
+            // todo: account delta
         }
     }
 
@@ -90,7 +115,13 @@ contract BookManager is IBookManager {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.ReduceParams calldata params = paramsList[i];
             (BookId bookId,,) = params.id.decode();
-            uint64 reducedAmount = _books[bookId].reduce(params.id, params.to);
+            uint256 reducedAmount = _books[bookId].reduce(params.id, params.to);
+            reducedAmount *= _books[bookId].key.unitDecimals;
+            int256 fee;
+            FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
+            if (!makerPolicy.useOutput) {
+                // todo: reverse calculation
+            }
             // todo: account delta
         }
     }
@@ -100,7 +131,13 @@ contract BookManager is IBookManager {
             OrderId id = ids[i];
             (BookId bookId,,) = id.decode();
             Book.State storage book = _books[bookId];
-            uint64 canceledAmount = book.cancel(id);
+            uint256 canceledAmount = book.cancel(id);
+            canceledAmount *= _books[bookId].key.unitDecimals;
+            int256 fee;
+            FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
+            if (!makerPolicy.useOutput) {
+                // todo: reverse calculation
+            }
             // todo: account delta
         }
     }
@@ -110,9 +147,16 @@ contract BookManager is IBookManager {
             OrderId id = ids[i];
             (BookId bookId,,) = id.decode();
             Book.State storage book = _books[bookId];
-            uint256 claimedAmount = book.claim(id);
-            // todo: account delta
-            // todo: calculate fee
+            (uint64 claimedRaw, uint256 claimedAmount) = book.claim(id);
+            int256 fee;
+            FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
+            if (makerPolicy.useOutput) {
+                (claimedAmount, fee) = _calculateFee(claimedAmount, makerPolicy.rate);
+                // todo: account delta
+            } else {
+                (, fee) = _calculateFee(uint256(claimedRaw) * _books[bookId].key.unitDecimals, makerPolicy.rate);
+                // todo: just add to reserve
+            }
         }
     }
 
@@ -121,4 +165,14 @@ contract BookManager is IBookManager {
     function whitelist(address[] calldata provider) external {}
 
     function delist(address[] calldata provider) external {}
+
+    function _calculateFee(uint256 amount, int24 rate) internal view returns (uint256 adjustedAmount, int256 fee) {
+        if (rate > 0) {
+            fee = int256(Math.divide(amount * uint24(rate), uint256(_RATE_PRECISION), true));
+            adjustedAmount = amount - uint256(fee);
+        } else {
+            fee = -int256(Math.divide(amount * uint24(-rate), uint256(_RATE_PRECISION), false));
+            adjustedAmount = amount + uint256(-fee);
+        }
+    }
 }
