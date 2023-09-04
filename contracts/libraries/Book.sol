@@ -183,13 +183,17 @@ library Book {
         canceledAmount = self.reduce(id, 0);
     }
 
-    function claim(State storage self, OrderId id) internal returns (uint64 claimedRaw, uint256 claimedAmount) {
+    function claim(State storage self, OrderId id)
+        internal
+        returns (uint64 claimedRaw, uint256 claimedAmount, address provider)
+    {
         Order storage order = self.orders[id];
         (, Tick tick, uint40 orderIndex) = id.decode();
         claimedRaw = _calculateClaimableRawAmount(self, order.pending, tick, orderIndex);
         order.pending -= claimedRaw;
         self.totalClaimableOf.sub(tick, claimedRaw);
         claimedAmount = tick.rawToBase(claimedRaw, false);
+        provider = order.provider;
     }
 
     function cleanHeap(State storage self) internal {

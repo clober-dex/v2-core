@@ -16,6 +16,7 @@ contract BookManager is IBookManager, Ownable {
     using Book for Book.State;
     using OrderIdLibrary for OrderId;
     using LockDataLibrary for LockData;
+    using CurrencyLibrary for Currency;
 
     int256 private constant _RATE_PRECISION = 10 ** 6;
 
@@ -25,6 +26,8 @@ contract BookManager is IBookManager, Ownable {
     mapping(Currency currency => uint256) public override reservesOf;
     mapping(BookId id => Book.State) internal _books;
     mapping(address provider => bool) public override isWhitelisted;
+    // TODO: Check if user can has below state. If not, change user to provider.
+    mapping(address user => mapping(Currency currency => uint256 amount)) public override tokenOwed;
 
     constructor() {}
 
@@ -91,7 +94,6 @@ contract BookManager is IBookManager, Ownable {
             if (baseAmount > params.maxIn) {
                 revert Slippage(bookId);
             }
-            // todo add fee to reserves
             // todo: account delta
         }
     }
@@ -114,7 +116,6 @@ contract BookManager is IBookManager, Ownable {
             if (quoteAmount < params.minOut) {
                 revert Slippage(bookId);
             }
-            // todo add fee to reserves
             // todo: account delta
         }
     }
@@ -155,7 +156,7 @@ contract BookManager is IBookManager, Ownable {
             OrderId id = ids[i];
             (BookId bookId,,) = id.decode();
             Book.State storage book = _books[bookId];
-            (uint64 claimedRaw, uint256 claimedAmount) = book.claim(id);
+            (uint64 claimedRaw, uint256 claimedAmount, address provider) = book.claim(id);
             int256 fee;
             FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
             if (makerPolicy.useOutput) {
@@ -163,12 +164,19 @@ contract BookManager is IBookManager, Ownable {
                 // todo: account delta
             } else {
                 (, fee) = _calculateFee(uint256(claimedRaw) * _books[bookId].key.unitDecimals, makerPolicy.rate);
-                // todo: just add to reserve
             }
+            // todo: also calculate taker fee and store it
         }
     }
 
-    function collect(address provider, Currency currency) external {}
+    function collect(address provider, Currency currency) external {
+        uint256 amount = tokenOwed[provider][currency];
+        if (amount > 0) {
+            tokenOwed[provider][currency] = 0;
+            currency.transfer(provider, amount);
+            // todo: event
+        }
+    }
 
     function whitelist(address[] calldata providers) external onlyOwner {
         unchecked {
