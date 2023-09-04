@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
+
 pragma solidity ^0.8.20;
 
 import "../libraries/Book.sol";
@@ -7,6 +8,8 @@ import "../libraries/OrderId.sol";
 import "../libraries/Tick.sol";
 
 interface IBookManager {
+    error Slippage(BookId bookId);
+
     struct BookKey {
         uint8 unitDecimals;
         Currency base;
@@ -40,6 +43,7 @@ interface IBookManager {
     struct TakeParams {
         BookKey key;
         uint64 amount; // times 10**unitDecimals to get actual output
+        Tick limit;
         uint256 maxIn;
     }
 
@@ -48,6 +52,7 @@ interface IBookManager {
     struct SpendParams {
         BookKey key;
         uint256 amount;
+        Tick limit;
         uint64 minOut; // times 10**unitDecimals to get actual output
     }
 
@@ -55,14 +60,14 @@ interface IBookManager {
 
     struct ReduceParams {
         OrderId id;
-        uint64 amount;
+        uint64 to;
     }
 
     function reduce(ReduceParams[] calldata paramsList) external;
 
-    function cancel(uint256[] calldata ids) external;
+    function cancel(OrderId[] calldata ids) external;
 
-    function claim(uint256[] calldata ids) external;
+    function claim(OrderId[] calldata ids) external;
 
     function collect(address provider, Currency currency) external;
 
