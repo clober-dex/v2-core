@@ -76,7 +76,6 @@ contract BookManager is IBookManager {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.TakeParams calldata params = paramsList[i];
             Book.State storage book = _getBook(params.key);
-            // todo: check slippage
             BookId bookId = params.key.toId();
             (uint256 baseAmount, uint256 quoteAmount) = book.take(bookId, msg.sender, params.amount, params.limit);
             quoteAmount *= params.key.unitDecimals;
@@ -85,6 +84,9 @@ contract BookManager is IBookManager {
                 (quoteAmount, fee) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
             } else {
                 (baseAmount, fee) = _calculateFee(baseAmount, params.key.takerPolicy.rate);
+            }
+            if (baseAmount > params.maxIn) {
+                revert Slippage(bookId);
             }
             // todo add fee to reserves
             // todo: account delta
@@ -105,6 +107,9 @@ contract BookManager is IBookManager {
             quoteAmount *= params.key.unitDecimals;
             if (params.key.takerPolicy.useOutput) {
                 (quoteAmount, fee) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
+            }
+            if (quoteAmount < params.minOut) {
+                revert Slippage(bookId);
             }
             // todo add fee to reserves
             // todo: account delta

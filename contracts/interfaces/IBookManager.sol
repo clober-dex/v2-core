@@ -55,7 +55,7 @@ interface IBookManager {
         BookKey key;
         uint256 amount;
         Tick limit;
-        uint64 minOut; // times 10**unitDecimals to get actual output
+        uint256 minOut;
     }
 
     function spend(SpendParams[] calldata paramsList) external;
