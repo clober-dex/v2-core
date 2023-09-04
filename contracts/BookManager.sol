@@ -2,13 +2,15 @@
 
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "./libraries/BookId.sol";
 import "./libraries/Book.sol";
 import "./libraries/OrderId.sol";
 import "./libraries/LockData.sol";
 import "./interfaces/IPositionLocker.sol";
 
-contract BookManager is IBookManager {
+contract BookManager is IBookManager, Ownable {
     using BookIdLibrary for IBookManager.BookKey;
     using TickLibrary for Tick;
     using Book for Book.State;
