@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
+
 pragma solidity ^0.8.20;
 
 import "@clober/library/contracts/SegmentedSegmentTree.sol";
@@ -6,16 +7,32 @@ import "@clober/library/contracts/SegmentedSegmentTree.sol";
 import "./Tick.sol";
 import "./OrderId.sol";
 import "./TotalClaimableMap.sol";
+import "./MockHeap.sol";
 import "../interfaces/IBookManager.sol";
 
 library Book {
+    using Book for State;
+    using MockHeap for MockHeap.Core;
     using SegmentedSegmentTree for SegmentedSegmentTree.Core;
     using TotalClaimableMap for mapping(uint24 => uint256);
+    using TickLibrary for Tick;
+    using OrderIdLibrary for OrderId;
 
+    event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 amount);
+    event MakeOrder(
+        BookId indexed bookId, address indexed user, uint64 amount, uint32 claimBounty, uint256 orderIndex, Tick tick
+    );
+    // todo: name of reducedAmount
+    event Reduce(OrderId indexed orderId, uint64 reducedAmount);
+    event ClaimOrder(address indexed claimer, OrderId indexed orderId, uint64 rawAmount, uint32 claimBounty);
+
+    error ReduceFailed(uint64 maxReduceAmount);
+    error Overflow();
     error BookAlreadyInitialized();
     error BookNotInitialized();
     error QueueReplaceFailed();
 
+    uint256 private constant _PRICE_PRECISION = 10 ** 18;
     uint256 private constant _CLAIM_BOUNTY_UNIT = 1 gwei;
     uint40 private constant _MAX_ORDER = 2 ** 15; // 32768
     uint256 private constant _MAX_ORDER_M = 2 ** 15 - 1; // % 32768
@@ -36,7 +53,7 @@ library Book {
     struct State {
         IBookManager.BookKey key;
         mapping(Tick tick => Queue) queues;
-        // TODO: add heap
+        MockHeap.Core heap;
         // four values of totalClaimable are stored in one uint256
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
         mapping(OrderId => Order) orders;
@@ -59,8 +76,10 @@ library Book {
         uint64 amount,
         address provider,
         uint32 bounty
-    ) internal returns (OrderId id, Order memory order) {
-        // TODO: add tick to heap
+    ) internal returns (OrderId id) {
+        if (!self.heap.has(tick)) {
+            self.heap.push(tick);
+        }
 
         Queue storage queue = self.queues[tick];
         uint40 index = queue.index;
@@ -92,16 +111,95 @@ library Book {
         queue.index = index + 1;
         queue.tree.update(index & _MAX_ORDER_M, amount);
         id = OrderIdLibrary.encode(bookId, tick, index);
-        order = Order({initial: amount, owner: user, pending: amount, bounty: bounty, provider: provider});
-        self.orders[id] = order;
+        self.orders[id] = Order({initial: amount, owner: user, pending: amount, bounty: bounty, provider: provider});
+        emit MakeOrder(bookId, user, amount, bounty, index, tick);
     }
 
-    function take(State storage self, uint64 amount) internal {
-        // TODO: update totalClaimableOf, add amount
+    function take(State storage self, BookId bookId, address user, uint64 requestedRawAmount, Tick limitTick)
+        internal
+        returns (uint256 baseAmount, uint256 rawAmount)
+    {
+        while (!self.heap.isEmpty()) {
+            Tick tick = self.heap.root();
+            if (tick.gt(limitTick)) break;
+
+            uint64 currentDepth = self.depth(tick);
+            uint64 takenRawAmount = currentDepth > requestedRawAmount ? requestedRawAmount : currentDepth;
+            if (takenRawAmount == 0) break;
+            requestedRawAmount -= takenRawAmount;
+            baseAmount += tick.rawToBase(takenRawAmount, true);
+            rawAmount += takenRawAmount;
+
+            self.totalClaimableOf.add(tick, takenRawAmount);
+
+            self.cleanHeap();
+
+            emit Take(bookId, user, tick, takenRawAmount);
+        }
     }
 
-    function spend(State storage self, uint64 amount) internal {
-        // TODO: update totalClaimableOf, add amount
+    function spend(State storage self, BookId bookId, address user, uint256 requestedBaseAmount, Tick limitTick)
+        internal
+        returns (uint256 baseAmount, uint256 rawAmount)
+    {
+        while (!self.heap.isEmpty()) {
+            Tick tick = self.heap.root();
+            if (tick.gt(limitTick)) break;
+
+            uint64 currentDepth = self.depth(tick);
+            uint64 baseInRaw = tick.baseToRaw(requestedBaseAmount, false);
+            uint64 takenRawAmount = currentDepth > baseInRaw ? baseInRaw : currentDepth;
+            if (takenRawAmount == 0) break;
+            uint256 usedBaseAmount = tick.rawToBase(takenRawAmount, true);
+            requestedBaseAmount -= usedBaseAmount;
+            baseAmount += usedBaseAmount;
+            rawAmount += takenRawAmount;
+
+            self.totalClaimableOf.add(tick, takenRawAmount);
+
+            self.cleanHeap();
+
+            emit Take(bookId, user, tick, takenRawAmount);
+        }
+    }
+
+    function reduce(State storage self, OrderId id, uint64 to) internal returns (uint64 reducedAmount) {
+        Order storage order = self.orders[id];
+        (, Tick tick, uint40 orderIndex) = id.decode();
+        uint64 claimableRawAmount = _calculateClaimableRawAmount(self, to, tick, orderIndex);
+        uint64 afterPendingAmount = to + claimableRawAmount;
+        unchecked {
+            if (order.pending < afterPendingAmount) {
+                revert ReduceFailed(order.pending - claimableRawAmount);
+            }
+            reducedAmount = order.pending - afterPendingAmount;
+        }
+        order.pending = afterPendingAmount;
+        self.totalClaimableOf.sub(tick, to);
+        emit Reduce(id, reducedAmount);
+    }
+
+    function cancel(State storage self, OrderId id) internal returns (uint64 canceledAmount) {
+        canceledAmount = self.reduce(id, 0);
+    }
+
+    function claim(State storage self, OrderId id) internal returns (uint256 claimedAmount) {
+        Order storage order = self.orders[id];
+        (, Tick tick, uint40 orderIndex) = id.decode();
+        uint64 claimableRawAmount = _calculateClaimableRawAmount(self, order.pending, tick, orderIndex);
+        order.pending -= claimableRawAmount;
+        self.totalClaimableOf.sub(tick, claimableRawAmount);
+        claimedAmount = tick.rawToBase(claimableRawAmount, false);
+    }
+
+    function cleanHeap(State storage self) internal {
+        while (!self.heap.isEmpty()) {
+            if (self.depth(self.heap.root()) == 0) {
+                self.heap.pop();
+            } else {
+                break;
+            }
+        }
     }
 
     function _calculateClaimableRawAmount(State storage self, uint64 orderAmount, Tick tick, uint40 index)

@@ -12,6 +12,7 @@ library TotalClaimableMap {
 
     function add(mapping(uint24 => uint256) storage self, Tick tick, uint64 n) internal {
         // TODO: add
+        // @notice Be aware of dirty storage add logic
     }
 
     function sub(mapping(uint24 => uint256) storage self, Tick tick, uint64 n) internal {
