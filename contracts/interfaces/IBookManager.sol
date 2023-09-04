@@ -73,9 +73,11 @@ interface IBookManager {
 
     function collect(address provider, Currency currency) external;
 
-    function whitelist(address[] calldata provider) external;
+    function whitelist(address[] calldata providers) external;
 
-    function delist(address[] calldata provider) external;
+    function delist(address[] calldata providers) external;
+
+    function isWhitelisted(address provider) external view returns (bool);
 
     function lockData() external view returns (uint128, uint128);
 

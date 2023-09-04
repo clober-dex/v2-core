@@ -24,6 +24,7 @@ contract BookManager is IBookManager, Ownable {
     mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public override currencyDelta;
     mapping(Currency currency => uint256) public override reservesOf;
     mapping(BookId id => Book.State) internal _books;
+    mapping(address provider => bool) public override isWhitelisted;
 
     constructor() {}
 
@@ -169,11 +170,23 @@ contract BookManager is IBookManager, Ownable {
 
     function collect(address provider, Currency currency) external {}
 
-    function whitelist(address[] calldata provider) external {}
+    function whitelist(address[] calldata providers) external onlyOwner {
+        unchecked {
+            for (uint256 i = 0; i < providers.length; ++i) {
+                isWhitelisted[providers[i]] = true;
+            }
+        }
+    }
 
-    function delist(address[] calldata provider) external {}
+    function delist(address[] calldata providers) external onlyOwner {
+        unchecked {
+            for (uint256 i = 0; i < providers.length; ++i) {
+                isWhitelisted[providers[i]] = false;
+            }
+        }
+    }
 
-    function _calculateFee(uint256 amount, int24 rate) internal view returns (uint256 adjustedAmount, int256 fee) {
+    function _calculateFee(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount, int256 fee) {
         if (rate > 0) {
             fee = int256(Math.divide(amount * uint24(rate), uint256(_RATE_PRECISION), true));
             adjustedAmount = amount - uint256(fee);
