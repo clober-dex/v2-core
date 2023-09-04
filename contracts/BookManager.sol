@@ -5,16 +5,42 @@ pragma solidity ^0.8.20;
 import "./libraries/BookId.sol";
 import "./libraries/Book.sol";
 import "./libraries/OrderId.sol";
+import "./libraries/LockData.sol";
+import "./interfaces/IPositionLocker.sol";
 
 contract BookManager is IBookManager {
     using BookIdLibrary for IBookManager.BookKey;
     using TickLibrary for Tick;
     using Book for Book.State;
     using OrderIdLibrary for OrderId;
+    using LockDataLibrary for LockData;
 
+    LockData public override lockData;
+
+    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public override currencyDelta;
+    mapping(Currency currency => uint256) public override reservesOf;
     mapping(BookId id => Book.State) internal _books;
 
     constructor() {}
+
+    modifier onlyByLocker() {
+        address locker = lockData.getActiveLock();
+        if (msg.sender != locker) revert LockedBy(locker);
+        _;
+    }
+
+    function lock(bytes calldata data) external returns (bytes memory result) {
+        lockData.push(msg.sender);
+
+        result = ILocker(msg.sender).lockAcquired(data);
+
+        if (lockData.length == 1) {
+            if (lockData.nonzeroDeltaCount != 0) revert NotSettled();
+            delete lockData;
+        } else {
+            lockData.pop();
+        }
+    }
 
     function _getBook(BookKey memory key) private view returns (Book.State storage) {
         return _books[key.toId()];

@@ -9,6 +9,8 @@ import "../libraries/Tick.sol";
 
 interface IBookManager {
     error Slippage(BookId bookId);
+    error LockedBy(address locker);
+    error NotSettled();
 
     struct BookKey {
         uint8 unitDecimals;
@@ -74,4 +76,12 @@ interface IBookManager {
     function whitelist(address[] calldata provider) external;
 
     function delist(address[] calldata provider) external;
+
+    function lockData() external view returns (uint128, uint128);
+
+    function currencyDelta(address locker, Currency currency) external view returns (int256);
+
+    function reservesOf(Currency currency) external view returns (uint256);
+
+    function lock(bytes calldata data) external returns (bytes memory);
 }
