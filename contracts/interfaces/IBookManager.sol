@@ -14,6 +14,8 @@ interface IBookManager {
     error NotWhitelisted(address provider);
 
     event SetTreasury(address indexed oldTreasury, address indexed newTreasury);
+    event Whitelist(address indexed provider);
+    event Delist(address indexed provider);
 
     struct BookKey {
         Currency base;

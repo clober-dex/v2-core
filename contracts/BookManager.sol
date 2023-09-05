@@ -229,7 +229,7 @@ contract BookManager is IBookManager, Ownable {
     function whitelist(address[] calldata providers) external onlyOwner {
         unchecked {
             for (uint256 i = 0; i < providers.length; ++i) {
-                isWhitelisted[providers[i]] = true;
+                _whitelist(providers[i]);
             }
         }
     }
@@ -237,7 +237,7 @@ contract BookManager is IBookManager, Ownable {
     function delist(address[] calldata providers) external onlyOwner {
         unchecked {
             for (uint256 i = 0; i < providers.length; ++i) {
-                isWhitelisted[providers[i]] = false;
+                _delist(providers[i]);
             }
         }
     }
@@ -245,6 +245,16 @@ contract BookManager is IBookManager, Ownable {
     function setTreasury(address newTreasury) public onlyOwner {
         emit SetTreasury(treasury, newTreasury);
         treasury = newTreasury;
+    }
+
+    function _whitelist(address provider) internal {
+        isWhitelisted[provider] = true;
+        emit Whitelist(provider);
+    }
+
+    function _delist(address provider) internal {
+        isWhitelisted[provider] = false;
+        emit Delist(provider);
     }
 
     function _calculateFee(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount, int256 fee) {
