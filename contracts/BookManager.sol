@@ -28,6 +28,7 @@ contract BookManager is IBookManager, Ownable {
     mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public override currencyDelta;
     mapping(Currency currency => uint256) public override reservesOf;
     mapping(BookId id => Book.State) internal _books;
+    mapping(OrderId => Order) internal _orders;
     mapping(address provider => bool) public override isWhitelisted;
     // TODO: Check if user can has below state. If not, change user to provider.
     mapping(address user => mapping(Currency currency => uint256 amount)) public override tokenOwed;
@@ -82,9 +83,8 @@ contract BookManager is IBookManager, Ownable {
         return _books[id].key;
     }
 
-    function getOrder(OrderId id) external view returns (Book.Order memory) {
-        (BookId bookId,,) = id.decode();
-        return _books[bookId].orders[id];
+    function getOrder(OrderId id) external view returns (Order memory) {
+        return _orders[id];
     }
 
     function make(IBookManager.MakeParams[] calldata paramsList) external onlyByLocker returns (OrderId[] memory ids) {
@@ -95,8 +95,9 @@ contract BookManager is IBookManager, Ownable {
                 revert NotWhitelisted(params.provider);
             }
             Book.State storage book = _getBook(params.key);
-            ids[i] =
-                book.make(params.key.toId(), params.user, params.tick, params.amount, params.provider, params.bounty);
+            ids[i] = book.make(
+                _orders, params.key.toId(), params.user, params.tick, params.amount, params.provider, params.bounty
+            );
             uint256 quoteAmount = uint256(params.amount) * params.key.unitDecimals;
             if (!params.key.makerPolicy.useOutput) {
                 (quoteAmount,) = _calculateFee(quoteAmount, params.key.makerPolicy.rate);
@@ -153,7 +154,7 @@ contract BookManager is IBookManager, Ownable {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.ReduceParams calldata params = paramsList[i];
             (BookId bookId,,) = params.id.decode();
-            uint256 reducedAmount = _books[bookId].reduce(params.id, params.to);
+            uint256 reducedAmount = _books[bookId].reduce(params.id, _orders[params.id], params.to);
             reducedAmount *= _books[bookId].key.unitDecimals;
             int256 fee;
             FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
@@ -169,7 +170,7 @@ contract BookManager is IBookManager, Ownable {
             OrderId id = ids[i];
             (BookId bookId,,) = id.decode();
             Book.State storage book = _books[bookId];
-            uint256 canceledAmount = book.cancel(id);
+            uint256 canceledAmount = book.cancel(id, _orders[id]);
             canceledAmount *= _books[bookId].key.unitDecimals;
             int256 fee;
             FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
@@ -186,7 +187,8 @@ contract BookManager is IBookManager, Ownable {
             (BookId bookId,,) = id.decode();
             Book.State storage book = _books[bookId];
             IBookManager.BookKey memory bookKey = book.key;
-            (uint256 claimedInQuote, uint256 claimedInBase, address provider) = book.claim(id);
+            Order storage order = _orders[id];
+            (uint256 claimedInQuote, uint256 claimedInBase) = book.claim(id, order);
             claimedInQuote *= bookKey.unitDecimals;
             int256 quoteFee;
             int256 baseFee;
@@ -208,12 +210,12 @@ contract BookManager is IBookManager, Ownable {
                 quoteFee += makerFee;
             }
 
+            address provider = order.provider;
             if (provider == address(0)) {
                 provider = defaultProvider;
             }
             tokenOwed[provider][bookKey.quote] += quoteFee.toUint256();
             tokenOwed[provider][bookKey.base] += baseFee.toUint256();
-            // todo: also calculate taker fee and store it
         }
     }
 

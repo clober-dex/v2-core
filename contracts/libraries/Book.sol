@@ -4,11 +4,11 @@ pragma solidity ^0.8.20;
 
 import "@clober/library/contracts/SegmentedSegmentTree.sol";
 
+import "../interfaces/IBookManager.sol";
 import "./Tick.sol";
 import "./OrderId.sol";
 import "./TotalClaimableMap.sol";
 import "./MockHeap.sol";
-import "../interfaces/IBookManager.sol";
 
 library Book {
     using Book for State;
@@ -42,21 +42,12 @@ library Book {
         uint40 index; // index of where the next order would go
     }
 
-    struct Order {
-        uint64 initial;
-        address owner;
-        uint64 pending; // Unclaimed amount
-        uint32 bounty;
-        address provider;
-    }
-
     struct State {
         IBookManager.BookKey key;
         mapping(Tick tick => Queue) queues;
         MockHeap.Core heap;
         // four values of totalClaimable are stored in one uint256
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
-        mapping(OrderId => Order) orders;
     }
 
     function initialize(State storage self, IBookManager.BookKey calldata key) internal {
@@ -70,6 +61,7 @@ library Book {
 
     function make(
         State storage self,
+        mapping(OrderId => IBookManager.Order) storage orders,
         BookId bookId,
         address user,
         Tick tick,
@@ -90,7 +82,7 @@ library Book {
                 unchecked {
                     staleOrderIndex = index - _MAX_ORDER;
                 }
-                uint64 stalePendingAmount = self.orders[OrderIdLibrary.encode(bookId, tick, staleOrderIndex)].pending;
+                uint64 stalePendingAmount = orders[OrderIdLibrary.encode(bookId, tick, staleOrderIndex)].pending;
                 if (stalePendingAmount > 0) {
                     // If the order is not settled completely, we cannot replace it
                     uint64 claimable = _calculateClaimableRawAmount(self, stalePendingAmount, tick, staleOrderIndex);
@@ -111,7 +103,8 @@ library Book {
         queue.index = index + 1;
         queue.tree.update(index & _MAX_ORDER_M, amount);
         id = OrderIdLibrary.encode(bookId, tick, index);
-        self.orders[id] = Order({initial: amount, owner: user, pending: amount, bounty: bounty, provider: provider});
+        orders[id] =
+            IBookManager.Order({initial: amount, owner: user, pending: amount, bounty: bounty, provider: provider});
         emit MakeOrder(bookId, user, amount, bounty, index, tick);
     }
 
@@ -163,37 +156,42 @@ library Book {
         }
     }
 
-    function reduce(State storage self, OrderId id, uint64 to) internal returns (uint64 reducedAmount) {
-        Order storage order = self.orders[id];
+    function reduce(State storage self, OrderId id, IBookManager.Order storage order, uint64 to)
+        internal
+        returns (uint64 reducedAmount)
+    {
         (, Tick tick, uint40 orderIndex) = id.decode();
         uint64 claimableRawAmount = _calculateClaimableRawAmount(self, to, tick, orderIndex);
         uint64 afterPendingAmount = to + claimableRawAmount;
+        uint64 pending = order.pending;
         unchecked {
-            if (order.pending < afterPendingAmount) {
-                revert ReduceFailed(order.pending - claimableRawAmount);
+            if (pending < afterPendingAmount) {
+                revert ReduceFailed(pending - claimableRawAmount);
             }
-            reducedAmount = order.pending - afterPendingAmount;
+            reducedAmount = pending - afterPendingAmount;
         }
         order.pending = afterPendingAmount;
         self.totalClaimableOf.sub(tick, to);
         emit Reduce(id, reducedAmount);
     }
 
-    function cancel(State storage self, OrderId id) internal returns (uint64 canceledAmount) {
-        canceledAmount = self.reduce(id, 0);
+    function cancel(State storage self, OrderId id, IBookManager.Order storage order)
+        internal
+        returns (uint64 canceledAmount)
+    {
+        canceledAmount = self.reduce(id, order, 0);
     }
 
-    function claim(State storage self, OrderId id)
+    function claim(State storage self, OrderId id, IBookManager.Order storage order)
         internal
-        returns (uint64 claimedRaw, uint256 claimedAmount, address provider)
+        returns (uint64 claimedRaw, uint256 claimedAmount)
     {
-        Order storage order = self.orders[id];
         (, Tick tick, uint40 orderIndex) = id.decode();
-        claimedRaw = _calculateClaimableRawAmount(self, order.pending, tick, orderIndex);
-        order.pending -= claimedRaw;
+        uint64 pending = order.pending;
+        claimedRaw = _calculateClaimableRawAmount(self, pending, tick, orderIndex);
+        order.pending = pending - claimedRaw;
         self.totalClaimableOf.sub(tick, claimedRaw);
         claimedAmount = tick.rawToBase(claimedRaw, false);
-        provider = order.provider;
     }
 
     function cleanHeap(State storage self) internal {

@@ -18,6 +18,14 @@ interface IBookManager {
     event Collect(address indexed provider, Currency indexed currency, uint256 amount);
     event SetDefaultProvider(address indexed oldDefaultProvider, address indexed newDefaultProvider);
 
+    struct Order {
+        uint64 initial;
+        address owner;
+        uint64 pending; // Unclaimed amount
+        uint32 bounty;
+        address provider;
+    }
+
     struct BookKey {
         Currency base;
         Currency quote;
@@ -46,7 +54,7 @@ interface IBookManager {
 
     function getBookKey(BookId id) external view returns (BookKey memory);
 
-    function getOrder(OrderId id) external view returns (Book.Order memory);
+    function getOrder(OrderId id) external view returns (Order memory);
 
     function make(MakeParams[] calldata paramsList) external returns (OrderId[] memory ids);
 

@@ -21,7 +21,7 @@ abstract contract LimitOrder is ILimitOrder {
         _bookManager = IBookManager(bookManager);
     }
 
-    function _get(OrderId id) internal view returns (Book.Order memory) {
+    function _get(OrderId id) internal view returns (IBookManager.Order memory) {
         return _bookManager.getOrder(id);
     }
 
