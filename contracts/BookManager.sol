@@ -67,7 +67,7 @@ contract BookManager is IBookManager, Ownable {
         return _books[bookId].orders[id];
     }
 
-    function make(IBookManager.MakeParams[] calldata paramsList) external returns (OrderId[] memory ids) {
+    function make(IBookManager.MakeParams[] calldata paramsList) external onlyByLocker returns (OrderId[] memory ids) {
         ids = new OrderId[](paramsList.length);
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.MakeParams calldata params = paramsList[i];
@@ -82,7 +82,7 @@ contract BookManager is IBookManager, Ownable {
         }
     }
 
-    function take(IBookManager.TakeParams[] calldata paramsList) external {
+    function take(IBookManager.TakeParams[] calldata paramsList) external onlyByLocker {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.TakeParams calldata params = paramsList[i];
             Book.State storage book = _getBook(params.key);
@@ -102,7 +102,7 @@ contract BookManager is IBookManager, Ownable {
         }
     }
 
-    function spend(IBookManager.SpendParams[] calldata paramsList) external {
+    function spend(IBookManager.SpendParams[] calldata paramsList) external onlyByLocker {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.SpendParams calldata params = paramsList[i];
             Book.State storage book = _getBook(params.key);
@@ -124,7 +124,7 @@ contract BookManager is IBookManager, Ownable {
         }
     }
 
-    function reduce(IBookManager.ReduceParams[] calldata paramsList) external {
+    function reduce(IBookManager.ReduceParams[] calldata paramsList) external onlyByLocker {
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.ReduceParams calldata params = paramsList[i];
             (BookId bookId,,) = params.id.decode();
@@ -139,7 +139,7 @@ contract BookManager is IBookManager, Ownable {
         }
     }
 
-    function cancel(OrderId[] calldata ids) external {
+    function cancel(OrderId[] calldata ids) external onlyByLocker {
         for (uint256 i = 0; i < ids.length; ++i) {
             OrderId id = ids[i];
             (BookId bookId,,) = id.decode();
@@ -155,7 +155,7 @@ contract BookManager is IBookManager, Ownable {
         }
     }
 
-    function claim(OrderId[] calldata ids) external {
+    function claim(OrderId[] calldata ids) external onlyByLocker {
         for (uint256 i = 0; i < ids.length; ++i) {
             OrderId id = ids[i];
             (BookId bookId,,) = id.decode();
