@@ -22,7 +22,7 @@ contract BookManager is IBookManager, Ownable {
 
     int256 private constant _RATE_PRECISION = 10 ** 6;
 
-    address public override treasury;
+    address public override defaultProvider;
     LockData public override lockData;
 
     mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public override currencyDelta;
@@ -32,8 +32,8 @@ contract BookManager is IBookManager, Ownable {
     // TODO: Check if user can has below state. If not, change user to provider.
     mapping(address user => mapping(Currency currency => uint256 amount)) public override tokenOwed;
 
-    constructor(address treasury_) {
-        setTreasury(treasury_);
+    constructor(address defaultProvider_) {
+        setDefaultProvider(defaultProvider_);
     }
 
     modifier onlyByLocker() {
@@ -209,7 +209,7 @@ contract BookManager is IBookManager, Ownable {
             }
 
             if (provider == address(0)) {
-                provider = treasury;
+                provider = defaultProvider;
             }
             tokenOwed[provider][bookKey.quote] += quoteFee.toUint256();
             tokenOwed[provider][bookKey.base] += baseFee.toUint256();
@@ -242,9 +242,12 @@ contract BookManager is IBookManager, Ownable {
         }
     }
 
-    function setTreasury(address newTreasury) public onlyOwner {
-        emit SetTreasury(treasury, newTreasury);
-        treasury = newTreasury;
+    function setDefaultProvider(address newDefaultProvider) public onlyOwner {
+        address oldDefaultProvider = defaultProvider;
+        defaultProvider = newDefaultProvider;
+        _delist(oldDefaultProvider);
+        _whitelist(newDefaultProvider);
+        emit SetDefaultProvider(oldDefaultProvider, newDefaultProvider);
     }
 
     function _whitelist(address provider) internal {

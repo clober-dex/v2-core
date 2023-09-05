@@ -13,9 +13,10 @@ interface IBookManager {
     error CurrencyNotSettled();
     error NotWhitelisted(address provider);
 
-    event SetTreasury(address indexed oldTreasury, address indexed newTreasury);
     event Whitelist(address indexed provider);
     event Delist(address indexed provider);
+    event Collect(address indexed provider, Currency indexed currency, uint256 amount);
+    event SetDefaultProvider(address indexed oldDefaultProvider, address indexed newDefaultProvider);
 
     struct BookKey {
         Currency base;
@@ -41,7 +42,7 @@ interface IBookManager {
         uint32 bounty;
     }
 
-    function treasury() external view returns (address);
+    function defaultProvider() external view returns (address);
 
     function getBookKey(BookId id) external view returns (BookKey memory);
 
@@ -96,5 +97,5 @@ interface IBookManager {
 
     function lock(bytes calldata data) external returns (bytes memory);
 
-    function setTreasury(address newTreasury) external;
+    function setDefaultProvider(address newDefaultProvider) external;
 }
