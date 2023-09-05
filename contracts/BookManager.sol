@@ -42,6 +42,14 @@ contract BookManager is IBookManager, Ownable {
         _;
     }
 
+    function getBookKey(BookId id) external view returns (BookKey memory) {
+        return _books[id].key;
+    }
+
+    function getOrder(OrderId id) external view returns (Order memory) {
+        return _orders[id];
+    }
+
     function lock(bytes calldata data) external returns (bytes memory result) {
         lockData.push(msg.sender);
 
@@ -54,36 +62,6 @@ contract BookManager is IBookManager, Ownable {
         } else {
             lockData.pop();
         }
-    }
-
-    function _accountDelta(Currency currency, int256 delta) internal {
-        if (delta == 0) return;
-
-        address locker = lockData.getActiveLock();
-        int256 current = currencyDelta[locker][currency];
-        int256 next = current + delta;
-
-        unchecked {
-            if (next == 0) {
-                lockData.nonzeroDeltaCount--;
-            } else if (current == 0) {
-                lockData.nonzeroDeltaCount++;
-            }
-        }
-
-        currencyDelta[locker][currency] = next;
-    }
-
-    function _getBook(BookKey memory key) private view returns (Book.State storage) {
-        return _books[key.toId()];
-    }
-
-    function getBookKey(BookId id) external view returns (BookKey memory) {
-        return _books[id].key;
-    }
-
-    function getOrder(OrderId id) external view returns (Order memory) {
-        return _orders[id];
     }
 
     function make(IBookManager.MakeParams[] calldata paramsList) external onlyByLocker returns (OrderId[] memory ids) {
@@ -249,6 +227,28 @@ contract BookManager is IBookManager, Ownable {
         _delist(oldDefaultProvider);
         _whitelist(newDefaultProvider);
         emit SetDefaultProvider(oldDefaultProvider, newDefaultProvider);
+    }
+
+    function _getBook(BookKey memory key) private view returns (Book.State storage) {
+        return _books[key.toId()];
+    }
+
+    function _accountDelta(Currency currency, int256 delta) internal {
+        if (delta == 0) return;
+
+        address locker = lockData.getActiveLock();
+        int256 current = currencyDelta[locker][currency];
+        int256 next = current + delta;
+
+        unchecked {
+            if (next == 0) {
+                lockData.nonzeroDeltaCount--;
+            } else if (current == 0) {
+                lockData.nonzeroDeltaCount++;
+            }
+        }
+
+        currencyDelta[locker][currency] = next;
     }
 
     function _whitelist(address provider) internal {

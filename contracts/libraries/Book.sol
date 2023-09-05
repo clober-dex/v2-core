@@ -32,11 +32,6 @@ library Book {
     error BookNotInitialized();
     error QueueReplaceFailed();
 
-    uint256 private constant _PRICE_PRECISION = 10 ** 18;
-    uint256 private constant _CLAIM_BOUNTY_UNIT = 1 gwei;
-    uint40 private constant _MAX_ORDER = 2 ** 15; // 32768
-    uint256 private constant _MAX_ORDER_M = 2 ** 15 - 1; // % 32768
-
     struct Queue {
         SegmentedSegmentTree.Core tree;
         uint40 index; // index of where the next order would go
@@ -49,6 +44,11 @@ library Book {
         // four values of totalClaimable are stored in one uint256
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
     }
+
+    uint256 private constant _PRICE_PRECISION = 10 ** 18;
+    uint256 private constant _CLAIM_BOUNTY_UNIT = 1 gwei;
+    uint40 private constant _MAX_ORDER = 2 ** 15; // 32768
+    uint256 private constant _MAX_ORDER_M = 2 ** 15 - 1; // % 32768
 
     function initialize(State storage self, IBookManager.BookKey calldata key) internal {
         if (self.key.unitDecimals != 0) revert BookAlreadyInitialized();

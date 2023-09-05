@@ -40,6 +40,24 @@ interface IBookManager {
         bool useOutput;
     }
 
+    function defaultProvider() external view returns (address);
+
+    function lockData() external view returns (uint128, uint128);
+
+    function currencyDelta(address locker, Currency currency) external view returns (int256);
+
+    function reservesOf(Currency currency) external view returns (uint256);
+
+    function isWhitelisted(address provider) external view returns (bool);
+
+    function tokenOwed(address provider, Currency currency) external view returns (uint256);
+
+    function getBookKey(BookId id) external view returns (BookKey memory);
+
+    function getOrder(OrderId id) external view returns (Order memory);
+
+    function lock(bytes calldata data) external returns (bytes memory);
+
     struct MakeParams {
         BookKey key;
         address user;
@@ -49,12 +67,6 @@ interface IBookManager {
         address provider;
         uint32 bounty;
     }
-
-    function defaultProvider() external view returns (address);
-
-    function getBookKey(BookId id) external view returns (BookKey memory);
-
-    function getOrder(OrderId id) external view returns (Order memory);
 
     function make(MakeParams[] calldata paramsList) external returns (OrderId[] memory ids);
 
@@ -92,18 +104,6 @@ interface IBookManager {
     function whitelist(address[] calldata providers) external;
 
     function delist(address[] calldata providers) external;
-
-    function isWhitelisted(address provider) external view returns (bool);
-
-    function tokenOwed(address provider, Currency currency) external view returns (uint256);
-
-    function lockData() external view returns (uint128, uint128);
-
-    function currencyDelta(address locker, Currency currency) external view returns (int256);
-
-    function reservesOf(Currency currency) external view returns (uint256);
-
-    function lock(bytes calldata data) external returns (bytes memory);
 
     function setDefaultProvider(address newDefaultProvider) external;
 }
