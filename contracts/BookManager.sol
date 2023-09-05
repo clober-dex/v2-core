@@ -3,6 +3,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "./libraries/BookId.sol";
 import "./libraries/Book.sol";
@@ -11,6 +12,7 @@ import "./libraries/LockData.sol";
 import "./interfaces/IPositionLocker.sol";
 
 contract BookManager is IBookManager, Ownable {
+    using SafeCast for *;
     using BookIdLibrary for IBookManager.BookKey;
     using TickLibrary for Tick;
     using Book for Book.State;
@@ -54,6 +56,24 @@ contract BookManager is IBookManager, Ownable {
         }
     }
 
+    function _accountDelta(Currency currency, int256 delta) internal {
+        if (delta == 0) return;
+
+        address locker = lockData.getActiveLock();
+        int256 current = currencyDelta[locker][currency];
+        int256 next = current + delta;
+
+        unchecked {
+            if (next == 0) {
+                lockData.nonzeroDeltaCount--;
+            } else if (current == 0) {
+                lockData.nonzeroDeltaCount++;
+            }
+        }
+
+        currencyDelta[locker][currency] = next;
+    }
+
     function _getBook(BookKey memory key) private view returns (Book.State storage) {
         return _books[key.toId()];
     }
@@ -75,13 +95,13 @@ contract BookManager is IBookManager, Ownable {
                 revert NotWhitelisted(params.provider);
             }
             Book.State storage book = _getBook(params.key);
-            int256 fee;
             ids[i] =
                 book.make(params.key.toId(), params.user, params.tick, params.amount, params.provider, params.bounty);
             uint256 quoteAmount = uint256(params.amount) * params.key.unitDecimals;
             if (!params.key.makerPolicy.useOutput) {
-                (quoteAmount, fee) = _calculateFee(quoteAmount, params.key.makerPolicy.rate);
+                (quoteAmount,) = _calculateFee(quoteAmount, params.key.makerPolicy.rate);
             }
+            _accountDelta(params.key.quote, quoteAmount.toInt256());
         }
     }
 
@@ -92,16 +112,16 @@ contract BookManager is IBookManager, Ownable {
             BookId bookId = params.key.toId();
             (uint256 baseAmount, uint256 quoteAmount) = book.take(bookId, msg.sender, params.amount, params.limit);
             quoteAmount *= params.key.unitDecimals;
-            int256 fee;
             if (params.key.takerPolicy.useOutput) {
-                (quoteAmount, fee) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
+                (quoteAmount,) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
             } else {
-                (baseAmount, fee) = _calculateFee(baseAmount, params.key.takerPolicy.rate);
+                (baseAmount,) = _calculateFee(baseAmount, params.key.takerPolicy.rate);
             }
             if (baseAmount > params.maxIn) {
                 revert Slippage(bookId);
             }
-            // todo: account delta
+            _accountDelta(params.key.quote, -quoteAmount.toInt256());
+            _accountDelta(params.key.base, baseAmount.toInt256());
         }
     }
 
@@ -113,6 +133,7 @@ contract BookManager is IBookManager, Ownable {
             uint256 amountToRequest = params.amount;
             int256 fee;
             if (!params.key.takerPolicy.useOutput) {
+                // todo: reverse calculation
                 (amountToRequest, fee) = _calculateFee(amountToRequest, params.key.takerPolicy.rate);
             }
             (uint256 baseAmount, uint256 quoteAmount) = book.spend(bookId, msg.sender, amountToRequest, params.limit);
@@ -123,7 +144,8 @@ contract BookManager is IBookManager, Ownable {
             if (quoteAmount < params.minOut) {
                 revert Slippage(bookId);
             }
-            // todo: account delta
+            _accountDelta(params.key.quote, -quoteAmount.toInt256());
+            _accountDelta(params.key.base, baseAmount.toInt256());
         }
     }
 
@@ -138,7 +160,7 @@ contract BookManager is IBookManager, Ownable {
             if (!makerPolicy.useOutput) {
                 // todo: reverse calculation
             }
-            // todo: account delta
+            _accountDelta(_books[bookId].key.quote, -reducedAmount.toInt256());
         }
     }
 
@@ -154,7 +176,7 @@ contract BookManager is IBookManager, Ownable {
             if (!makerPolicy.useOutput) {
                 // todo: reverse calculation
             }
-            // todo: account delta
+            _accountDelta(_books[bookId].key.quote, -canceledAmount.toInt256());
         }
     }
 
@@ -163,15 +185,34 @@ contract BookManager is IBookManager, Ownable {
             OrderId id = ids[i];
             (BookId bookId,,) = id.decode();
             Book.State storage book = _books[bookId];
-            (uint64 claimedRaw, uint256 claimedAmount, address provider) = book.claim(id);
-            int256 fee;
-            FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
-            if (makerPolicy.useOutput) {
-                (claimedAmount, fee) = _calculateFee(claimedAmount, makerPolicy.rate);
-                // todo: account delta
+            IBookManager.BookKey memory bookKey = book.key;
+            (uint256 claimedInQuote, uint256 claimedInBase, address provider) = book.claim(id);
+            claimedInQuote *= bookKey.unitDecimals;
+            int256 quoteFee;
+            int256 baseFee;
+            FeePolicy memory takerPolicy = bookKey.takerPolicy;
+            FeePolicy memory makerPolicy = bookKey.makerPolicy;
+            if (takerPolicy.useOutput) {
+                (, quoteFee) = _calculateFee(claimedInQuote, takerPolicy.rate);
             } else {
-                (, fee) = _calculateFee(uint256(claimedRaw) * _books[bookId].key.unitDecimals, makerPolicy.rate);
+                (, baseFee) = _calculateFee(claimedInBase, takerPolicy.rate);
             }
+            if (makerPolicy.useOutput) {
+                int256 makerFee;
+                (claimedInBase, makerFee) = _calculateFee(claimedInBase, makerPolicy.rate);
+                baseFee += makerFee;
+                _accountDelta(bookKey.base, -claimedInBase.toInt256());
+            } else {
+                int256 makerFee;
+                (, makerFee) = _calculateFee(claimedInQuote, makerPolicy.rate);
+                quoteFee += makerFee;
+            }
+
+            if (provider == address(0)) {
+                provider = treasury;
+            }
+            tokenOwed[provider][bookKey.quote] += quoteFee.toUint256();
+            tokenOwed[provider][bookKey.base] += baseFee.toUint256();
             // todo: also calculate taker fee and store it
         }
     }
