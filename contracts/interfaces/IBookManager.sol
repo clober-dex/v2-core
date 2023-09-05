@@ -95,7 +95,7 @@ interface IBookManager {
 
     function isWhitelisted(address provider) external view returns (bool);
 
-    function tokenOwed(address user, Currency currency) external view returns (uint256);
+    function tokenOwed(address provider, Currency currency) external view returns (uint256);
 
     function lockData() external view returns (uint128, uint128);
 

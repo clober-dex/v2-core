@@ -30,8 +30,7 @@ contract BookManager is IBookManager, Ownable {
     mapping(BookId id => Book.State) internal _books;
     mapping(OrderId => Order) internal _orders;
     mapping(address provider => bool) public override isWhitelisted;
-    // TODO: Check if user can has below state. If not, change user to provider.
-    mapping(address user => mapping(Currency currency => uint256 amount)) public override tokenOwed;
+    mapping(address provider => mapping(Currency currency => uint256 amount)) public override tokenOwed;
 
     constructor(address defaultProvider_) {
         setDefaultProvider(defaultProvider_);
