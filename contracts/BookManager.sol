@@ -71,6 +71,9 @@ contract BookManager is IBookManager, Ownable {
         ids = new OrderId[](paramsList.length);
         for (uint256 i = 0; i < paramsList.length; ++i) {
             IBookManager.MakeParams calldata params = paramsList[i];
+            if (params.provider != address(0) && !isWhitelisted[params.provider]) {
+                revert NotWhitelisted(params.provider);
+            }
             Book.State storage book = _getBook(params.key);
             int256 fee;
             ids[i] =
