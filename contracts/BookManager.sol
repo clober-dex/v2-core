@@ -224,7 +224,7 @@ contract BookManager is IBookManager, Ownable {
         if (amount > 0) {
             tokenOwed[provider][currency] = 0;
             currency.transfer(provider, amount);
-            // todo: event
+            emit Collect(provider, currency, amount);
         }
     }
 
