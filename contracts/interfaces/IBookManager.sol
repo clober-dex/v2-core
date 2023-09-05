@@ -10,7 +10,10 @@ import "../libraries/Tick.sol";
 interface IBookManager {
     error Slippage(BookId bookId);
     error LockedBy(address locker);
-    error NotSettled();
+    error CurrencyNotSettled();
+    error NotWhitelisted(address provider);
+
+    event SetTreasury(address indexed oldTreasury, address indexed newTreasury);
 
     struct BookKey {
         Currency base;
@@ -35,6 +38,8 @@ interface IBookManager {
         address provider;
         uint32 bounty;
     }
+
+    function treasury() external view returns (address);
 
     function getBookKey(BookId id) external view returns (BookKey memory);
 
@@ -88,4 +93,6 @@ interface IBookManager {
     function reservesOf(Currency currency) external view returns (uint256);
 
     function lock(bytes calldata data) external returns (bytes memory);
+
+    function setTreasury(address newTreasury) external;
 }

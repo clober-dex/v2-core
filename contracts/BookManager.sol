@@ -20,6 +20,7 @@ contract BookManager is IBookManager, Ownable {
 
     int256 private constant _RATE_PRECISION = 10 ** 6;
 
+    address public override treasury;
     LockData public override lockData;
 
     mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public override currencyDelta;
@@ -29,7 +30,9 @@ contract BookManager is IBookManager, Ownable {
     // TODO: Check if user can has below state. If not, change user to provider.
     mapping(address user => mapping(Currency currency => uint256 amount)) public override tokenOwed;
 
-    constructor() {}
+    constructor(address treasury_) {
+        setTreasury(treasury_);
+    }
 
     modifier onlyByLocker() {
         address locker = lockData.getActiveLock();
@@ -40,10 +43,11 @@ contract BookManager is IBookManager, Ownable {
     function lock(bytes calldata data) external returns (bytes memory result) {
         lockData.push(msg.sender);
 
+        // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILocker(msg.sender).lockAcquired(data);
 
         if (lockData.length == 1) {
-            if (lockData.nonzeroDeltaCount != 0) revert NotSettled();
+            if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
             delete lockData;
         } else {
             lockData.pop();
@@ -192,6 +196,11 @@ contract BookManager is IBookManager, Ownable {
                 isWhitelisted[providers[i]] = false;
             }
         }
+    }
+
+    function setTreasury(address newTreasury) public onlyOwner {
+        emit SetTreasury(treasury, newTreasury);
+        treasury = newTreasury;
     }
 
     function _calculateFee(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount, int256 fee) {
