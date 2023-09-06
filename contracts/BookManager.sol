@@ -10,8 +10,9 @@ import "./libraries/Book.sol";
 import "./libraries/OrderId.sol";
 import "./libraries/LockData.sol";
 import "./interfaces/IPositionLocker.sol";
+import "./libraries/ERC721Permit.sol";
 
-contract BookManager is IBookManager, Ownable {
+contract BookManager is IBookManager, Ownable, ERC721Permit {
     using SafeCast for *;
     using BookIdLibrary for IBookManager.BookKey;
     using TickLibrary for Tick;
@@ -22,6 +23,7 @@ contract BookManager is IBookManager, Ownable {
 
     int256 private constant _RATE_PRECISION = 10 ** 6;
 
+    string public override baseURI;
     address public override defaultProvider;
     LockData public override lockData;
 
@@ -32,8 +34,11 @@ contract BookManager is IBookManager, Ownable {
     mapping(address provider => bool) public override isWhitelisted;
     mapping(address provider => mapping(Currency currency => uint256 amount)) public override tokenOwed;
 
-    constructor(address defaultProvider_) {
+    constructor(address defaultProvider_, string memory baseURI_, string memory name_, string memory symbol_)
+        ERC721Permit(name_, symbol_, "1")
+    {
         setDefaultProvider(defaultProvider_);
+        baseURI = baseURI_;
     }
 
     modifier onlyByLocker() {
@@ -227,6 +232,20 @@ contract BookManager is IBookManager, Ownable {
         _delist(oldDefaultProvider);
         _whitelist(newDefaultProvider);
         emit SetDefaultProvider(oldDefaultProvider, newDefaultProvider);
+    }
+
+    function nonces(uint256 id) external view returns (uint256) {
+        return _orders[OrderId.wrap(id)].nonce;
+    }
+
+    function _getAndIncrementNonce(uint256 id) internal override returns (uint256 nonce) {
+        OrderId orderId = OrderId.wrap(id);
+        nonce = _orders[orderId].nonce;
+        _orders[orderId].nonce++;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
     }
 
     function _getBook(BookKey memory key) private view returns (Book.State storage) {

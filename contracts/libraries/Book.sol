@@ -103,8 +103,14 @@ library Book {
         queue.index = index + 1;
         queue.tree.update(index & _MAX_ORDER_M, amount);
         id = OrderIdLibrary.encode(bookId, tick, index);
-        orders[id] =
-            IBookManager.Order({initial: amount, owner: user, pending: amount, bounty: bounty, provider: provider});
+        orders[id] = IBookManager.Order({
+            initial: amount,
+            nonce: 0,
+            owner: user,
+            pending: amount,
+            bounty: bounty,
+            provider: provider
+        });
         emit MakeOrder(bookId, user, amount, bounty, index, tick);
     }
 

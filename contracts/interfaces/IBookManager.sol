@@ -2,12 +2,15 @@
 
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+
 import "../libraries/Book.sol";
 import "../libraries/Currency.sol";
 import "../libraries/OrderId.sol";
 import "../libraries/Tick.sol";
+import "./IERC721Permit.sol";
 
-interface IBookManager {
+interface IBookManager is IERC721Metadata, IERC721Permit {
     error Slippage(BookId bookId);
     error LockedBy(address locker);
     error CurrencyNotSettled();
@@ -20,6 +23,7 @@ interface IBookManager {
 
     struct Order {
         uint64 initial;
+        uint32 nonce;
         address owner;
         uint64 pending; // Unclaimed amount
         uint32 bounty;
@@ -39,6 +43,8 @@ interface IBookManager {
         int24 rate;
         bool useOutput;
     }
+
+    function baseURI() external view returns (string memory);
 
     function defaultProvider() external view returns (address);
 
