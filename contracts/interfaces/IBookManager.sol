@@ -107,6 +107,10 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function collect(address provider, Currency currency) external;
 
+    function withdraw(Currency currency, address to, uint256 amount) external;
+
+    function settle(Currency currency) external payable returns (uint256);
+
     function whitelist(address[] calldata providers) external;
 
     function delist(address[] calldata providers) external;

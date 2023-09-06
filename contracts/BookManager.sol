@@ -47,6 +47,10 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
         _;
     }
 
+    function nonces(uint256 id) external view returns (uint256) {
+        return _orders[OrderId.wrap(id)].nonce;
+    }
+
     function getBookKey(BookId id) external view returns (BookKey memory) {
         return _books[id].key;
     }
@@ -210,6 +214,21 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
         }
     }
 
+    function withdraw(Currency currency, address to, uint256 amount) external onlyByLocker {
+        if (amount == 0) return;
+        _accountDelta(currency, amount.toInt256());
+        reservesOf[currency] -= amount;
+        currency.transfer(to, amount);
+    }
+
+    function settle(Currency currency) external payable onlyByLocker returns (uint256 paid) {
+        uint256 reservesBefore = reservesOf[currency];
+        reservesOf[currency] = currency.balanceOfSelf();
+        paid = reservesOf[currency] - reservesBefore;
+        // subtraction must be safe
+        _accountDelta(currency, -(paid.toInt256()));
+    }
+
     function whitelist(address[] calldata providers) external onlyOwner {
         unchecked {
             for (uint256 i = 0; i < providers.length; ++i) {
@@ -232,10 +251,6 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
         _delist(oldDefaultProvider);
         _whitelist(newDefaultProvider);
         emit SetDefaultProvider(oldDefaultProvider, newDefaultProvider);
-    }
-
-    function nonces(uint256 id) external view returns (uint256) {
-        return _orders[OrderId.wrap(id)].nonce;
     }
 
     function _getAndIncrementNonce(uint256 id) internal override returns (uint256 nonce) {
