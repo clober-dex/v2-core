@@ -19,12 +19,12 @@ library Book {
     using OrderIdLibrary for OrderId;
 
     event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 amount);
-    event MakeOrder(
+    event Make(
         BookId indexed bookId, address indexed user, uint64 amount, uint32 claimBounty, uint256 orderIndex, Tick tick
     );
     // todo: name of reducedAmount
     event Reduce(OrderId indexed orderId, uint64 reducedAmount);
-    event ClaimOrder(address indexed claimer, OrderId indexed orderId, uint64 rawAmount, uint32 claimBounty);
+    event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount, uint32 claimBounty);
 
     error ReduceFailed(uint64 maxReduceAmount);
     error Overflow();
@@ -111,7 +111,7 @@ library Book {
             bounty: bounty,
             provider: provider
         });
-        emit MakeOrder(bookId, user, amount, bounty, index, tick);
+        emit Make(bookId, user, amount, bounty, index, tick);
     }
 
     function take(State storage self, BookId bookId, address user, uint64 requestedRawAmount, Tick limitTick)
@@ -198,6 +198,7 @@ library Book {
         order.pending = pending - claimedRaw;
         self.totalClaimableOf.sub(tick, claimedRaw);
         claimedAmount = tick.rawToBase(claimedRaw, false);
+        emit Claim(msg.sender, id, claimedRaw, order.bounty);
     }
 
     function cleanHeap(State storage self) internal {
