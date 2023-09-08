@@ -11,11 +11,24 @@ import "../libraries/Tick.sol";
 import "./IERC721Permit.sol";
 
 interface IBookManager is IERC721Metadata, IERC721Permit {
+    error TickSpacingTooLarge();
+    error TickSpacingTooSmall();
+    error InvalidUnitDecimals();
+    error InvalidFeePolicy();
     error Slippage(BookId bookId);
     error LockedBy(address locker);
     error CurrencyNotSettled();
     error NotWhitelisted(address provider);
 
+    event OpenBook(
+        BookId indexed id,
+        Currency indexed base,
+        Currency indexed quote,
+        uint8 unitDecimals,
+        uint24 tickSpacing,
+        FeePolicy makerPolicy,
+        FeePolicy takerPolicy
+    );
     event Whitelist(address indexed provider);
     event Delist(address indexed provider);
     event Collect(address indexed provider, Currency indexed currency, uint256 amount);
@@ -61,6 +74,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     function getBookKey(BookId id) external view returns (BookKey memory);
 
     function getOrder(OrderId id) external view returns (Order memory);
+
+    function openBook(BookKey calldata key) external;
 
     function lock(bytes calldata data) external returns (bytes memory);
 

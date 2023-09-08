@@ -22,6 +22,8 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
     using CurrencyLibrary for Currency;
 
     int256 private constant _RATE_PRECISION = 10 ** 6;
+    uint24 private constant _MAX_TICK_SPACING = type(uint16).max;
+    uint24 private constant _MIN_TICK_SPACING = 1;
 
     string public override baseURI;
     address public override defaultProvider;
@@ -57,6 +59,27 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
 
     function getOrder(OrderId id) external view returns (Order memory) {
         return _orders[id];
+    }
+
+    function openBook(BookKey calldata key) external {
+        if (key.tickSpacing > _MAX_TICK_SPACING) revert TickSpacingTooLarge();
+        if (key.tickSpacing < _MIN_TICK_SPACING) revert TickSpacingTooSmall();
+        if (key.unitDecimals == 0) revert InvalidUnitDecimals();
+
+        if (
+            key.makerPolicy.rate > _RATE_PRECISION / 2 || key.takerPolicy.rate > _RATE_PRECISION / 2
+                || key.makerPolicy.rate < -_RATE_PRECISION / 2 || key.takerPolicy.rate < -_RATE_PRECISION / 2
+        ) {
+            revert InvalidFeePolicy();
+        }
+        if (key.makerPolicy.rate + key.takerPolicy.rate < 0) revert InvalidFeePolicy();
+        if (key.makerPolicy.rate < 0 || key.takerPolicy.rate < 0) {
+            if (key.makerPolicy.useOutput == key.takerPolicy.useOutput) revert InvalidFeePolicy();
+        }
+
+        BookId id = key.toId();
+        _books[id].initialize(key);
+        emit OpenBook(id, key.base, key.quote, key.unitDecimals, key.tickSpacing, key.makerPolicy, key.takerPolicy);
     }
 
     function lock(bytes calldata data) external returns (bytes memory result) {
