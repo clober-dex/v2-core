@@ -181,44 +181,48 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
             reducedAmount = _calculateAmountInReverse(reducedAmount, makerPolicy.rate);
         }
         _accountDelta(_books[bookId].key.quote, -reducedAmount.toInt256());
+        _claim(params.id);
     }
 
     function claim(OrderId[] calldata ids) external onlyByLocker {
         for (uint256 i = 0; i < ids.length; ++i) {
-            OrderId id = ids[i];
-            (BookId bookId,,) = id.decode();
-            Book.State storage book = _books[bookId];
-            IBookManager.BookKey memory bookKey = book.key;
-            Order storage order = _orders[id];
-            (uint256 claimedInQuote, uint256 claimedInBase) = book.claim(id, order);
-            claimedInQuote *= bookKey.unitDecimals;
-            int256 quoteFee;
-            int256 baseFee;
-            FeePolicy memory takerPolicy = bookKey.takerPolicy;
-            FeePolicy memory makerPolicy = bookKey.makerPolicy;
-            if (takerPolicy.useOutput) {
-                (, quoteFee) = _calculateFee(claimedInQuote, takerPolicy.rate);
-            } else {
-                (, baseFee) = _calculateFee(claimedInBase, takerPolicy.rate);
-            }
-            if (makerPolicy.useOutput) {
-                int256 makerFee;
-                (claimedInBase, makerFee) = _calculateFee(claimedInBase, makerPolicy.rate);
-                baseFee += makerFee;
-                _accountDelta(bookKey.base, -claimedInBase.toInt256());
-            } else {
-                int256 makerFee;
-                (, makerFee) = _calculateFee(claimedInQuote, makerPolicy.rate);
-                quoteFee += makerFee;
-            }
-
-            address provider = order.provider;
-            if (provider == address(0)) {
-                provider = defaultProvider;
-            }
-            tokenOwed[provider][bookKey.quote] += quoteFee.toUint256();
-            tokenOwed[provider][bookKey.base] += baseFee.toUint256();
+            _claim(ids[i]);
         }
+    }
+
+    function _claim(OrderId id) internal {
+        (BookId bookId,,) = id.decode();
+        Book.State storage book = _books[bookId];
+        IBookManager.BookKey memory bookKey = book.key;
+        Order storage order = _orders[id];
+        (uint256 claimedInQuote, uint256 claimedInBase) = book.claim(id, order);
+        claimedInQuote *= bookKey.unitDecimals;
+        int256 quoteFee;
+        int256 baseFee;
+        FeePolicy memory takerPolicy = bookKey.takerPolicy;
+        FeePolicy memory makerPolicy = bookKey.makerPolicy;
+        if (takerPolicy.useOutput) {
+            (, quoteFee) = _calculateFee(claimedInQuote, takerPolicy.rate);
+        } else {
+            (, baseFee) = _calculateFee(claimedInBase, takerPolicy.rate);
+        }
+        if (makerPolicy.useOutput) {
+            int256 makerFee;
+            (claimedInBase, makerFee) = _calculateFee(claimedInBase, makerPolicy.rate);
+            baseFee += makerFee;
+            _accountDelta(bookKey.base, -claimedInBase.toInt256());
+        } else {
+            int256 makerFee;
+            (, makerFee) = _calculateFee(claimedInQuote, makerPolicy.rate);
+            quoteFee += makerFee;
+        }
+
+        address provider = order.provider;
+        if (provider == address(0)) {
+            provider = defaultProvider;
+        }
+        tokenOwed[provider][bookKey.quote] += quoteFee.toUint256();
+        tokenOwed[provider][bookKey.base] += baseFee.toUint256();
     }
 
     function collect(address provider, Currency currency) external {
