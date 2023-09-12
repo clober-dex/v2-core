@@ -141,15 +141,15 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
             Book.State storage book = _getBook(params.key);
             BookId bookId = params.key.toId();
             uint256 amountToRequest = params.amount;
-            int256 fee;
             if (!params.key.takerPolicy.useOutput) {
-                // todo: reverse calculation
-                (amountToRequest, fee) = _calculateFee(amountToRequest, params.key.takerPolicy.rate);
+                amountToRequest = _calculateAmountInReverse(amountToRequest, params.key.takerPolicy.rate);
             }
             (uint256 baseAmount, uint256 quoteAmount) = book.spend(bookId, msg.sender, amountToRequest, params.limit);
             quoteAmount *= params.key.unitDecimals;
             if (params.key.takerPolicy.useOutput) {
-                (quoteAmount, fee) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
+                (quoteAmount,) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
+            } else {
+                (baseAmount,) = _calculateFee(baseAmount, params.key.takerPolicy.rate);
             }
             if (quoteAmount < params.minOut) {
                 revert Slippage(bookId);
@@ -165,10 +165,9 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
             (BookId bookId,,) = params.id.decode();
             uint256 reducedAmount = _books[bookId].reduce(params.id, _orders[params.id], params.to);
             reducedAmount *= _books[bookId].key.unitDecimals;
-            int256 fee;
             FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
             if (!makerPolicy.useOutput) {
-                // todo: reverse calculation
+                reducedAmount = _calculateAmountInReverse(reducedAmount, makerPolicy.rate);
             }
             _accountDelta(_books[bookId].key.quote, -reducedAmount.toInt256());
         }
@@ -181,10 +180,9 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
             Book.State storage book = _books[bookId];
             uint256 canceledAmount = book.cancel(id, _orders[id]);
             canceledAmount *= _books[bookId].key.unitDecimals;
-            int256 fee;
             FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
             if (!makerPolicy.useOutput) {
-                // todo: reverse calculation
+                canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate);
             }
             _accountDelta(_books[bookId].key.quote, -canceledAmount.toInt256());
         }
@@ -326,5 +324,10 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
             fee = -int256(Math.divide(amount * uint24(-rate), uint256(_RATE_PRECISION), false));
             adjustedAmount = amount + uint256(-fee);
         }
+    }
+
+    function _calculateAmountInReverse(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount) {
+        uint256 fee = Math.divide(amount * uint256(_RATE_PRECISION), uint256(_RATE_PRECISION - rate), rate < 0);
+        adjustedAmount = rate > 0 ? amount - fee : amount + fee;
     }
 }
