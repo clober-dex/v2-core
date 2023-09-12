@@ -188,7 +188,10 @@ library Book {
             reducedAmount = pending - afterPendingAmount;
         }
         order.pending = afterPendingAmount;
-        self.totalClaimableOf.sub(tick, to);
+
+        self.queues[tick].tree.update(
+            orderIndex & _MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & _MAX_ORDER_M) - reducedAmount
+        );
         emit Reduce(id, reducedAmount);
     }
 
@@ -207,7 +210,6 @@ library Book {
         uint64 pending = order.pending;
         claimedRaw = _calculateClaimableRawAmount(self, pending, tick, orderIndex);
         order.pending = pending - claimedRaw;
-        self.totalClaimableOf.sub(tick, claimedRaw);
         claimedAmount = tick.rawToBase(claimedRaw, false);
         emit Claim(msg.sender, id, claimedRaw, order.bounty);
     }
