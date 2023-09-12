@@ -195,13 +195,6 @@ library Book {
         emit Reduce(id, reducedAmount);
     }
 
-    function cancel(State storage self, OrderId id, IBookManager.Order storage order)
-        external
-        returns (uint64 canceledAmount)
-    {
-        canceledAmount = _reduce(self, id, order, 0);
-    }
-
     function claim(State storage self, OrderId id, IBookManager.Order storage order)
         external
         returns (uint64 claimedRaw, uint256 claimedAmount)

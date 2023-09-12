@@ -161,31 +161,26 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
 
     function reduce(IBookManager.ReduceParams[] calldata paramsList) external onlyByLocker {
         for (uint256 i = 0; i < paramsList.length; ++i) {
-            IBookManager.ReduceParams calldata params = paramsList[i];
-            (BookId bookId,,) = params.id.decode();
-            uint256 reducedAmount = _books[bookId].reduce(params.id, _orders[params.id], params.to);
-            reducedAmount *= _books[bookId].key.unitDecimals;
-            FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
-            if (!makerPolicy.useOutput) {
-                reducedAmount = _calculateAmountInReverse(reducedAmount, makerPolicy.rate);
-            }
-            _accountDelta(_books[bookId].key.quote, -reducedAmount.toInt256());
+            _reduce(paramsList[i]);
         }
     }
 
     function cancel(OrderId[] calldata ids) external onlyByLocker {
         for (uint256 i = 0; i < ids.length; ++i) {
-            OrderId id = ids[i];
-            (BookId bookId,,) = id.decode();
-            Book.State storage book = _books[bookId];
-            uint256 canceledAmount = book.cancel(id, _orders[id]);
-            canceledAmount *= _books[bookId].key.unitDecimals;
-            FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
-            if (!makerPolicy.useOutput) {
-                canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate);
-            }
-            _accountDelta(_books[bookId].key.quote, -canceledAmount.toInt256());
+            _reduce(IBookManager.ReduceParams({id: ids[i], to: 0}));
         }
+    }
+
+    function _reduce(IBookManager.ReduceParams memory params) internal {
+        (BookId bookId,,) = params.id.decode();
+        uint256 reducedAmount = _books[bookId].reduce(params.id, _orders[params.id], params.to);
+        // todo: check order ownership
+        reducedAmount *= _books[bookId].key.unitDecimals;
+        FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
+        if (!makerPolicy.useOutput) {
+            reducedAmount = _calculateAmountInReverse(reducedAmount, makerPolicy.rate);
+        }
+        _accountDelta(_books[bookId].key.quote, -reducedAmount.toInt256());
     }
 
     function claim(OrderId[] calldata ids) external onlyByLocker {
