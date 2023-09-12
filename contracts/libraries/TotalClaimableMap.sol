@@ -11,12 +11,18 @@ library TotalClaimableMap {
     using PackedUint256 for uint256;
 
     function add(mapping(uint24 => uint256) storage self, Tick tick, uint64 n) internal {
-        // TODO: add
+        (uint24 groupIndex, uint8 elementIndex) = _splitTick(tick);
+        uint256 group = self[groupIndex];
         // @notice Be aware of dirty storage add logic
+        self[groupIndex] = group.update64Unsafe(
+            elementIndex, // elementIndex < 4
+            group.get64Unsafe(elementIndex).addClean(n)
+        );
     }
 
     function sub(mapping(uint24 => uint256) storage self, Tick tick, uint64 n) internal {
-        // TODO: sub
+        (uint24 groupIndex, uint8 elementIndex) = _splitTick(tick);
+        self[groupIndex] = self[groupIndex].sub64Unsafe(elementIndex, n);
     }
 
     function get(mapping(uint24 => uint256) storage self, Tick tick) internal view returns (uint64) {
