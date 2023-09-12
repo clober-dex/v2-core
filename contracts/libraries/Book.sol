@@ -50,12 +50,16 @@ library Book {
     uint40 private constant _MAX_ORDER = 2 ** 15; // 32768
     uint256 private constant _MAX_ORDER_M = 2 ** 15 - 1; // % 32768
 
-    function initialize(State storage self, IBookManager.BookKey calldata key) internal {
+    function initialize(State storage self, IBookManager.BookKey calldata key) external {
         if (self.key.unitDecimals != 0) revert BookAlreadyInitialized();
         self.key = key;
     }
 
-    function depth(State storage self, Tick tick) internal view returns (uint64) {
+    function depth(State storage self, Tick tick) external view returns (uint64) {
+        return _depth(self, tick);
+    }
+
+    function _depth(State storage self, Tick tick) private view returns (uint64) {
         return self.queues[tick].tree.total() - self.totalClaimableOf.get(tick);
     }
 
@@ -68,7 +72,7 @@ library Book {
         uint64 amount,
         address provider,
         uint32 bounty
-    ) internal returns (OrderId id) {
+    ) external returns (OrderId id) {
         if (!self.heap.has(tick)) {
             self.heap.push(tick);
         }
@@ -115,14 +119,14 @@ library Book {
     }
 
     function take(State storage self, BookId bookId, address user, uint64 requestedRawAmount, Tick limitTick)
-        internal
+        external
         returns (uint256 baseAmount, uint64 rawAmount)
     {
         while (!self.heap.isEmpty()) {
             Tick tick = self.heap.root();
             if (tick.gt(limitTick)) break;
 
-            uint64 currentDepth = self.depth(tick);
+            uint64 currentDepth = _depth(self, tick);
             uint64 takenRawAmount = currentDepth > requestedRawAmount ? requestedRawAmount : currentDepth;
             if (takenRawAmount == 0) break;
             requestedRawAmount -= takenRawAmount;
@@ -131,21 +135,21 @@ library Book {
 
             self.totalClaimableOf.add(tick, takenRawAmount);
 
-            self.cleanHeap();
+            _cleanHeap(self);
 
             emit Take(bookId, user, tick, takenRawAmount);
         }
     }
 
     function spend(State storage self, BookId bookId, address user, uint256 requestedBaseAmount, Tick limitTick)
-        internal
+        external
         returns (uint256 baseAmount, uint256 rawAmount)
     {
         while (!self.heap.isEmpty()) {
             Tick tick = self.heap.root();
             if (tick.gt(limitTick)) break;
 
-            uint64 currentDepth = self.depth(tick);
+            uint64 currentDepth = _depth(self, tick);
             uint64 baseInRaw = tick.baseToRaw(requestedBaseAmount, false);
             uint64 takenRawAmount = currentDepth > baseInRaw ? baseInRaw : currentDepth;
             if (takenRawAmount == 0) break;
@@ -156,14 +160,21 @@ library Book {
 
             self.totalClaimableOf.add(tick, takenRawAmount);
 
-            self.cleanHeap();
+            _cleanHeap(self);
 
             emit Take(bookId, user, tick, takenRawAmount);
         }
     }
 
     function reduce(State storage self, OrderId id, IBookManager.Order storage order, uint64 to)
-        internal
+        external
+        returns (uint64)
+    {
+        return _reduce(self, id, order, to);
+    }
+
+    function _reduce(State storage self, OrderId id, IBookManager.Order storage order, uint64 to)
+        private
         returns (uint64 reducedAmount)
     {
         (, Tick tick, uint40 orderIndex) = id.decode();
@@ -182,14 +193,14 @@ library Book {
     }
 
     function cancel(State storage self, OrderId id, IBookManager.Order storage order)
-        internal
+        external
         returns (uint64 canceledAmount)
     {
-        canceledAmount = self.reduce(id, order, 0);
+        canceledAmount = _reduce(self, id, order, 0);
     }
 
     function claim(State storage self, OrderId id, IBookManager.Order storage order)
-        internal
+        external
         returns (uint64 claimedRaw, uint256 claimedAmount)
     {
         (, Tick tick, uint40 orderIndex) = id.decode();
@@ -201,9 +212,9 @@ library Book {
         emit Claim(msg.sender, id, claimedRaw, order.bounty);
     }
 
-    function cleanHeap(State storage self) internal {
+    function _cleanHeap(State storage self) private {
         while (!self.heap.isEmpty()) {
-            if (self.depth(self.heap.root()) == 0) {
+            if (_depth(self, self.heap.root()) == 0) {
                 self.heap.pop();
             } else {
                 break;
