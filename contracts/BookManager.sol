@@ -21,6 +21,7 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
     using LockDataLibrary for LockData;
     using CurrencyLibrary for Currency;
 
+    uint256 private constant _CLAIM_BOUNTY_UNIT = 1 gwei;
     int256 private constant _RATE_PRECISION = 10 ** 6;
     uint24 private constant _MAX_TICK_SPACING = type(uint16).max;
     uint24 private constant _MIN_TICK_SPACING = 1;
@@ -112,6 +113,8 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
                 (quoteAmount,) = _calculateFee(quoteAmount, params.key.makerPolicy.rate);
             }
             _accountDelta(params.key.quote, quoteAmount.toInt256());
+            _accountDelta(CurrencyLibrary.NATIVE, (_CLAIM_BOUNTY_UNIT * params.bounty).toInt256());
+            _mint(params.user, OrderId.unwrap(ids[i]));
         }
     }
 
@@ -223,6 +226,11 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
         }
         tokenOwed[provider][bookKey.quote] += quoteFee.toUint256();
         tokenOwed[provider][bookKey.base] += baseFee.toUint256();
+
+        if (order.pending == 0) {
+            _accountDelta(CurrencyLibrary.NATIVE, -(_CLAIM_BOUNTY_UNIT * order.bounty).toInt256());
+            _burn(OrderId.unwrap(id));
+        }
     }
 
     function collect(address provider, Currency currency) external {
