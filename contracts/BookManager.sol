@@ -337,4 +337,12 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
         uint256 fee = Math.divide(amount * uint256(_RATE_PRECISION), uint256(_RATE_PRECISION - rate), rate < 0);
         adjustedAmount = rate > 0 ? amount - fee : amount + fee;
     }
+
+    function _ownerOf(uint256 tokenId) internal view override returns (address) {
+        return _orders[OrderId.wrap(tokenId)].owner;
+    }
+
+    function _setOwner(uint256 tokenId, address owner) internal override {
+        _orders[OrderId.wrap(tokenId)].owner = owner;
+    }
 }
