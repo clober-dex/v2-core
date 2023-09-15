@@ -177,7 +177,7 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
     function _reduce(IBookManager.ReduceParams memory params) internal {
         (BookId bookId,,) = params.id.decode();
         uint256 reducedAmount = _books[bookId].reduce(params.id, _orders[params.id], params.to);
-        // todo: check order ownership
+        if (!_isApprovedOrOwner(_msgSender(), OrderId.unwrap(params.id))) revert ERC721InvalidOwnership();
         reducedAmount *= _books[bookId].key.unitDecimals;
         FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
         if (!makerPolicy.useOutput) {
