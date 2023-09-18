@@ -104,6 +104,7 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
             if (params.provider != address(0) && !isWhitelisted[params.provider]) {
                 revert NotWhitelisted(params.provider);
             }
+            params.tick.validate();
             Book.State storage book = _getBook(params.key);
             ids[i] = book.make(
                 _orders, params.key.toId(), params.user, params.tick, params.amount, params.provider, params.bounty
