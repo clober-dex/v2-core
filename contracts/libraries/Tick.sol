@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 
 import "./Math.sol";
 
-type Tick is uint24;
+type Tick is int24;
 
 library TickLibrary {
     using TickLibrary for Tick;
@@ -15,10 +15,11 @@ library TickLibrary {
 
     uint256 private constant _PRICE_PRECISION = 10 ** 18;
 
-    // TODO: fill the constants
-    uint24 private constant _MAX_TICK = 1;
+    int24 private constant _MAX_TICK = 887272;
+    int24 private constant _MIN_TICK = -_MAX_TICK;
     uint256 private constant _MIN_PRICE = 1;
     uint256 private constant _MAX_PRICE = 1;
+    // TODO: fill the constants
     uint256 private constant _R0 = 1;
     uint256 private constant _R1 = 1;
     uint256 private constant _R2 = 1;
@@ -51,7 +52,7 @@ library TickLibrary {
         if (price < _MIN_PRICE || price >= _MAX_PRICE) {
             revert InvalidPrice();
         }
-        uint24 index = 0;
+        int24 index = 0;
         uint256 _correctedPrice = _MIN_PRICE;
         uint256 shiftedPrice = (price + 1) << 64;
 
@@ -139,9 +140,6 @@ library TickLibrary {
         }
         if (roundingUp && _correctedPrice < price) {
             unchecked {
-                if (index == type(uint24).max) {
-                    revert InvalidPrice();
-                }
                 index += 1;
             }
             correctedPrice = toPrice(Tick.wrap(index));
@@ -153,29 +151,31 @@ library TickLibrary {
 
     function toPrice(Tick tick) internal pure returns (uint256 price) {
         tick.validate();
-        uint24 tickValue = Tick.unwrap(tick);
-        price = _MIN_PRICE;
+        int24 tickValue = Tick.unwrap(tick);
+        uint256 absTick = uint24(tickValue < 0 ? -tickValue : tickValue);
+        price = _PRICE_PRECISION;
         unchecked {
-            if (tickValue & (_MAX_TICK & 0x80000) != 0) price = (price * _R19) >> 64;
-            if (tickValue & (_MAX_TICK & 0x40000) != 0) price = (price * _R18) >> 64;
-            if (tickValue & (_MAX_TICK & 0x20000) != 0) price = (price * _R17) >> 64;
-            if (tickValue & (_MAX_TICK & 0x10000) != 0) price = (price * _R16) >> 64;
-            if (tickValue & (_MAX_TICK & 0x8000) != 0) price = (price * _R15) >> 64;
-            if (tickValue & (_MAX_TICK & 0x4000) != 0) price = (price * _R14) >> 64;
-            if (tickValue & (_MAX_TICK & 0x2000) != 0) price = (price * _R13) >> 64;
-            if (tickValue & (_MAX_TICK & 0x1000) != 0) price = (price * _R12) >> 64;
-            if (tickValue & (_MAX_TICK & 0x800) != 0) price = (price * _R11) >> 64;
-            if (tickValue & (_MAX_TICK & 0x400) != 0) price = (price * _R10) >> 64;
-            if (tickValue & (_MAX_TICK & 0x200) != 0) price = (price * _R9) >> 64;
-            if (tickValue & (_MAX_TICK & 0x100) != 0) price = (price * _R8) >> 64;
-            if (tickValue & (_MAX_TICK & 0x80) != 0) price = (price * _R7) >> 64;
-            if (tickValue & (_MAX_TICK & 0x40) != 0) price = (price * _R6) >> 64;
-            if (tickValue & (_MAX_TICK & 0x20) != 0) price = (price * _R5) >> 64;
-            if (tickValue & (_MAX_TICK & 0x10) != 0) price = (price * _R4) >> 64;
-            if (tickValue & (_MAX_TICK & 0x8) != 0) price = (price * _R3) >> 64;
-            if (tickValue & (_MAX_TICK & 0x4) != 0) price = (price * _R2) >> 64;
-            if (tickValue & (_MAX_TICK & 0x2) != 0) price = (price * _R1) >> 64;
-            if (tickValue & (_MAX_TICK & 0x1) != 0) price = (price * _R0) >> 64;
+            if (absTick & 0x80000 != 0) price = (price * _R19) >> 64;
+            if (absTick & 0x40000 != 0) price = (price * _R18) >> 64;
+            if (absTick & 0x20000 != 0) price = (price * _R17) >> 64;
+            if (absTick & 0x10000 != 0) price = (price * _R16) >> 64;
+            if (absTick & 0x8000 != 0) price = (price * _R15) >> 64;
+            if (absTick & 0x4000 != 0) price = (price * _R14) >> 64;
+            if (absTick & 0x2000 != 0) price = (price * _R13) >> 64;
+            if (absTick & 0x1000 != 0) price = (price * _R12) >> 64;
+            if (absTick & 0x800 != 0) price = (price * _R11) >> 64;
+            if (absTick & 0x400 != 0) price = (price * _R10) >> 64;
+            if (absTick & 0x200 != 0) price = (price * _R9) >> 64;
+            if (absTick & 0x100 != 0) price = (price * _R8) >> 64;
+            if (absTick & 0x80 != 0) price = (price * _R7) >> 64;
+            if (absTick & 0x40 != 0) price = (price * _R6) >> 64;
+            if (absTick & 0x20 != 0) price = (price * _R5) >> 64;
+            if (absTick & 0x10 != 0) price = (price * _R4) >> 64;
+            if (absTick & 0x8 != 0) price = (price * _R3) >> 64;
+            if (absTick & 0x4 != 0) price = (price * _R2) >> 64;
+            if (absTick & 0x2 != 0) price = (price * _R1) >> 64;
+            if (absTick & 0x1 != 0) price = (price * _R0) >> 64;
+            if (tickValue < 0) price = _PRICE_PRECISION * _PRICE_PRECISION / price;
         }
     }
 

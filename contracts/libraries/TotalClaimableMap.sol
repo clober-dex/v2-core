@@ -31,7 +31,7 @@ library TotalClaimableMap {
     }
 
     function _splitTick(Tick tick) internal pure returns (uint24 groupIndex, uint8 elementIndex) {
-        uint256 casted = Tick.unwrap(tick);
+        uint256 casted = uint24(Tick.unwrap(tick));
         assembly {
             groupIndex := shr(2, casted) // div 4
             elementIndex := and(casted, 3) // mod 4

@@ -19,7 +19,7 @@ contract OrderIdUnitTest is Test {
         uint40 index;
         (bookId, tick, index) = id.decode();
         assertEq(BookId.unwrap(bookId), uint192(1));
-        assertEq(Tick.unwrap(tick), uint24(2));
+        assertEq(Tick.unwrap(tick), int24(2));
         assertEq(index, uint40(3));
     }
 }
