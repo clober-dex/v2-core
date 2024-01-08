@@ -3,20 +3,18 @@ import fs from 'fs'
 
 import * as dotenv from 'dotenv'
 import readlineSync from 'readline-sync'
-import { HardhatConfig } from 'hardhat/types'
-import { arbitrum, hardhat, mainnet } from '@wagmi/chains'
 
-import '@nomiclabs/hardhat-waffle'
-import '@typechain/hardhat'
 import 'hardhat-deploy'
-import '@nomiclabs/hardhat-ethers'
+import '@nomicfoundation/hardhat-viem'
 import 'hardhat-gas-reporter'
 import 'hardhat-contract-sizer'
 import 'hardhat-abi-exporter'
 
+import { HardhatConfig } from 'hardhat/types'
+import * as networkInfos from 'viem/chains'
+
 dotenv.config()
 
-const networkInfos = require('@wagmi/chains')
 const chainIdMap: { [key: string]: string } = {}
 for (const [networkName, networkInfo] of Object.entries(networkInfos)) {
   // @ts-ignore
@@ -38,7 +36,7 @@ if (!SKIP_LOAD) {
 let privateKey: string
 let ok: string
 
-const getMainnetPrivateKey = () => {
+const loadPrivateKeyFromKeyfile = () => {
   let network
   for (const [i, arg] of Object.entries(process.argv)) {
     if (arg === '--network') {
@@ -52,7 +50,7 @@ const getMainnetPrivateKey = () => {
     }
   }
 
-  const prodNetworks = new Set<number>([mainnet.id])
+  const prodNetworks = new Set<number>([networkInfos.mainnet.id])
   if (network && prodNetworks.has(network)) {
     if (privateKey) {
       return privateKey
@@ -78,7 +76,7 @@ const config: HardhatConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.20',
+        version: '0.8.23',
         settings: {
           optimizer: {
             enabled: true,
@@ -89,17 +87,12 @@ const config: HardhatConfig = {
     ],
     overrides: {},
   },
-  // @ts-ignore
-  typechain: {
-    outDir: 'typechain',
-    target: 'ethers-v5',
-  },
   defaultNetwork: 'hardhat',
   networks: {
-    [arbitrum.id]: {
-      url: arbitrum.rpcUrls.default.http[0],
-      chainId: arbitrum.id,
-      accounts: [getMainnetPrivateKey()],
+    [networkInfos.arbitrum.id]: {
+      url: networkInfos.arbitrum.rpcUrls.default.http[0],
+      chainId: networkInfos.arbitrum.id,
+      accounts: [loadPrivateKeyFromKeyfile()],
       gas: 'auto',
       gasPrice: 'auto',
       gasMultiplier: 1,
@@ -116,8 +109,8 @@ const config: HardhatConfig = {
         },
       },
     },
-    [hardhat.network]: {
-      chainId: hardhat.id,
+    [networkInfos.hardhat.network]: {
+      chainId: networkInfos.hardhat.id,
       gas: 20000000,
       gasPrice: 250000000000,
       gasMultiplier: 1,

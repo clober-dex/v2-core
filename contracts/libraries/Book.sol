@@ -22,7 +22,6 @@ library Book {
     event Make(
         BookId indexed bookId, address indexed user, uint64 amount, uint32 claimBounty, uint256 orderIndex, Tick tick
     );
-    // todo: name of reducedAmount
     event Reduce(OrderId indexed orderId, uint64 reducedAmount);
     event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount, uint32 claimBounty);
 

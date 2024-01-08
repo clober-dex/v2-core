@@ -1,17 +1,11 @@
-name: Tests for coupon finance contracts
+name: CI
 on:
   pull_request:
     branches:
       - master
-    paths:
-      - '**/*.sol'
-      - 'test/**/*.ts'
   push:
     branches:
       - master
-    paths:
-      - '**/*.sol'
-      - 'test/**/*.ts'
 
 jobs:
   hardhat-tests:
@@ -19,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [ '18.10' ]
+        node-version: [ '20.9' ]
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
@@ -45,8 +39,6 @@ jobs:
         run: npm list
       - name: Install Dependencies
         run: npm install --ignore-scripts
-      - name: Hardhat Compile
-        run: npx hardhat compile
       - name: Hardhat test
         run: npm run test:hardhat
 
@@ -55,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [ '18.10' ]
+        node-version: [ '20.9' ]
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
@@ -87,9 +79,7 @@ jobs:
         run: npm install --ignore-scripts
       - name: Install Forge
         run: forge install
-      - name: Forge Build
-        run: forge build
       - name: Foundry Forge test
         run: npm run test:forge
         env:
-          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+          FORK_URL: ${{ secrets.FORK_URL }}

@@ -2,5 +2,4 @@ node_modules
 artifacts
 cache
 coverage*
-typechain/
 lib/forge-std/

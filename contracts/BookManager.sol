@@ -346,4 +346,23 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
     function _setOwner(uint256 tokenId, address owner) internal override {
         _orders[OrderId.wrap(tokenId)].owner = owner;
     }
+
+    function load(bytes32 slot) external view returns (bytes32 value) {
+        assembly {
+            value := sload(slot)
+        }
+    }
+
+    function load(bytes32 startSlot, uint256 nSlot) external view returns (bytes memory value) {
+        value = new bytes(32 * nSlot);
+
+        assembly {
+            for { let i := 0 } lt(i, nSlot) { i := add(i, 1) } {
+                mstore(add(value, mul(add(i, 1), 32)), sload(add(startSlot, i)))
+            }
+        }
+    }
+
+    // TODO: how to get list of all orders?
+    // TODO: oracle => https://github.com/traderjoe-xyz/joe-v2/blob/main/src/libraries/OracleHelper.sol
 }
