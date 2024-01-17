@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "./libraries/BookId.sol";
@@ -12,7 +12,7 @@ import "./libraries/LockData.sol";
 import "./interfaces/IPositionLocker.sol";
 import "./libraries/ERC721Permit.sol";
 
-contract BookManager is IBookManager, Ownable, ERC721Permit {
+contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     using SafeCast for *;
     using BookIdLibrary for IBookManager.BookKey;
     using TickLibrary for Tick;
@@ -37,9 +37,13 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
     mapping(address provider => bool) public override isWhitelisted;
     mapping(address provider => mapping(Currency currency => uint256 amount)) public override tokenOwed;
 
-    constructor(address defaultProvider_, string memory baseURI_, string memory name_, string memory symbol_)
-        ERC721Permit(name_, symbol_, "1")
-    {
+    constructor(
+        address owner_,
+        address defaultProvider_,
+        string memory baseURI_,
+        string memory name_,
+        string memory symbol_
+    ) Ownable(owner_) ERC721Permit(name_, symbol_, "2") {
         setDefaultProvider(defaultProvider_);
         baseURI = baseURI_;
     }
