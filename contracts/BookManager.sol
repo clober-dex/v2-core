@@ -49,7 +49,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     modifier onlyByLocker() {
-        address locker = lockData.getActiveLock();
+        address locker = lockData.getActiveLocker();
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
@@ -87,11 +87,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         emit OpenBook(id, key.base, key.quote, key.unitDecimals, key.tickSpacing, key.makerPolicy, key.takerPolicy);
     }
 
-    function lock(bytes calldata data) external returns (bytes memory result) {
-        lockData.push(msg.sender);
+    function lock(address locker, bytes calldata data) external returns (bytes memory result) {
+        lockData.push(locker, msg.sender);
 
-        // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILocker(msg.sender).lockAcquired(data);
+        // the locker does everything in this callback, including paying what they owe via calls to settle
+        result = ILocker(locker).lockAcquired(msg.sender, data);
 
         if (lockData.length == 1) {
             if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
@@ -99,6 +99,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         } else {
             lockData.pop();
         }
+    }
+
+    function getLock(uint256 i) external view returns (address, address) {
+        return (LockDataLibrary.getLocker(i), LockDataLibrary.getLockCaller(i));
     }
 
     function make(IBookManager.MakeParams[] calldata paramsList) external onlyByLocker returns (OrderId[] memory ids) {
@@ -309,7 +313,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     function _accountDelta(Currency currency, int256 delta) internal {
         if (delta == 0) return;
 
-        address locker = lockData.getActiveLock();
+        address locker = lockData.getActiveLocker();
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 

@@ -3,5 +3,5 @@
 pragma solidity ^0.8.0;
 
 interface ILocker {
-    function lockAcquired(bytes calldata data) external returns (bytes memory);
+    function lockAcquired(address lockCaller, bytes calldata data) external returns (bytes memory);
 }

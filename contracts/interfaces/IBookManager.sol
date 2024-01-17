@@ -75,9 +75,11 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function getOrder(OrderId id) external view returns (Order memory);
 
+    function getLock(uint256 i) external view returns (address locker, address lockCaller);
+
     function openBook(BookKey calldata key) external;
 
-    function lock(bytes calldata data) external returns (bytes memory);
+    function lock(address locker, bytes calldata data) external returns (bytes memory);
 
     struct MakeParams {
         BookKey key;

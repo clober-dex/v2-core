@@ -20,16 +20,21 @@ struct LockData {
 library LockDataLibrary {
     uint256 private constant OFFSET = uint256(keccak256("LockData"));
 
+    // The number of slots per item in the lockers array
+    uint256 private constant LOCKER_STRUCT_SIZE = 2;
+
     /// @dev Pushes a locker onto the end of the queue, and updates the sentinel storage slot.
-    function push(LockData storage self, address locker) internal {
+    function push(LockData storage self, address locker, address lockCaller) internal {
         // read current value from the sentinel storage slot
         uint128 length = self.length;
         unchecked {
-            uint256 indexToWrite = OFFSET + length; // not in assembly because OFFSET is in the library scope
+            // not in assembly because OFFSET is in the library scope
+            uint256 indexToWrite = OFFSET + (length * LOCKER_STRUCT_SIZE);
             /// @solidity memory-safe-assembly
             assembly {
-                // in the next storage slot, write the locker
+                // in the next storage slot, write the locker and lockCaller
                 sstore(indexToWrite, locker)
+                sstore(add(indexToWrite, 1), lockCaller)
             }
             // update the sentinel storage slot
             self.length = length + 1;
@@ -43,9 +48,10 @@ library LockDataLibrary {
         }
     }
 
-    function getLock(uint256 i) internal view returns (address locker) {
+    function getLocker(uint256 i) internal view returns (address locker) {
         unchecked {
-            uint256 position = OFFSET + i; // not in assembly because OFFSET is in the library scope
+            // not in assembly because OFFSET is in the library scope
+            uint256 position = OFFSET + (i * LOCKER_STRUCT_SIZE);
             /// @solidity memory-safe-assembly
             assembly {
                 locker := sload(position)
@@ -53,7 +59,18 @@ library LockDataLibrary {
         }
     }
 
-    function getActiveLock(LockData storage self) internal view returns (address locker) {
-        return getLock(self.length - 1);
+    function getLockCaller(uint256 i) internal view returns (address locker) {
+        unchecked {
+            // not in assembly because OFFSET is in the library scope
+            uint256 position = OFFSET + (i * LOCKER_STRUCT_SIZE + 1);
+            /// @solidity memory-safe-assembly
+            assembly {
+                locker := sload(position)
+            }
+        }
+    }
+
+    function getActiveLocker(LockData storage self) internal view returns (address locker) {
+        return getLocker(self.length - 1);
     }
 }
