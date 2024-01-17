@@ -98,14 +98,14 @@ library Lockers {
         }
     }
 
-    function getActiveLocker() internal view returns (address) {
+    function getCurrentLocker() internal view returns (address) {
         (uint128 length,) = lockData();
         unchecked {
             return length > 0 ? getLocker(length - 1) : address(0);
         }
     }
 
-    function getActiveLockCaller() internal view returns (address) {
+    function getCurrentLockCaller() internal view returns (address) {
         (uint128 length,) = lockData();
         unchecked {
             return length > 0 ? getLockCaller(length - 1) : address(0);

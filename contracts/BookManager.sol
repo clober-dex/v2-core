@@ -48,7 +48,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     modifier onlyByLocker() {
-        address locker = Lockers.getActiveLocker();
+        address locker = Lockers.getCurrentLocker();
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
@@ -317,7 +317,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     function _accountDelta(Currency currency, int256 delta) internal {
         if (delta == 0) return;
 
-        address locker = Lockers.getActiveLocker();
+        address locker = Lockers.getCurrentLocker();
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
