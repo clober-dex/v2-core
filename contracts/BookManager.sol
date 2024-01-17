@@ -44,7 +44,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     ) Ownable(owner_) ERC721Permit(name_, symbol_, "2") {
         setDefaultProvider(defaultProvider_);
         baseURI = baseURI_;
-        Lockers.initialize();
+        Lockers.clear();
     }
 
     modifier onlyByLocker() {

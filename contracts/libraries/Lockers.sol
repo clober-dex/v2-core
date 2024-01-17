@@ -12,30 +12,21 @@ pragma solidity ^0.8.23;
 ///      length of the queue but also the global count of non-zero deltas across all lockers.
 ///      The values of the data structure start at OFFSET, and each value is a locker address.
 library Lockers {
-    uint256 private constant EMPTY_LOCK_DATA = 2 << 249;
     /// struct LockData {
     ///     /// @notice The current number of active lockers
-    ///     uint128 length;
+    ///     /// @dev This value starts with 1 to make dirty slot
+    ///     uint128 nextLength;
     ///     /// @notice The total number of nonzero deltas over all active + completed lockers
-    ///     uint120 nonzeroDeltaCount;
-    ///     /// @notice The initialized flag to make dirty slot
-    ///     bool initialized;
+    ///     uint128 nonzeroDeltaCount;
     /// }
-    uint256 private constant LOCK_DATA_SLOT = uint256(keccak256("LockData"));
+    uint256 public constant LOCK_DATA_SLOT = uint256(keccak256("LockData"));
 
-    uint256 private constant LOCKERS_SLOT = uint256(keccak256("Lockers"));
+    uint256 public constant LOCKERS_SLOT = uint256(keccak256("Lockers"));
 
     // The number of slots per item in the lockers array
-    uint256 private constant LOCKER_STRUCT_SIZE = 2;
+    uint256 public constant LOCKER_STRUCT_SIZE = 2;
 
-    uint256 private constant NONZERO_DELTA_COUNT_OFFSET = 2 ** 128;
-
-    function initialize() internal {
-        uint256 slot = LOCK_DATA_SLOT;
-        assembly {
-            sstore(slot, EMPTY_LOCK_DATA)
-        }
-    }
+    uint256 public constant NONZERO_DELTA_COUNT_OFFSET = 2 ** 128;
 
     /// @dev Pushes a locker onto the end of the queue, and updates the sentinel storage slot.
     function push(address locker, address lockCaller) internal {
@@ -57,11 +48,11 @@ library Lockers {
         }
     }
 
-    function lockData() internal view returns (uint128 length, uint120 nonzeroDeltaCount) {
+    function lockData() internal view returns (uint128 length, uint128 nonzeroDeltaCount) {
         uint256 slot = LOCK_DATA_SLOT;
         assembly {
             let data := sload(slot)
-            length := data
+            length := sub(data, 1)
             nonzeroDeltaCount := shr(128, data)
         }
     }
@@ -77,7 +68,7 @@ library Lockers {
     function clear() internal {
         uint256 slot = LOCK_DATA_SLOT;
         assembly {
-            sstore(slot, EMPTY_LOCK_DATA)
+            sstore(slot, 1)
         }
     }
 
