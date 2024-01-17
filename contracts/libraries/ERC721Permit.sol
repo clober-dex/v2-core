@@ -3,13 +3,12 @@
 pragma solidity ^0.8.0;
 
 import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
-import {IERC721Permit} from "../interfaces/IERC721Permit.sol";
 import {ERC721} from "./ERC721.sol";
+import {IERC721Permit} from "../interfaces/IERC721Permit.sol";
 
 abstract contract ERC721Permit is ERC721, IERC721Permit, EIP712 {
     // keccak256("Permit(address spender,uint256 tokenId,uint256 nonce,uint256 deadline)");
@@ -23,7 +22,6 @@ abstract contract ERC721Permit is ERC721, IERC721Permit, EIP712 {
 
     function permit(address spender, uint256 tokenId, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
         external
-        payable
         override
     {
         if (block.timestamp > deadline) revert PermitExpired();
@@ -35,7 +33,7 @@ abstract contract ERC721Permit is ERC721, IERC721Permit, EIP712 {
         address owner = ownerOf(tokenId);
         if (spender == owner) revert InvalidSignature();
 
-        if (Address.isContract(owner)) {
+        if (owner.code.length > 0) {
             if (IERC1271(owner).isValidSignature(digest, abi.encodePacked(r, s, v)) != 0x1626ba7e) {
                 revert InvalidSignature();
             }
@@ -43,7 +41,7 @@ abstract contract ERC721Permit is ERC721, IERC721Permit, EIP712 {
             if (ECDSA.recover(digest, v, r, s) != owner) revert InvalidSignature();
         }
 
-        _approve(spender, tokenId);
+        _approve(spender, tokenId, owner, true);
     }
 
     function DOMAIN_SEPARATOR() public view override returns (bytes32) {

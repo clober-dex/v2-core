@@ -175,10 +175,16 @@ contract BookManager is IBookManager, Ownable, ERC721Permit {
         }
     }
 
+    function _checkAuthorized(address spender, uint256 tokenId) internal view {
+        _checkAuthorized(_ownerOf(tokenId), spender, tokenId);
+    }
+
     function _reduce(IBookManager.ReduceParams memory params) internal {
         (BookId bookId,,) = params.id.decode();
         uint256 reducedAmount = _books[bookId].reduce(params.id, _orders[params.id], params.to);
-        if (!_isApprovedOrOwner(_msgSender(), OrderId.unwrap(params.id))) revert ERC721InvalidOwnership();
+
+        _checkAuthorized(_msgSender(), OrderId.unwrap(params.id));
+
         reducedAmount *= _books[bookId].key.unitDecimals;
         FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
         if (!makerPolicy.useOutput) {
