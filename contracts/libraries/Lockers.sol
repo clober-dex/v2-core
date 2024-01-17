@@ -98,9 +98,18 @@ library Lockers {
         }
     }
 
-    function getActiveLocker() internal view returns (address locker) {
+    function getActiveLocker() internal view returns (address) {
         (uint128 length,) = lockData();
-        return getLocker(length - 1);
+        unchecked {
+            return length > 0 ? getLocker(length - 1) : address(0);
+        }
+    }
+
+    function getActiveLockCaller() internal view returns (address) {
+        (uint128 length,) = lockData();
+        unchecked {
+            return length > 0 ? getLockCaller(length - 1) : address(0);
+        }
     }
 
     function incrementNonzeroDeltaCount() internal {
