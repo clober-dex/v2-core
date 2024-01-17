@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "./libraries/BookId.sol";
 import "./libraries/Book.sol";
 import "./libraries/OrderId.sol";
-import "./libraries/LockData.sol";
+import "./libraries/Lockers.sol";
 import "./interfaces/IPositionLocker.sol";
 import "./libraries/ERC721Permit.sol";
 
@@ -18,7 +18,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     using TickLibrary for Tick;
     using Book for Book.State;
     using OrderIdLibrary for OrderId;
-    using LockDataLibrary for LockData;
     using CurrencyLibrary for Currency;
 
     uint256 private constant _CLAIM_BOUNTY_UNIT = 1 gwei;
@@ -28,7 +27,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
     string public override baseURI;
     address public override defaultProvider;
-    LockData public override lockData;
 
     mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public override currencyDelta;
     mapping(Currency currency => uint256) public override reservesOf;
@@ -46,10 +44,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     ) Ownable(owner_) ERC721Permit(name_, symbol_, "2") {
         setDefaultProvider(defaultProvider_);
         baseURI = baseURI_;
+        Lockers.initialize();
     }
 
     modifier onlyByLocker() {
-        address locker = lockData.getActiveLocker();
+        address locker = Lockers.getActiveLocker();
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
@@ -88,21 +87,26 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function lock(address locker, bytes calldata data) external returns (bytes memory result) {
-        lockData.push(locker, msg.sender);
+        Lockers.push(locker, msg.sender);
 
         // the locker does everything in this callback, including paying what they owe via calls to settle
         result = ILocker(locker).lockAcquired(msg.sender, data);
 
-        if (lockData.length == 1) {
-            if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
-            delete lockData;
+        (uint128 length, uint128 nonzeroDeltaCount) = Lockers.lockData();
+        if (length == 1) {
+            if (nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+            Lockers.clear();
         } else {
-            lockData.pop();
+            Lockers.pop();
         }
     }
 
     function getLock(uint256 i) external view returns (address, address) {
-        return (LockDataLibrary.getLocker(i), LockDataLibrary.getLockCaller(i));
+        return (Lockers.getLocker(i), Lockers.getLockCaller(i));
+    }
+
+    function getLockData() external view returns (uint128, uint128) {
+        return Lockers.lockData();
     }
 
     function make(IBookManager.MakeParams[] calldata paramsList) external onlyByLocker returns (OrderId[] memory ids) {
@@ -313,15 +317,15 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     function _accountDelta(Currency currency, int256 delta) internal {
         if (delta == 0) return;
 
-        address locker = lockData.getActiveLocker();
+        address locker = Lockers.getActiveLocker();
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
         unchecked {
             if (next == 0) {
-                lockData.nonzeroDeltaCount--;
+                Lockers.decrementNonzeroDeltaCount();
             } else if (current == 0) {
-                lockData.nonzeroDeltaCount++;
+                Lockers.incrementNonzeroDeltaCount();
             }
         }
 

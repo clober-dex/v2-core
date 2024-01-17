@@ -61,8 +61,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function defaultProvider() external view returns (address);
 
-    function lockData() external view returns (uint128, uint128);
-
     function currencyDelta(address locker, Currency currency) external view returns (int256);
 
     function reservesOf(Currency currency) external view returns (uint256);
@@ -76,6 +74,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     function getOrder(OrderId id) external view returns (Order memory);
 
     function getLock(uint256 i) external view returns (address locker, address lockCaller);
+
+    function getLockData() external view returns (uint128, uint128);
 
     function openBook(BookKey calldata key) external;
 
