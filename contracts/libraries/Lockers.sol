@@ -28,6 +28,10 @@ library Lockers {
 
     uint256 public constant NONZERO_DELTA_COUNT_OFFSET = 2 ** 128;
 
+    function initialize() internal {
+        clear();
+    }
+
     /// @dev Pushes a locker onto the end of the queue, and updates the sentinel storage slot.
     function push(address locker, address lockCaller) internal {
         // read current value from the sentinel storage slot
