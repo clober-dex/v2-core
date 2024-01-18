@@ -129,38 +129,14 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
     function take(TakeParams calldata params) external onlyByLocker {
         Book.State storage book = _getBook(params.key);
-        BookId bookId = params.key.toId();
-        (uint256 baseAmount, uint256 quoteAmount) = book.take(bookId, msg.sender, params.amount, params.limit);
-        quoteAmount *= params.key.unitDecimals;
+        uint256 baseAmount = book.take(params.amount);
+        uint256 quoteAmount = uint256(params.amount) * params.key.unitDecimals;
         if (params.key.takerPolicy.useOutput) {
             (quoteAmount,) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
         } else {
             (baseAmount,) = _calculateFee(baseAmount, params.key.takerPolicy.rate);
         }
-        if (baseAmount > params.maxIn) {
-            revert Slippage(bookId);
-        }
-        _accountDelta(params.key.quote, -quoteAmount.toInt256());
-        _accountDelta(params.key.base, baseAmount.toInt256());
-    }
 
-    function spend(SpendParams calldata params) external onlyByLocker {
-        Book.State storage book = _getBook(params.key);
-        BookId bookId = params.key.toId();
-        uint256 amountToRequest = params.amount;
-        if (!params.key.takerPolicy.useOutput) {
-            amountToRequest = _calculateAmountInReverse(amountToRequest, params.key.takerPolicy.rate);
-        }
-        (uint256 baseAmount, uint256 quoteAmount) = book.spend(bookId, msg.sender, amountToRequest, params.limit);
-        quoteAmount *= params.key.unitDecimals;
-        if (params.key.takerPolicy.useOutput) {
-            (quoteAmount,) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
-        } else {
-            (baseAmount,) = _calculateFee(baseAmount, params.key.takerPolicy.rate);
-        }
-        if (quoteAmount < params.minOut) {
-            revert Slippage(bookId);
-        }
         _accountDelta(params.key.quote, -quoteAmount.toInt256());
         _accountDelta(params.key.base, baseAmount.toInt256());
     }

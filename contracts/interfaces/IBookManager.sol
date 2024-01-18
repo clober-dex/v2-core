@@ -95,21 +95,11 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     struct TakeParams {
         BookKey key;
-        uint64 amount; // times 10**unitDecimals to get actual output
-        Tick limit;
-        uint256 maxIn;
+        uint64 amount;
     }
 
+    // todo: consider return value
     function take(TakeParams calldata params) external;
-
-    struct SpendParams {
-        BookKey key;
-        uint256 amount;
-        Tick limit;
-        uint256 minOut;
-    }
-
-    function spend(SpendParams calldata params) external;
 
     struct CancelParams {
         OrderId id;

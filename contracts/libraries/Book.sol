@@ -26,10 +26,10 @@ library Book {
     event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount, uint32 claimBounty);
 
     error CancelFailed(uint64 maxCancelableAmount);
-    error Overflow();
     error BookAlreadyInitialized();
     error BookNotInitialized();
     error QueueReplaceFailed();
+    error TooLargeTakeAmount();
 
     struct Queue {
         SegmentedSegmentTree.Core tree;
@@ -117,52 +117,15 @@ library Book {
         emit Make(bookId, user, amount, bounty, index, tick);
     }
 
-    function take(State storage self, BookId bookId, address user, uint64 requestedRawAmount, Tick limitTick)
-        external
-        returns (uint256 baseAmount, uint64 rawAmount)
-    {
-        while (!self.heap.isEmpty()) {
-            Tick tick = self.heap.root();
-            if (tick.gt(limitTick)) break;
+    function take(State storage self, uint64 takeAmount) external returns (uint256 baseAmount) {
+        Tick tick = self.heap.root();
+        uint64 currentDepth = _depth(self, tick);
+        if (currentDepth < takeAmount) revert TooLargeTakeAmount();
 
-            uint64 currentDepth = _depth(self, tick);
-            uint64 takenRawAmount = currentDepth > requestedRawAmount ? requestedRawAmount : currentDepth;
-            if (takenRawAmount == 0) break;
-            requestedRawAmount -= takenRawAmount;
-            baseAmount += tick.rawToBase(takenRawAmount, true);
-            rawAmount += takenRawAmount;
+        baseAmount = tick.rawToBase(takeAmount, true);
+        self.totalClaimableOf.add(tick, takeAmount);
 
-            self.totalClaimableOf.add(tick, takenRawAmount);
-
-            _cleanHeap(self);
-
-            emit Take(bookId, user, tick, takenRawAmount);
-        }
-    }
-
-    function spend(State storage self, BookId bookId, address user, uint256 requestedBaseAmount, Tick limitTick)
-        external
-        returns (uint256 baseAmount, uint256 rawAmount)
-    {
-        while (!self.heap.isEmpty()) {
-            Tick tick = self.heap.root();
-            if (tick.gt(limitTick)) break;
-
-            uint64 currentDepth = _depth(self, tick);
-            uint64 baseInRaw = tick.baseToRaw(requestedBaseAmount, false);
-            uint64 takenRawAmount = currentDepth > baseInRaw ? baseInRaw : currentDepth;
-            if (takenRawAmount == 0) break;
-            uint256 usedBaseAmount = tick.rawToBase(takenRawAmount, true);
-            requestedBaseAmount -= usedBaseAmount;
-            baseAmount += usedBaseAmount;
-            rawAmount += takenRawAmount;
-
-            self.totalClaimableOf.add(tick, takenRawAmount);
-
-            _cleanHeap(self);
-
-            emit Take(bookId, user, tick, takenRawAmount);
-        }
+        _cleanHeap(self);
     }
 
     function cancel(State storage self, OrderId id, IBookManager.Order storage order, uint64 to)
