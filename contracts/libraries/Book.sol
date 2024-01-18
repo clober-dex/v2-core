@@ -78,7 +78,7 @@ library Book {
                 uint64 stalePendingAmount = orders[OrderIdLibrary.encode(bookId, tick, staleOrderIndex)].pending;
                 if (stalePendingAmount > 0) {
                     // If the order is not settled completely, we cannot replace it
-                    uint64 claimable = _calculateClaimableRawAmount(self, stalePendingAmount, tick, staleOrderIndex);
+                    uint64 claimable = calculateClaimableRawAmount(self, stalePendingAmount, tick, staleOrderIndex);
                     if (claimable != stalePendingAmount) {
                         revert QueueReplaceFailed();
                     }
@@ -112,7 +112,7 @@ library Book {
         internal
         returns (uint64 canceledAmount)
     {
-        uint64 claimableRawAmount = _calculateClaimableRawAmount(self, to, tick, orderIndex);
+        uint64 claimableRawAmount = calculateClaimableRawAmount(self, to, tick, orderIndex);
         uint64 afterPendingAmount = to + claimableRawAmount;
         uint64 pending = order.pending;
         unchecked {
@@ -129,14 +129,6 @@ library Book {
         // todo: check clean
     }
 
-    function claim(State storage self, Tick tick, uint40 orderIndex, uint64 pending)
-        internal
-        returns (uint64 claimedRaw, uint256 claimedAmount)
-    {
-        claimedRaw = _calculateClaimableRawAmount(self, pending, tick, orderIndex);
-        claimedAmount = tick.rawToBase(claimedRaw, false);
-    }
-
     function _cleanHeap(State storage self) private {
         while (!self.heap.isEmpty()) {
             if (_depth(self, self.heap.root()) == 0) {
@@ -147,8 +139,8 @@ library Book {
         }
     }
 
-    function _calculateClaimableRawAmount(State storage self, uint64 orderAmount, Tick tick, uint40 index)
-        private
+    function calculateClaimableRawAmount(State storage self, uint64 orderAmount, Tick tick, uint40 index)
+        internal
         view
         returns (uint64)
     {

@@ -185,7 +185,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         IBookManager.BookKey memory bookKey = book.key;
         Order storage order = _orders[id];
 
-        (uint64 claimedRaw, uint256 claimedInBase) = book.claim(tick, orderIndex, order.pending);
+        uint64 claimedRaw = book.calculateClaimableRawAmount(order.pending, tick, orderIndex);
+        uint256 claimedInBase = tick.rawToBase(claimedRaw, false);
         order.pending -= claimedRaw;
 
         uint256 claimedInQuote = uint256(claimedRaw) * bookKey.unitDecimals;
