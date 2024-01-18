@@ -42,12 +42,12 @@ library Book {
     uint40 private constant _MAX_ORDER = 2 ** 15; // 32768
     uint256 private constant _MAX_ORDER_M = 2 ** 15 - 1; // % 32768
 
-    function initialize(State storage self, IBookManager.BookKey calldata key) external {
+    function initialize(State storage self, IBookManager.BookKey calldata key) internal {
         if (self.key.unitDecimals != 0) revert BookAlreadyInitialized();
         self.key = key;
     }
 
-    function depth(State storage self, Tick tick) external view returns (uint64) {
+    function depth(State storage self, Tick tick) internal view returns (uint64) {
         return _depth(self, tick);
     }
 
@@ -61,7 +61,7 @@ library Book {
         BookId bookId,
         Tick tick,
         uint64 amount
-    ) external returns (uint40 orderIndex) {
+    ) internal returns (uint40 orderIndex) {
         if (!self.heap.has(tick)) {
             self.heap.push(tick);
         }
@@ -97,7 +97,7 @@ library Book {
         queue.tree.update(orderIndex & _MAX_ORDER_M, amount);
     }
 
-    function take(State storage self, uint64 takeAmount) external returns (Tick tick, uint256 baseAmount) {
+    function take(State storage self, uint64 takeAmount) internal returns (Tick tick, uint256 baseAmount) {
         tick = self.heap.root();
         uint64 currentDepth = _depth(self, tick);
         if (currentDepth < takeAmount) revert TooLargeTakeAmount();
@@ -109,7 +109,7 @@ library Book {
     }
 
     function cancel(State storage self, Tick tick, uint40 orderIndex, IBookManager.Order storage order, uint64 to)
-        external
+        internal
         returns (uint64 canceledAmount)
     {
         uint64 claimableRawAmount = _calculateClaimableRawAmount(self, to, tick, orderIndex);
@@ -130,7 +130,7 @@ library Book {
     }
 
     function claim(State storage self, Tick tick, uint40 orderIndex, uint64 pending)
-        external
+        internal
         returns (uint64 claimedRaw, uint256 claimedAmount)
     {
         claimedRaw = _calculateClaimableRawAmount(self, pending, tick, orderIndex);
