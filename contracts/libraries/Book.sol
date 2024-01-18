@@ -18,13 +18,6 @@ library Book {
     using TickLibrary for Tick;
     using OrderIdLibrary for OrderId;
 
-    event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 amount);
-    event Make(
-        BookId indexed bookId, address indexed user, uint64 amount, uint32 claimBounty, uint256 orderIndex, Tick tick
-    );
-    event Cancel(OrderId indexed orderId, uint64 canceledAmount);
-    event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount, uint32 claimBounty);
-
     error CancelFailed(uint64 maxCancelableAmount);
     error BookAlreadyInitialized();
     error BookNotInitialized();
@@ -66,24 +59,21 @@ library Book {
         State storage self,
         mapping(OrderId => IBookManager.Order) storage orders,
         BookId bookId,
-        address user,
         Tick tick,
-        uint64 amount,
-        address provider,
-        uint32 bounty
-    ) external returns (OrderId id) {
+        uint64 amount
+    ) external returns (uint40 orderIndex) {
         if (!self.heap.has(tick)) {
             self.heap.push(tick);
         }
 
         Queue storage queue = self.queues[tick];
-        uint40 index = queue.index;
+        orderIndex = queue.index;
 
-        if (index >= _MAX_ORDER) {
+        if (orderIndex >= _MAX_ORDER) {
             {
                 uint40 staleOrderIndex;
                 unchecked {
-                    staleOrderIndex = index - _MAX_ORDER;
+                    staleOrderIndex = orderIndex - _MAX_ORDER;
                 }
                 uint64 stalePendingAmount = orders[OrderIdLibrary.encode(bookId, tick, staleOrderIndex)].pending;
                 if (stalePendingAmount > 0) {
@@ -97,28 +87,18 @@ library Book {
 
             // The stale order is settled completely, so remove it from the totalClaimableOf.
             // We can determine the stale order is claimable.
-            uint64 staleOrderedAmount = queue.tree.get(index & _MAX_ORDER_M);
+            uint64 staleOrderedAmount = queue.tree.get(orderIndex & _MAX_ORDER_M);
             if (staleOrderedAmount > 0) {
                 self.totalClaimableOf.sub(tick, staleOrderedAmount);
             }
         }
 
-        queue.index = index + 1;
-        queue.tree.update(index & _MAX_ORDER_M, amount);
-        id = OrderIdLibrary.encode(bookId, tick, index);
-        orders[id] = IBookManager.Order({
-            initial: amount,
-            nonce: 0,
-            owner: user,
-            pending: amount,
-            bounty: bounty,
-            provider: provider
-        });
-        emit Make(bookId, user, amount, bounty, index, tick);
+        queue.index = orderIndex + 1;
+        queue.tree.update(orderIndex & _MAX_ORDER_M, amount);
     }
 
-    function take(State storage self, uint64 takeAmount) external returns (uint256 baseAmount) {
-        Tick tick = self.heap.root();
+    function take(State storage self, uint64 takeAmount) external returns (Tick tick, uint256 baseAmount) {
+        tick = self.heap.root();
         uint64 currentDepth = _depth(self, tick);
         if (currentDepth < takeAmount) revert TooLargeTakeAmount();
 
@@ -128,11 +108,10 @@ library Book {
         _cleanHeap(self);
     }
 
-    function cancel(State storage self, OrderId id, IBookManager.Order storage order, uint64 to)
+    function cancel(State storage self, Tick tick, uint40 orderIndex, IBookManager.Order storage order, uint64 to)
         external
         returns (uint64 canceledAmount)
     {
-        (, Tick tick, uint40 orderIndex) = id.decode();
         uint64 claimableRawAmount = _calculateClaimableRawAmount(self, to, tick, orderIndex);
         uint64 afterPendingAmount = to + claimableRawAmount;
         uint64 pending = order.pending;
@@ -147,19 +126,15 @@ library Book {
         self.queues[tick].tree.update(
             orderIndex & _MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & _MAX_ORDER_M) - canceledAmount
         );
-        emit Cancel(id, canceledAmount);
+        // todo: check clean
     }
 
-    function claim(State storage self, OrderId id, IBookManager.Order storage order)
+    function claim(State storage self, Tick tick, uint40 orderIndex, uint64 pending)
         external
         returns (uint64 claimedRaw, uint256 claimedAmount)
     {
-        (, Tick tick, uint40 orderIndex) = id.decode();
-        uint64 pending = order.pending;
         claimedRaw = _calculateClaimableRawAmount(self, pending, tick, orderIndex);
-        order.pending = pending - claimedRaw;
         claimedAmount = tick.rawToBase(claimedRaw, false);
-        emit Claim(msg.sender, id, claimedRaw, order.bounty);
     }
 
     function _cleanHeap(State storage self) private {

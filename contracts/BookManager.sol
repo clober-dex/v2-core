@@ -113,11 +113,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         if (params.provider != address(0) && !isWhitelisted[params.provider]) {
             revert NotWhitelisted(params.provider);
         }
+        // TODO: check book initialized
         params.tick.validate();
-        Book.State storage book = _getBook(params.key);
-        id = book.make(
-            _orders, params.key.toId(), params.user, params.tick, params.amount, params.provider, params.bounty
-        );
+        BookId bookId = params.key.toId();
+        Book.State storage book = _books[bookId];
+        uint40 orderIndex = book.make(_orders, bookId, params.tick, params.amount);
+        id = OrderIdLibrary.encode(bookId, params.tick, orderIndex);
         uint256 quoteAmount = uint256(params.amount) * params.key.unitDecimals;
         if (!params.key.makerPolicy.useOutput) {
             (quoteAmount,) = _calculateFee(quoteAmount, params.key.makerPolicy.rate);
@@ -125,11 +126,23 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         _accountDelta(params.key.quote, quoteAmount.toInt256());
         _accountDelta(CurrencyLibrary.NATIVE, (_CLAIM_BOUNTY_UNIT * params.bounty).toInt256());
         _mint(params.user, OrderId.unwrap(id));
+
+        _orders[id] = IBookManager.Order({
+            initial: params.amount,
+            nonce: 0,
+            owner: params.user,
+            pending: params.amount,
+            bounty: params.bounty,
+            provider: params.provider
+        });
+
+        emit Make(bookId, params.user, params.amount, params.bounty, orderIndex, params.tick);
     }
 
     function take(TakeParams calldata params) external onlyByLocker {
-        Book.State storage book = _getBook(params.key);
-        uint256 baseAmount = book.take(params.amount);
+        BookId bookId = params.key.toId();
+        Book.State storage book = _books[bookId];
+        (Tick tick, uint256 baseAmount) = book.take(params.amount);
         uint256 quoteAmount = uint256(params.amount) * params.key.unitDecimals;
         if (params.key.takerPolicy.useOutput) {
             (quoteAmount,) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
@@ -139,21 +152,25 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         _accountDelta(params.key.quote, -quoteAmount.toInt256());
         _accountDelta(params.key.base, baseAmount.toInt256());
+
+        emit Take(bookId, msg.sender, tick, params.amount);
     }
 
     function cancel(CancelParams calldata params) external onlyByLocker {
-        (BookId bookId,,) = params.id.decode();
-        uint256 reducedAmount = _books[bookId].cancel(params.id, _orders[params.id], params.to);
+        (BookId bookId, Tick tick, uint40 orderIndex) = params.id.decode();
+        uint64 canceledRaw = _books[bookId].cancel(tick, orderIndex, _orders[params.id], params.to);
 
         _checkAuthorized(_ownerOf(OrderId.unwrap(params.id)), _msgSender(), OrderId.unwrap(params.id));
 
-        reducedAmount *= _books[bookId].key.unitDecimals;
+        uint256 canceledAmount = uint256(canceledRaw) * _books[bookId].key.unitDecimals;
         FeePolicy memory makerPolicy = _books[bookId].key.makerPolicy;
         if (!makerPolicy.useOutput) {
-            reducedAmount = _calculateAmountInReverse(reducedAmount, makerPolicy.rate);
+            canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate);
         }
-        _accountDelta(_books[bookId].key.quote, -reducedAmount.toInt256());
-        _claim(params.id);
+        _accountDelta(_books[bookId].key.quote, -canceledAmount.toInt256());
+        _claim(params.id); // todo: why we should call here?
+
+        emit Cancel(params.id, canceledRaw);
     }
 
     function claim(OrderId id) external onlyByLocker {
@@ -161,12 +178,15 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function _claim(OrderId id) internal {
-        (BookId bookId,,) = id.decode();
+        (BookId bookId, Tick tick, uint40 orderIndex) = id.decode();
         Book.State storage book = _books[bookId];
         IBookManager.BookKey memory bookKey = book.key;
         Order storage order = _orders[id];
-        (uint256 claimedInQuote, uint256 claimedInBase) = book.claim(id, order);
-        claimedInQuote *= bookKey.unitDecimals;
+
+        (uint64 claimedRaw, uint256 claimedInBase) = book.claim(tick, orderIndex, order.pending);
+        order.pending -= claimedRaw;
+
+        uint256 claimedInQuote = uint256(claimedRaw) * bookKey.unitDecimals;
         int256 quoteFee;
         int256 baseFee;
         FeePolicy memory takerPolicy = bookKey.takerPolicy;
@@ -198,6 +218,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             _accountDelta(CurrencyLibrary.NATIVE, -(_CLAIM_BOUNTY_UNIT * order.bounty).toInt256());
             _burn(OrderId.unwrap(id));
         }
+
+        emit Claim(msg.sender, id, claimedRaw, order.bounty);
     }
 
     function collect(address provider, Currency currency) external {
@@ -256,10 +278,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
-    }
-
-    function _getBook(BookKey memory key) private view returns (Book.State storage) {
-        return _books[key.toId()];
     }
 
     function _accountDelta(Currency currency, int256 delta) internal {

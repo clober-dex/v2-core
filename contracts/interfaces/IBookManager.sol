@@ -29,6 +29,12 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         FeePolicy makerPolicy,
         FeePolicy takerPolicy
     );
+    event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 amount);
+    event Make(
+        BookId indexed bookId, address indexed user, uint64 amount, uint32 claimBounty, uint256 orderIndex, Tick tick
+    );
+    event Cancel(OrderId indexed orderId, uint64 canceledAmount);
+    event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount, uint32 claimBounty);
     event Whitelist(address indexed provider);
     event Delist(address indexed provider);
     event Collect(address indexed provider, Currency indexed currency, uint256 amount);
