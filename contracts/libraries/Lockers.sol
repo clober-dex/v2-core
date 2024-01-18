@@ -35,10 +35,10 @@ library Lockers {
     /// @dev Pushes a locker onto the end of the queue, and updates the sentinel storage slot.
     function push(address locker, address lockCaller) internal {
         // read current value from the sentinel storage slot
-        (uint128 length,) = lockData();
+        uint128 l = length();
         unchecked {
             // not in assembly because OFFSET is in the library scope
-            uint256 indexToWrite = LOCKERS_SLOT + (length * LOCKER_STRUCT_SIZE);
+            uint256 indexToWrite = LOCKERS_SLOT + (l * LOCKER_STRUCT_SIZE);
             uint256 lockDataSlot = LOCK_DATA_SLOT;
             /// @solidity memory-safe-assembly
             assembly {
@@ -52,12 +52,19 @@ library Lockers {
         }
     }
 
-    function lockData() internal view returns (uint128 length, uint128 nonzeroDeltaCount) {
+    function lockData() internal view returns (uint128 l, uint128 nonzeroDeltaCount) {
         uint256 slot = LOCK_DATA_SLOT;
         assembly {
             let data := sload(slot)
-            length := sub(data, 1)
+            l := sub(data, 1)
             nonzeroDeltaCount := shr(128, data)
+        }
+    }
+
+    function length() internal view returns (uint128 l) {
+        uint256 slot = LOCK_DATA_SLOT;
+        assembly {
+            l := sub(sload(slot), 1)
         }
     }
 
@@ -99,16 +106,16 @@ library Lockers {
     }
 
     function getCurrentLocker() internal view returns (address) {
-        (uint128 length,) = lockData();
+        uint128 l = length();
         unchecked {
-            return length > 0 ? getLocker(length - 1) : address(0);
+            return l > 0 ? getLocker(l - 1) : address(0);
         }
     }
 
     function getCurrentLockCaller() internal view returns (address) {
-        (uint128 length,) = lockData();
+        uint128 l = length();
         unchecked {
-            return length > 0 ? getLockCaller(length - 1) : address(0);
+            return l > 0 ? getLockCaller(l - 1) : address(0);
         }
     }
 

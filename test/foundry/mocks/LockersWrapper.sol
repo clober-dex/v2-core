@@ -49,11 +49,9 @@ contract LockersWrapper {
         Lockers.decrementNonzeroDeltaCount();
     }
 
-    function load(uint256 slot) external view returns (uint256) {
-        uint256 raw;
+    function load(uint256 slot) external view returns (bytes32 raw) {
         assembly {
             raw := sload(slot)
         }
-        return raw;
     }
 }
