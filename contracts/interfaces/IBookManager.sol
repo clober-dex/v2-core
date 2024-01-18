@@ -20,7 +20,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     error CurrencyNotSettled();
     error NotWhitelisted(address provider);
 
-    event OpenBook(
+    event Open(
         BookId indexed id,
         Currency indexed base,
         Currency indexed quote,
@@ -77,7 +77,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function getLockData() external view returns (uint128, uint128);
 
-    function openBook(BookKey calldata key) external;
+    function open(BookKey calldata key) external;
 
     function lock(address locker, bytes calldata data) external returns (bytes memory);
 

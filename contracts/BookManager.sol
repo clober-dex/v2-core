@@ -65,7 +65,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         return _orders[id];
     }
 
-    function openBook(BookKey calldata key) external {
+    function open(BookKey calldata key) external {
         if (key.tickSpacing > _MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < _MIN_TICK_SPACING) revert TickSpacingTooSmall();
         if (key.unitDecimals == 0) revert InvalidUnitDecimals();
@@ -83,7 +83,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         BookId id = key.toId();
         _books[id].initialize(key);
-        emit OpenBook(id, key.base, key.quote, key.unitDecimals, key.tickSpacing, key.makerPolicy, key.takerPolicy);
+        emit Open(id, key.base, key.quote, key.unitDecimals, key.tickSpacing, key.makerPolicy, key.takerPolicy);
     }
 
     function lock(address locker, bytes calldata data) external returns (bytes memory result) {
