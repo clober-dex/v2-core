@@ -91,7 +91,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint32 bounty;
     }
 
-    function make(MakeParams[] calldata paramsList) external returns (OrderId[] memory ids);
+    function make(MakeParams calldata params) external returns (OrderId id);
 
     struct TakeParams {
         BookKey key;
@@ -100,7 +100,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint256 maxIn;
     }
 
-    function take(TakeParams[] calldata paramsList) external;
+    function take(TakeParams calldata params) external;
 
     struct SpendParams {
         BookKey key;
@@ -109,18 +109,18 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint256 minOut;
     }
 
-    function spend(SpendParams[] calldata paramsList) external;
+    function spend(SpendParams calldata params) external;
 
     struct ReduceParams {
         OrderId id;
         uint64 to;
     }
 
-    function reduce(ReduceParams[] calldata paramsList) external;
+    function reduce(ReduceParams calldata params) external;
 
-    function cancel(OrderId[] calldata ids) external;
+    function cancel(OrderId id) external;
 
-    function claim(OrderId[] calldata ids) external;
+    function claim(OrderId id) external;
 
     function collect(address provider, Currency currency) external;
 
