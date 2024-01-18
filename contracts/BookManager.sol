@@ -384,5 +384,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
     }
 
+    receive() external payable {}
     // TODO: how to get list of all orders?
 }
