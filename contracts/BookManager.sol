@@ -22,6 +22,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
     uint256 private constant _CLAIM_BOUNTY_UNIT = 1 gwei;
     int256 private constant _RATE_PRECISION = 10 ** 6;
+    int256 private constant _MAX_FEE_RATE = 10 ** 6 / 2;
+    int256 private constant _MIN_FEE_RATE = -10 ** 6 / 2;
     uint24 private constant _MAX_TICK_SPACING = type(uint16).max;
     uint24 private constant _MIN_TICK_SPACING = 1;
 
@@ -71,8 +73,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         if (key.unitDecimals == 0) revert InvalidUnitDecimals();
 
         if (
-            key.makerPolicy.rate > _RATE_PRECISION / 2 || key.takerPolicy.rate > _RATE_PRECISION / 2
-                || key.makerPolicy.rate < -_RATE_PRECISION / 2 || key.takerPolicy.rate < -_RATE_PRECISION / 2
+            key.makerPolicy.rate > _MAX_FEE_RATE || key.takerPolicy.rate > _MAX_FEE_RATE
+                || key.makerPolicy.rate < _MIN_FEE_RATE || key.takerPolicy.rate < _MIN_FEE_RATE
         ) {
             revert InvalidFeePolicy();
         }
@@ -247,18 +249,14 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function whitelist(address[] calldata providers) external onlyOwner {
-        unchecked {
-            for (uint256 i = 0; i < providers.length; ++i) {
-                _whitelist(providers[i]);
-            }
+        for (uint256 i = 0; i < providers.length; ++i) {
+            _whitelist(providers[i]);
         }
     }
 
     function delist(address[] calldata providers) external onlyOwner {
-        unchecked {
-            for (uint256 i = 0; i < providers.length; ++i) {
-                _delist(providers[i]);
-            }
+        for (uint256 i = 0; i < providers.length; ++i) {
+            _delist(providers[i]);
         }
     }
 
