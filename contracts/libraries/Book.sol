@@ -22,10 +22,10 @@ library Book {
     event Make(
         BookId indexed bookId, address indexed user, uint64 amount, uint32 claimBounty, uint256 orderIndex, Tick tick
     );
-    event Reduce(OrderId indexed orderId, uint64 reducedAmount);
+    event Cancel(OrderId indexed orderId, uint64 canceledAmount);
     event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount, uint32 claimBounty);
 
-    error ReduceFailed(uint64 maxReduceAmount);
+    error CancelFailed(uint64 maxCancelableAmount);
     error Overflow();
     error BookAlreadyInitialized();
     error BookNotInitialized();
@@ -165,16 +165,9 @@ library Book {
         }
     }
 
-    function reduce(State storage self, OrderId id, IBookManager.Order storage order, uint64 to)
+    function cancel(State storage self, OrderId id, IBookManager.Order storage order, uint64 to)
         external
-        returns (uint64)
-    {
-        return _reduce(self, id, order, to);
-    }
-
-    function _reduce(State storage self, OrderId id, IBookManager.Order storage order, uint64 to)
-        private
-        returns (uint64 reducedAmount)
+        returns (uint64 canceledAmount)
     {
         (, Tick tick, uint40 orderIndex) = id.decode();
         uint64 claimableRawAmount = _calculateClaimableRawAmount(self, to, tick, orderIndex);
@@ -182,16 +175,16 @@ library Book {
         uint64 pending = order.pending;
         unchecked {
             if (pending < afterPendingAmount) {
-                revert ReduceFailed(pending - claimableRawAmount);
+                revert CancelFailed(pending - claimableRawAmount);
             }
-            reducedAmount = pending - afterPendingAmount;
+            canceledAmount = pending - afterPendingAmount;
         }
         order.pending = afterPendingAmount;
 
         self.queues[tick].tree.update(
-            orderIndex & _MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & _MAX_ORDER_M) - reducedAmount
+            orderIndex & _MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & _MAX_ORDER_M) - canceledAmount
         );
-        emit Reduce(id, reducedAmount);
+        emit Cancel(id, canceledAmount);
     }
 
     function claim(State storage self, OrderId id, IBookManager.Order storage order)

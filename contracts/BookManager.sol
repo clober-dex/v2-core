@@ -165,21 +165,17 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         _accountDelta(params.key.base, baseAmount.toInt256());
     }
 
-    function reduce(ReduceParams calldata params) external onlyByLocker {
-        _reduce(params);
-    }
-
-    function cancel(OrderId id) external onlyByLocker {
-        _reduce(IBookManager.ReduceParams({id: id, to: 0}));
+    function cancel(CancelParams calldata params) external onlyByLocker {
+        _cancel(params);
     }
 
     function _checkAuthorized(address spender, uint256 tokenId) internal view {
         _checkAuthorized(_ownerOf(tokenId), spender, tokenId);
     }
 
-    function _reduce(ReduceParams memory params) internal {
+    function _cancel(CancelParams memory params) internal {
         (BookId bookId,,) = params.id.decode();
-        uint256 reducedAmount = _books[bookId].reduce(params.id, _orders[params.id], params.to);
+        uint256 reducedAmount = _books[bookId].cancel(params.id, _orders[params.id], params.to);
 
         _checkAuthorized(_msgSender(), OrderId.unwrap(params.id));
 

@@ -111,14 +111,12 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function spend(SpendParams calldata params) external;
 
-    struct ReduceParams {
+    struct CancelParams {
         OrderId id;
         uint64 to;
     }
 
-    function reduce(ReduceParams calldata params) external;
-
-    function cancel(OrderId id) external;
+    function cancel(CancelParams calldata params) external;
 
     function claim(OrderId id) external;
 
