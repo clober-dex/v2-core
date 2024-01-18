@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.23;
 
+import "../interfaces/IHooks.sol";
+
 /// @author Clober
 /// @author Modified from Uniswap V4 (https://github.com/Uniswap/v4-core/tree/98680ebc1a654120e995d53a5b10ec6fe153066f)
 /// @notice Contains data about pool lockers.
@@ -26,7 +28,12 @@ library Lockers {
     // The number of slots per item in the lockers array
     uint256 public constant LOCKER_STRUCT_SIZE = 2;
 
+    uint256 public constant HOOK_ADDRESS_SLOT = uint256(keccak256("HookAddress"));
+
     uint256 public constant NONZERO_DELTA_COUNT_OFFSET = 2 ** 128;
+
+    // TODO: check performance
+    //    uint256 public constant EMPTY_ADDRESS_STORAGE = 2 << 255;
 
     function initialize() internal {
         clear();
@@ -130,6 +137,42 @@ library Lockers {
         uint256 slot = LOCK_DATA_SLOT;
         assembly {
             sstore(slot, sub(sload(slot), NONZERO_DELTA_COUNT_OFFSET))
+        }
+    }
+
+    function getCurrentHook() internal view returns (IHooks currentHook) {
+        return IHooks(getHook(length()));
+    }
+
+    function getHook(uint256 i) internal view returns (address hook) {
+        unchecked {
+            uint256 position = HOOK_ADDRESS_SLOT + i;
+            assembly {
+                hook := sload(position)
+            }
+        }
+    }
+
+    function setCurrentHook(IHooks currentHook) internal returns (bool set) {
+        // Set the hook address for the current locker if the address is 0.
+        // If the address is nonzero, a hook has already been set for this lock, and is not allowed to be updated or cleared at the end of the call.
+        if (address(getCurrentHook()) == address(0)) {
+            unchecked {
+                uint256 indexToWrite = HOOK_ADDRESS_SLOT + length();
+                assembly {
+                    sstore(indexToWrite, currentHook)
+                }
+            }
+            return true;
+        }
+    }
+
+    function clearCurrentHook() internal {
+        unchecked {
+            uint256 indexToWrite = HOOK_ADDRESS_SLOT + length();
+            assembly {
+                sstore(indexToWrite, 0)
+            }
         }
     }
 }

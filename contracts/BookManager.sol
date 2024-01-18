@@ -52,9 +52,16 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     modifier onlyByLocker() {
-        address locker = Lockers.getCurrentLocker();
-        if (msg.sender != locker) revert LockedBy(locker);
+        _checkLocker(msg.sender);
         _;
+    }
+
+    function _checkLocker(address caller) internal view {
+        address locker = Lockers.getCurrentLocker();
+        IHooks hook = Lockers.getCurrentHook();
+        if (caller == locker) return;
+        if (caller == address(hook) && hook.hasPermission(Hooks.ACCESS_LOCK_FLAG)) return;
+        revert LockedBy(locker, address(hook));
     }
 
     function nonces(uint256 id) external view returns (uint256) {
@@ -84,6 +91,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         if (key.makerPolicy.rate < 0 || key.takerPolicy.rate < 0) {
             if (key.makerPolicy.useOutput == key.takerPolicy.useOutput) revert InvalidFeePolicy();
         }
+        if (!key.hooks.isValidHookAddress()) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         key.hooks.beforeOpen(key, hookData);
 

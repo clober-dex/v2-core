@@ -17,7 +17,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     error InvalidUnitDecimals();
     error InvalidFeePolicy();
     error Slippage(BookId bookId);
-    error LockedBy(address locker);
+    error LockedBy(address locker, address hook);
     error CurrencyNotSettled();
     error NotWhitelisted(address provider);
 
