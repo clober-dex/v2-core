@@ -9,6 +9,7 @@ import "../libraries/Currency.sol";
 import "../libraries/OrderId.sol";
 import "../libraries/Tick.sol";
 import "./IERC721Permit.sol";
+import "./IHooks.sol";
 
 interface IBookManager is IERC721Metadata, IERC721Permit {
     error TickSpacingTooLarge();
@@ -27,7 +28,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint8 unitDecimals,
         uint24 tickSpacing,
         FeePolicy makerPolicy,
-        FeePolicy takerPolicy
+        FeePolicy takerPolicy,
+        IHooks hooks
     );
     event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 amount);
     event Make(
@@ -56,6 +58,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint24 tickSpacing;
         FeePolicy makerPolicy;
         FeePolicy takerPolicy;
+        IHooks hooks;
     }
 
     struct FeePolicy {
@@ -83,7 +86,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function getLockData() external view returns (uint128, uint128);
 
-    function open(BookKey calldata key) external;
+    function open(BookKey calldata key, bytes calldata hookData) external;
 
     function lock(address locker, bytes calldata data) external returns (bytes memory);
 
@@ -97,7 +100,13 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint32 bounty;
     }
 
-    function make(MakeParams calldata params) external returns (OrderId id);
+    /**
+     * @notice Make a limit order
+     * @param params The order parameters
+     * @param hookData The hook data
+     * @return id The order id. Returns 0 if the order is not settled
+     */
+    function make(MakeParams calldata params, bytes calldata hookData) external returns (OrderId id);
 
     struct TakeParams {
         BookKey key;
@@ -105,16 +114,16 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     }
 
     // todo: consider return value
-    function take(TakeParams calldata params) external;
+    function take(TakeParams calldata params, bytes calldata hookData) external;
 
     struct CancelParams {
         OrderId id;
         uint64 to;
     }
 
-    function cancel(CancelParams calldata params) external;
+    function cancel(CancelParams calldata params, bytes calldata hookData) external;
 
-    function claim(OrderId id) external;
+    function claim(OrderId id, bytes calldata hookData) external;
 
     function collect(address provider, Currency currency) external;
 
