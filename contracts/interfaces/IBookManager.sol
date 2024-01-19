@@ -12,7 +12,7 @@ import "./IERC721Permit.sol";
 import "./IHooks.sol";
 
 interface IBookManager is IERC721Metadata, IERC721Permit {
-    error InvalidUnitDecimals();
+    error InvalidUnit();
     error InvalidFeePolicy();
     error Slippage(BookId bookId);
     error LockedBy(address locker, address hook);
@@ -23,7 +23,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         BookId indexed id,
         Currency indexed base,
         Currency indexed quote,
-        uint8 unitDecimals,
+        uint96 unit,
         FeePolicy makerPolicy,
         FeePolicy takerPolicy,
         IHooks hooks
@@ -50,8 +50,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     struct BookKey {
         Currency base;
+        uint96 unit;
         Currency quote;
-        uint8 unitDecimals;
         FeePolicy makerPolicy;
         FeePolicy takerPolicy;
         IHooks hooks;

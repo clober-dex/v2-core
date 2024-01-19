@@ -48,7 +48,7 @@ library Book {
     }
 
     function isInitialized(State storage self) internal view returns (bool) {
-        return self.key.unitDecimals != 0;
+        return self.key.unit != 0;
     }
 
     function checkInitialized(State storage self) internal view {
