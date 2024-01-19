@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 
 import "forge-std/Test.sol";
 
-import "../mocks/LockersWrapper.sol";
+import "../../mocks/LockersWrapper.sol";
 
 contract LockersTest is Test {
     LockersWrapper public lockers;
