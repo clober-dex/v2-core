@@ -188,7 +188,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         Book.State storage book = _books[bookId];
         BookKey memory key = book.key;
         book.checkInitialized();
-        _checkAuthorized(_ownerOf(OrderId.unwrap(params.id)), _msgSender(), OrderId.unwrap(params.id));
+        _checkAuthorized(_orders[params.id].owner, _msgSender(), OrderId.unwrap(params.id));
 
         uint64 pending = _orders[params.id].pending;
         uint64 claimableRaw = book.calculateClaimableRawAmount(pending, tick, orderIndex);
@@ -197,7 +197,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         if (!key.hooks.beforeCancel(key, params, hookData)) return;
 
         uint64 canceledRaw = book.cancel(tick, orderIndex, pending, claimableRaw, params.to);
-        _orders[params.id].pending = params.to + claimableRaw;
+        unchecked {
+            _orders[params.id].pending = params.to + claimableRaw;
+        }
 
         uint256 canceledAmount = uint256(canceledRaw) * key.unit;
         FeePolicy memory makerPolicy = key.makerPolicy;
@@ -214,8 +216,14 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function claim(OrderId id, bytes calldata hookData) external onlyByLocker {
-        (BookId bookId, Tick tick, uint40 orderIndex) = id.decode();
-        Book.State storage book = _books[bookId];
+        Tick tick;
+        uint40 orderIndex;
+        Book.State storage book;
+        {
+            BookId bookId;
+            (bookId, tick, orderIndex) = id.decode();
+            book = _books[bookId];
+        }
         book.checkInitialized();
         IBookManager.BookKey memory key = book.key;
         Order storage order = _orders[id];
@@ -225,7 +233,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (!key.hooks.beforeClaim(key, id, hookData)) return;
 
-        order.pending -= claimableRaw;
+        unchecked {
+            order.pending -= claimableRaw;
+        }
 
         int256 quoteFee;
         int256 baseFee;
