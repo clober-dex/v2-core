@@ -37,10 +37,10 @@ library Book {
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
     }
 
-    uint256 private constant _PRICE_PRECISION = 10 ** 18;
-    uint256 private constant _CLAIM_BOUNTY_UNIT = 1 gwei;
-    uint40 private constant _MAX_ORDER = 2 ** 15; // 32768
-    uint256 private constant _MAX_ORDER_M = 2 ** 15 - 1; // % 32768
+    uint256 internal constant PRICE_PRECISION = 10 ** 18;
+    uint256 internal constant CLAIM_BOUNTY_UNIT = 1 gwei;
+    uint40 internal constant MAX_ORDER = 2 ** 15; // 32768
+    uint256 internal constant MAX_ORDER_M = 2 ** 15 - 1; // % 32768
 
     function initialize(State storage self, IBookManager.BookKey calldata key) internal {
         if (self.isInitialized()) revert BookAlreadyInitialized();
@@ -73,11 +73,11 @@ library Book {
         Queue storage queue = self.queues[tick];
         orderIndex = queue.index;
 
-        if (orderIndex >= _MAX_ORDER) {
+        if (orderIndex >= MAX_ORDER) {
             {
                 uint40 staleOrderIndex;
                 unchecked {
-                    staleOrderIndex = orderIndex - _MAX_ORDER;
+                    staleOrderIndex = orderIndex - MAX_ORDER;
                 }
                 uint64 stalePendingAmount = orders[OrderIdLibrary.encode(bookId, tick, staleOrderIndex)].pending;
                 if (stalePendingAmount > 0) {
@@ -91,14 +91,14 @@ library Book {
 
             // The stale order is settled completely, so remove it from the totalClaimableOf.
             // We can determine the stale order is claimable.
-            uint64 staleOrderedAmount = queue.tree.get(orderIndex & _MAX_ORDER_M);
+            uint64 staleOrderedAmount = queue.tree.get(orderIndex & MAX_ORDER_M);
             if (staleOrderedAmount > 0) {
                 self.totalClaimableOf.sub(tick, staleOrderedAmount);
             }
         }
 
         queue.index = orderIndex + 1;
-        queue.tree.update(orderIndex & _MAX_ORDER_M, amount);
+        queue.tree.update(orderIndex & MAX_ORDER_M, amount);
     }
 
     function take(State storage self, uint64 takeAmount) internal returns (Tick tick, uint256 baseAmount) {
@@ -128,7 +128,7 @@ library Book {
             order.pending = afterPending;
 
             self.queues[tick].tree.update(
-                orderIndex & _MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & _MAX_ORDER_M) - canceledAmount
+                orderIndex & MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & MAX_ORDER_M) - canceledAmount
             );
         }
         // todo: check clean
@@ -150,7 +150,7 @@ library Book {
         returns (uint64)
     {
         Queue storage queue = self.queues[tick];
-        if (index + _MAX_ORDER < queue.index) {
+        if (index + MAX_ORDER < queue.index) {
             // replace order
             return orderAmount;
         }
@@ -171,8 +171,8 @@ library Book {
     }
 
     function _getClaimRangeRight(Queue storage queue, uint256 orderIndex) private view returns (uint64 rangeRight) {
-        uint256 l = queue.index & _MAX_ORDER_M;
-        uint256 r = (orderIndex + 1) & _MAX_ORDER_M;
+        uint256 l = queue.index & MAX_ORDER_M;
+        uint256 r = (orderIndex + 1) & MAX_ORDER_M;
         rangeRight = (l < r) ? queue.tree.query(l, r) : queue.tree.total() - queue.tree.query(r, l);
     }
 }
