@@ -56,10 +56,6 @@ library Book {
     }
 
     function depth(State storage self, Tick tick) internal view returns (uint64) {
-        return _depth(self, tick);
-    }
-
-    function _depth(State storage self, Tick tick) private view returns (uint64) {
         return self.queues[tick].tree.total() - self.totalClaimableOf.get(tick);
     }
 
@@ -107,7 +103,7 @@ library Book {
 
     function take(State storage self, uint64 takeAmount) internal returns (Tick tick, uint256 baseAmount) {
         tick = self.heap.root();
-        uint64 currentDepth = _depth(self, tick);
+        uint64 currentDepth = self.depth(tick);
         if (currentDepth < takeAmount) revert TooLargeTakeAmount();
 
         baseAmount = tick.rawToBase(takeAmount, true);
@@ -140,7 +136,7 @@ library Book {
 
     function _cleanHeap(State storage self) private {
         while (!self.heap.isEmpty()) {
-            if (_depth(self, self.heap.root()) == 0) {
+            if (self.depth(self.heap.root()) == 0) {
                 self.heap.pop();
             } else {
                 break;
