@@ -43,8 +43,16 @@ library Book {
     uint256 private constant _MAX_ORDER_M = 2 ** 15 - 1; // % 32768
 
     function initialize(State storage self, IBookManager.BookKey calldata key) internal {
-        if (self.key.unitDecimals != 0) revert BookAlreadyInitialized();
+        if (self.isInitialized()) revert BookAlreadyInitialized();
         self.key = key;
+    }
+
+    function isInitialized(State storage self) internal view returns (bool) {
+        return self.key.unitDecimals != 0;
+    }
+
+    function checkInitialized(State storage self) internal view {
+        if (!self.isInitialized()) revert BookNotInitialized();
     }
 
     function depth(State storage self, Tick tick) internal view returns (uint64) {

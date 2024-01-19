@@ -128,13 +128,13 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         if (params.provider != address(0) && !isWhitelisted[params.provider]) {
             revert NotWhitelisted(params.provider);
         }
-        // TODO: check book initialized
         params.tick.validate();
+        BookId bookId = params.key.toId();
+        Book.State storage book = _books[bookId];
+        book.checkInitialized();
 
         if (!params.key.hooks.beforeMake(params.key, params, hookData)) return OrderId.wrap(0);
 
-        BookId bookId = params.key.toId();
-        Book.State storage book = _books[bookId];
         uint40 orderIndex = book.make(_orders, bookId, params.tick, params.amount);
         id = OrderIdLibrary.encode(bookId, params.tick, orderIndex);
         uint256 quoteAmount = uint256(params.amount) * params.key.unitDecimals;
@@ -160,10 +160,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function take(TakeParams calldata params, bytes calldata hookData) external onlyByLocker {
-        if (!params.key.hooks.beforeTake(params.key, params, hookData)) return;
-
         BookId bookId = params.key.toId();
         Book.State storage book = _books[bookId];
+        book.checkInitialized();
+
+        if (!params.key.hooks.beforeTake(params.key, params, hookData)) return;
+
         (Tick tick, uint256 baseAmount) = book.take(params.amount);
         uint256 quoteAmount = uint256(params.amount) * params.key.unitDecimals;
         if (params.key.takerPolicy.useOutput) {
@@ -183,10 +185,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     function cancel(CancelParams calldata params, bytes calldata hookData) external onlyByLocker {
         (BookId bookId, Tick tick, uint40 orderIndex) = params.id.decode();
 
-        BookKey memory key = _books[bookId].key;
+        Book.State storage book = _books[bookId];
+        BookKey memory key = book.key;
+        book.checkInitialized();
         if (!key.hooks.beforeCancel(key, params, hookData)) return;
 
-        uint64 canceledRaw = _books[bookId].cancel(tick, orderIndex, _orders[params.id], params.to);
+        uint64 canceledRaw = book.cancel(tick, orderIndex, _orders[params.id], params.to);
 
         _checkAuthorized(_ownerOf(OrderId.unwrap(params.id)), _msgSender(), OrderId.unwrap(params.id));
 
@@ -210,12 +214,14 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
     function _claim(OrderId id, bytes calldata hookData) internal {
         (BookId bookId, Tick tick, uint40 orderIndex) = id.decode();
-        IBookManager.BookKey memory key = _books[bookId].key;
+        Book.State storage book = _books[bookId];
+        book.checkInitialized();
+        IBookManager.BookKey memory key = book.key;
         Order storage order = _orders[id];
 
         if (!key.hooks.beforeClaim(key, id, hookData)) return;
 
-        uint64 claimedRaw = _books[bookId].calculateClaimableRawAmount(order.pending, tick, orderIndex);
+        uint64 claimedRaw = book.calculateClaimableRawAmount(order.pending, tick, orderIndex);
         if (claimedRaw > 0) {
             uint256 claimedInBase = tick.rawToBase(claimedRaw, false);
             order.pending -= claimedRaw;
