@@ -12,8 +12,6 @@ import "./IERC721Permit.sol";
 import "./IHooks.sol";
 
 interface IBookManager is IERC721Metadata, IERC721Permit {
-    error TickSpacingTooLarge();
-    error TickSpacingTooSmall();
     error InvalidUnitDecimals();
     error InvalidFeePolicy();
     error Slippage(BookId bookId);
@@ -26,7 +24,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         Currency indexed base,
         Currency indexed quote,
         uint8 unitDecimals,
-        uint24 tickSpacing,
         FeePolicy makerPolicy,
         FeePolicy takerPolicy,
         IHooks hooks
@@ -55,7 +52,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         Currency base;
         Currency quote;
         uint8 unitDecimals;
-        uint24 tickSpacing;
         FeePolicy makerPolicy;
         FeePolicy takerPolicy;
         IHooks hooks;
