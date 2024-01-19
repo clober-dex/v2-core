@@ -112,20 +112,21 @@ library Book {
         internal
         returns (uint64 canceledAmount)
     {
-        uint64 claimableRawAmount = calculateClaimableRawAmount(self, to, tick, orderIndex);
-        uint64 afterPendingAmount = to + claimableRawAmount;
-        uint64 pending = order.pending;
+        uint64 currentPending = order.pending;
+        uint64 currentClaimable = calculateClaimableRawAmount(self, currentPending, tick, orderIndex);
+        uint64 afterPending = to + currentClaimable;
         unchecked {
-            if (pending < afterPendingAmount) {
-                revert CancelFailed(pending - claimableRawAmount);
+            if (currentPending < afterPending) {
+                revert CancelFailed(currentPending - currentClaimable);
             }
-            canceledAmount = pending - afterPendingAmount;
-        }
-        order.pending = afterPendingAmount;
+            canceledAmount = currentPending - afterPending;
 
-        self.queues[tick].tree.update(
-            orderIndex & _MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & _MAX_ORDER_M) - canceledAmount
-        );
+            order.pending = afterPending;
+
+            self.queues[tick].tree.update(
+                orderIndex & _MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & _MAX_ORDER_M) - canceledAmount
+            );
+        }
         // todo: check clean
     }
 
