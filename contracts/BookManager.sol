@@ -83,7 +83,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         ) {
             revert InvalidFeePolicy();
         }
-        if (key.makerPolicy.rate + key.takerPolicy.rate < 0) revert InvalidFeePolicy();
+        unchecked {
+            if (key.makerPolicy.rate + key.takerPolicy.rate < 0) revert InvalidFeePolicy();
+        }
         if (key.makerPolicy.rate < 0 || key.takerPolicy.rate < 0) {
             if (key.makerPolicy.useOutput == key.takerPolicy.useOutput) revert InvalidFeePolicy();
         }
@@ -304,7 +306,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     function _getAndIncrementNonce(uint256 id) internal override returns (uint256 nonce) {
         OrderId orderId = OrderId.wrap(id);
         nonce = _orders[orderId].nonce;
-        _orders[orderId].nonce++;
+        _orders[orderId].nonce = uint32(nonce) + 1;
     }
 
     function _baseURI() internal view override returns (string memory) {
