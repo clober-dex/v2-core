@@ -21,10 +21,10 @@ contract TickUnitTest is Test {
             price = tickWrapper.toPrice(index);
 
             tick = tickWrapper.fromPrice(price - 1);
-            assertEq(tick, index, "LOWER_PRICE");
+            assertEq(tick, index - 1, "LOWER_PRICE");
 
             tick = tickWrapper.fromPrice(price);
-            assertEq(tick, index - 1, "EXACT_PRICE");
+            assertEq(tick, index, "EXACT_PRICE");
 
             tick = tickWrapper.fromPrice(price + 1);
             assertEq(tick, index, "HIGHER_PRICE");
