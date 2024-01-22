@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 
 import "./Math.sol";
 
-    type Tick is int24;
+type Tick is int24;
 
 library TickLibrary {
     using TickLibrary for Tick;
@@ -13,8 +13,8 @@ library TickLibrary {
     error InvalidPrice();
     error TickOverflow();
 
-    int24 public constant MIN_TICK = -795236;
-    int24 public constant MAX_TICK = -MIN_TICK;
+    int24 public constant MAX_TICK = 2**19 - 1;
+    int24 public constant MIN_TICK = -MAX_TICK;//-395236;
 
     uint256 public constant MIN_PRICE = 0; // 10**18 / (1.0001)**(2**18-1) = 4128985.53
     uint256 public constant MAX_PRICE = type(uint256).max; // 10**18 * (1.0001)**(2**18-1) = 242190240580283037346837115382.001
@@ -116,12 +116,19 @@ library TickLibrary {
         return result;
     }
 
-    function fromPrice(uint256 price) internal pure validatePrice(price) returns (Tick) {
+    function fromPrice(uint256 price) internal view validatePrice(price) returns (Tick) {
         int256 log = log2(price);
-        Tick tickLow = Tick.wrap(int24((log - 49079889512941450636682367697628371) / 49089913871092318234424474366155889));
-        Tick tickHigh = Tick.wrap(int24((log + 345989347778) / 49089913871092318234424474366155889));
+        int256 tick = log / 49089913871092318234424474366155889;
+        int256 tickLow = (log - int256(uint256((price >> 128 == 0) ? 49089913871092318234424474366155887 : 84124744249948177485425))) / 49089913871092318234424474366155889;
 
-        return Tick.unwrap(tickLow) == Tick.unwrap(tickHigh) ? tickLow : toPrice(tickHigh) <= price ? tickHigh : tickLow;
+        if (tick == tickLow) {
+            return Tick.wrap(int24(tick));
+        }
+
+        if (toPrice(Tick.wrap(int24(tick))) <= price) {
+            return Tick.wrap(int24(tick));
+        }
+        return Tick.wrap(int24(tickLow));
     }
 
     function toPrice(Tick tick) internal pure returns (uint256 price) {
