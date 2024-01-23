@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 import "../../mocks/TickWrapper.sol";
 
 contract TickUnitTest is Test {
-
     TickWrapper public tickWrapper;
 
     function setUp() public {
@@ -17,7 +16,6 @@ contract TickUnitTest is Test {
         int24 tick;
         uint256 price;
         for (int24 index = TickLibrary.MIN_TICK + 1; index < TickLibrary.MAX_TICK; index++) {
-
             price = tickWrapper.toPrice(index);
 
             tick = tickWrapper.fromPrice(price - 1);

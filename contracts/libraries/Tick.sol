@@ -13,8 +13,8 @@ library TickLibrary {
     error InvalidPrice();
     error TickOverflow();
 
-    int24 public constant MAX_TICK = 2**19 - 1;
-    int24 public constant MIN_TICK = -MAX_TICK;//-395236;
+    int24 public constant MAX_TICK = 2 ** 19 - 1;
+    int24 public constant MIN_TICK = -MAX_TICK; //-395236;
 
     uint256 public constant MIN_PRICE = 0; // 10**18 / (1.0001)**(2**18-1) = 4128985.53
     uint256 public constant MAX_PRICE = type(uint256).max; // 10**18 * (1.0001)**(2**18-1) = 242190240580283037346837115382.001
@@ -91,8 +91,8 @@ library TickLibrary {
         return uint8(msb);
     }
 
-    function log2 (uint256 x) pure internal returns (int256) {
-        require (x > 0);
+    function log2(uint256 x) internal pure returns (int256) {
+        require(x > 0);
 
         uint8 msb = mostSignificantBit(x);
 
@@ -116,10 +116,12 @@ library TickLibrary {
         return result;
     }
 
-    function fromPrice(uint256 price) internal view validatePrice(price) returns (Tick) {
+    function fromPrice(uint256 price) internal pure validatePrice(price) returns (Tick) {
         int256 log = log2(price);
         int256 tick = log / 49089913871092318234424474366155889;
-        int256 tickLow = (log - int256(uint256((price >> 128 == 0) ? 49089913871092318234424474366155887 : 84124744249948177485425))) / 49089913871092318234424474366155889;
+        int256 tickLow = (
+            log - int256(uint256((price >> 128 == 0) ? 49089913871092318234424474366155887 : 84124744249948177485425))
+        ) / 49089913871092318234424474366155889;
 
         if (tick == tickLow) {
             return Tick.wrap(int24(tick));
@@ -136,7 +138,8 @@ library TickLibrary {
         uint256 absTick = uint24(tickValue < 0 ? -tickValue : tickValue);
 
         unchecked {
-            if (absTick & 0x1 != 0) price = _R0; else price = 1 << 128;
+            if (absTick & 0x1 != 0) price = _R0;
+            else price = 1 << 128;
             if (absTick & 0x2 != 0) price = (price * _R1) >> 128;
             if (absTick & 0x4 != 0) price = (price * _R2) >> 128;
             if (absTick & 0x8 != 0) price = (price * _R3) >> 128;
