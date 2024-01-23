@@ -24,7 +24,7 @@ contract LockersTest is Test {
         assertEq(length, 0, "LENGTH");
         assertEq(nonzeroDeltaCount, 0, "NONZERO_DELTA_COUNT");
 
-        assertEq(lockers.load(Lockers.LOCK_DATA_SLOT), bytes32(1), "LOCK_DATA");
+        assertEq(lockers.load(Lockers.LOCK_DATA_SLOT), bytes32(uint256(1)), "LOCK_DATA");
     }
 
     function testPush() public afterInit {
