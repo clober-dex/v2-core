@@ -11,6 +11,7 @@ library TotalClaimableMap {
     using DirtyUint64 for uint64;
     using PackedUint256 for uint256;
 
+    // @dev n should be less than type(uint64).max due to the dirty storage logic.
     function add(mapping(uint24 => uint256) storage self, Tick tick, uint64 n) internal {
         (uint24 groupIndex, uint8 elementIndex) = _splitTick(tick);
         uint256 group = self[groupIndex];
