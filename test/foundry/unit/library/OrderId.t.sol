@@ -31,4 +31,15 @@ contract OrderIdUnitTest is Test {
         assertEq(Tick.unwrap(tick), int24(-2));
         assertEq(index, uint40(3));
     }
+
+    function testEncodeAndDecode(BookId bookId, Tick tick, uint40 index) public {
+        OrderId id = OrderIdLibrary.encode(bookId, tick, index);
+        BookId _bookId;
+        Tick _tick;
+        uint40 _index;
+        (_bookId, _tick, _index) = id.decode();
+        assertEq(BookId.unwrap(_bookId), BookId.unwrap(bookId));
+        assertEq(Tick.unwrap(_tick), Tick.unwrap(tick));
+        assertEq(_index, index);
+    }
 }
