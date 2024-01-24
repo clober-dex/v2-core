@@ -30,9 +30,13 @@ interface IHooks {
         external
         returns (bytes4);
 
-    function afterTake(address sender, IBookManager.TakeParams calldata params, bytes calldata hookData)
-        external
-        returns (bytes4);
+    function afterTake(
+        address sender,
+        IBookManager.TakeParams calldata params,
+        uint256 quoteAmount,
+        uint256 baseAmount,
+        bytes calldata hookData
+    ) external returns (bytes4);
 
     function beforeCancel(address sender, IBookManager.CancelParams calldata params, bytes calldata hookData)
         external

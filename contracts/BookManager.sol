@@ -160,15 +160,20 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         emit Make(bookId, msg.sender, params.amount, orderIndex, params.tick);
     }
 
-    function take(TakeParams calldata params, bytes calldata hookData) external onlyByLocker {
+    function take(TakeParams calldata params, bytes calldata hookData)
+        external
+        onlyByLocker
+        returns (uint256 quoteAmount, uint256 baseAmount)
+    {
         BookId bookId = params.key.toId();
         Book.State storage book = _books[bookId];
         book.checkInitialized();
 
-        if (!params.key.hooks.beforeTake(params, hookData)) return;
+        if (!params.key.hooks.beforeTake(params, hookData)) return (0, 0);
 
-        (Tick tick, uint256 baseAmount) = book.take(params.amount);
-        uint256 quoteAmount = uint256(params.amount) * params.key.unit;
+        Tick tick;
+        (tick, baseAmount) = book.take(params.amount);
+        quoteAmount = uint256(params.amount) * params.key.unit;
         if (params.key.takerPolicy.useOutput) {
             (quoteAmount,) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
         } else {
@@ -178,7 +183,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         _accountDelta(params.key.quote, -quoteAmount.toInt256());
         _accountDelta(params.key.base, baseAmount.toInt256());
 
-        params.key.hooks.afterTake(params, hookData);
+        params.key.hooks.afterTake(params, quoteAmount, baseAmount, hookData);
 
         emit Take(bookId, msg.sender, tick, params.amount);
     }

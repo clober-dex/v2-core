@@ -107,8 +107,9 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint64 amount;
     }
 
-    // todo: consider return value
-    function take(TakeParams calldata params, bytes calldata hookData) external;
+    function take(TakeParams calldata params, bytes calldata hookData)
+        external
+        returns (uint256 quoteAmount, uint256 baseAmount);
 
     struct CancelParams {
         OrderId id;
