@@ -7,6 +7,7 @@ import "./Math.sol";
 type Tick is int24;
 
 library TickLibrary {
+    using Math for uint256;
     using TickLibrary for Tick;
 
     error InvalidTick();
@@ -14,10 +15,10 @@ library TickLibrary {
     error TickOverflow();
 
     int24 public constant MAX_TICK = 2 ** 19 - 1;
-    int24 public constant MIN_TICK = -MAX_TICK; //-395236;
+    int24 public constant MIN_TICK = -MAX_TICK;
 
-    uint256 public constant MIN_PRICE = 0; // 10**18 / (1.0001)**(2**18-1) = 4128985.53
-    uint256 public constant MAX_PRICE = type(uint256).max; // 10**18 * (1.0001)**(2**18-1) = 242190240580283037346837115382.001
+    uint256 public constant MIN_PRICE = 5800731190957938;
+    uint256 public constant MAX_PRICE = 19961636804996334433808922353085948875386438476189866322430503;
 
     uint256 private constant _R0 = 0xfff97272373d413259a46990580e2139; // 2^128 / r^(2^0)
     uint256 private constant _R1 = 0xfff2e50f5f656932ef12357cf3c7fdcb;
@@ -38,7 +39,6 @@ library TickLibrary {
     uint256 private constant _R16 = 0x5d6af8dedb81196699c329225ee604;
     uint256 private constant _R17 = 0x2216e584f5fa1ea926041bedfe97;
     uint256 private constant _R18 = 0x48a170391f7dc42444e8fa2;
-    uint256 private constant _R19 = 0x149b34ee7ac262; // 2^128 / r^(2^19)
 
     function validate(Tick tick) internal pure {
         if (Tick.unwrap(tick) > MAX_TICK || Tick.unwrap(tick) < MIN_TICK) {
@@ -60,64 +60,8 @@ library TickLibrary {
         _;
     }
 
-    function mostSignificantBit(uint256 x) internal pure returns (uint8) {
-        require(x > 0);
-        uint256 msb;
-        assembly {
-            let f := shl(7, gt(x, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
-            msb := or(msb, f)
-            x := shr(f, x)
-            f := shl(6, gt(x, 0xFFFFFFFFFFFFFFFF))
-            msb := or(msb, f)
-            x := shr(f, x)
-            f := shl(5, gt(x, 0xFFFFFFFF))
-            msb := or(msb, f)
-            x := shr(f, x)
-            f := shl(4, gt(x, 0xFFFF))
-            msb := or(msb, f)
-            x := shr(f, x)
-            f := shl(3, gt(x, 0xFF))
-            msb := or(msb, f)
-            x := shr(f, x)
-            f := shl(2, gt(x, 0xF))
-            msb := or(msb, f)
-            x := shr(f, x)
-            f := shl(1, gt(x, 0x3))
-            msb := or(msb, f)
-            x := shr(f, x)
-            f := gt(x, 0x1)
-            msb := or(msb, f)
-        }
-        return uint8(msb);
-    }
-
-    function log2(uint256 x) internal pure returns (int256) {
-        require(x > 0);
-
-        uint8 msb = mostSignificantBit(x);
-
-        if (msb > 128) x >>= msb - 128;
-        else if (msb < 128) x <<= 128 - msb;
-
-        x &= 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-
-        int256 result = (int256(uint256(msb)) - 128) << 128; // Integer part of log_2
-
-        int256 bit = 0x80000000000000000000000000000000;
-        for (uint8 i = 0; i < 128 && x > 0; i++) {
-            x = (x << 1) + ((x * x + 0x80000000000000000000000000000000) >> 128);
-            if (x > 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) {
-                result |= bit;
-                x = (x >> 1) - 0x80000000000000000000000000000000;
-            }
-            bit >>= 1;
-        }
-
-        return result;
-    }
-
     function fromPrice(uint256 price) internal pure validatePrice(price) returns (Tick) {
-        int256 log = log2(price);
+        int256 log = price.log2();
         int256 tick = log / 49089913871092318234424474366155889;
         int256 tickLow = (
             log - int256(uint256((price >> 128 == 0) ? 49089913871092318234424474366155887 : 84124744249948177485425))
@@ -158,7 +102,6 @@ library TickLibrary {
             if (absTick & 0x10000 != 0) price = (price * _R16) >> 128;
             if (absTick & 0x20000 != 0) price = (price * _R17) >> 128;
             if (absTick & 0x40000 != 0) price = (price * _R18) >> 128;
-            if (absTick & 0x80000 != 0) price = (price * _R19) >> 128;
         }
         if (tickValue > 0) price = type(uint256).max / price;
     }
