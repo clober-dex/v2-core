@@ -186,13 +186,21 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         emit Take(bookId, msg.sender, tick, params.amount);
     }
 
-    function cancel(CancelParams calldata params, bytes calldata hookData) external onlyByLocker {
-        (BookId bookId, Tick tick, uint40 orderIndex) = params.id.decode();
+    function cancel(CancelParams calldata params, bytes calldata hookData) external {
+        address owner = _orders[params.id].owner;
+        _checkAuthorized(owner, msg.sender, OrderId.unwrap(params.id));
 
-        Book.State storage book = _books[bookId];
+        Book.State storage book;
+        Tick tick;
+        uint40 orderIndex;
+        {
+            BookId bookId;
+            (bookId, tick, orderIndex) = params.id.decode();
+            book = _books[bookId];
+        }
+
         BookKey memory key = book.key;
         book.checkInitialized();
-        _checkAuthorized(_orders[params.id].owner, _msgSender(), OrderId.unwrap(params.id));
 
         uint64 pending = _orders[params.id].pending;
         uint64 claimableRaw = book.calculateClaimableRawAmount(pending, tick, orderIndex);
@@ -210,7 +218,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         if (!makerPolicy.useOutput) {
             canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate);
         }
-        _accountDelta(key.quote, -canceledAmount.toInt256());
+        key.quote.transfer(owner, canceledAmount);
 
         if (claimableRaw == 0) _burn(params.id);
 
@@ -219,7 +227,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         emit Cancel(params.id, canceledRaw);
     }
 
-    function claim(OrderId id, bytes calldata hookData) external onlyByLocker {
+    function claim(OrderId id, bytes calldata hookData) external {
         Tick tick;
         uint40 orderIndex;
         Book.State storage book;
@@ -241,23 +249,23 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             order.pending -= claimableRaw;
         }
 
+        uint256 claimableAmount;
         int256 quoteFee;
         int256 baseFee;
         {
-            uint256 claimedInBase = tick.rawToBase(claimableRaw, false);
+            claimableAmount = tick.rawToBase(claimableRaw, false);
             uint256 claimedInQuote = uint256(claimableRaw) * key.unit;
             FeePolicy memory makerPolicy = key.makerPolicy;
             FeePolicy memory takerPolicy = key.takerPolicy;
             if (takerPolicy.useOutput) {
                 (, quoteFee) = _calculateFee(claimedInQuote, takerPolicy.rate);
             } else {
-                (, baseFee) = _calculateFee(claimedInBase, takerPolicy.rate);
+                (, baseFee) = _calculateFee(claimableAmount, takerPolicy.rate);
             }
             if (makerPolicy.useOutput) {
                 int256 makerFee;
-                (claimedInBase, makerFee) = _calculateFee(claimedInBase, makerPolicy.rate);
+                (claimableAmount, makerFee) = _calculateFee(claimableAmount, makerPolicy.rate);
                 baseFee += makerFee;
-                _accountDelta(key.base, -claimedInBase.toInt256());
             } else {
                 int256 makerFee;
                 (, makerFee) = _calculateFee(claimedInQuote, makerPolicy.rate);
@@ -273,6 +281,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         tokenOwed[provider][key.base] += baseFee.toUint256();
 
         if (order.pending == 0) _burn(id);
+
+        key.base.transfer(order.owner, claimableAmount);
 
         key.hooks.afterClaim(id, claimableRaw, hookData);
 
