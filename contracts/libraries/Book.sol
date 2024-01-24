@@ -110,7 +110,7 @@ library Book {
         baseAmount = tick.rawToBase(takeAmount, true);
         self.totalClaimableOf.add(tick, takeAmount);
 
-        _cleanHeap(self);
+        self.cleanHeap();
     }
 
     function cancel(State storage self, Tick tick, uint40 orderIndex, uint64 pending, uint64 claimableRaw, uint64 to)
@@ -128,10 +128,10 @@ library Book {
                 orderIndex & MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & MAX_ORDER_M) - canceledAmount
             );
         }
-        // todo: check clean
+        self.cleanHeap();
     }
 
-    function _cleanHeap(State storage self) private {
+    function cleanHeap(State storage self) internal {
         while (!self.heap.isEmpty()) {
             if (self.depth(self.heap.root()) == 0) {
                 self.heap.pop();
