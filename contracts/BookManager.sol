@@ -24,7 +24,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
     int256 private constant _RATE_PRECISION = 10 ** 6;
     int256 private constant _MAX_FEE_RATE = 10 ** 6 / 2;
-    int256 private constant _MIN_FEE_RATE = -10 ** 6 / 2;
+    int256 private constant _MIN_FEE_RATE = -(10 ** 6 / 2);
 
     string public override baseURI;
     address public override defaultProvider;
