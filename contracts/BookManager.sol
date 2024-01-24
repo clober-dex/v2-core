@@ -124,7 +124,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         return Lockers.lockData();
     }
 
-    function make(MakeParams calldata params, bytes calldata hookData) external onlyByLocker returns (OrderId id) {
+    function make(MakeParams calldata params, bytes calldata hookData)
+        external
+        onlyByLocker
+        returns (OrderId id, uint256 quoteAmount)
+    {
         if (params.provider != address(0) && !isWhitelisted[params.provider]) {
             revert NotWhitelisted(params.provider);
         }
@@ -133,11 +137,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         Book.State storage book = _books[bookId];
         book.checkInitialized();
 
-        if (!params.key.hooks.beforeMake(params.key, params, hookData)) return OrderId.wrap(0);
+        if (!params.key.hooks.beforeMake(params, hookData)) return (OrderId.wrap(0), 0);
 
         uint40 orderIndex = book.make(_orders, bookId, params.tick, params.amount);
         id = OrderIdLibrary.encode(bookId, params.tick, orderIndex);
-        uint256 quoteAmount = uint256(params.amount) * params.key.unit;
+        quoteAmount = uint256(params.amount) * params.key.unit;
         if (!params.key.makerPolicy.useOutput) {
             (quoteAmount,) = _calculateFee(quoteAmount, params.key.makerPolicy.rate);
         }
@@ -154,7 +158,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         });
         _mint(msg.sender, OrderId.unwrap(id));
 
-        params.key.hooks.afterMake(params.key, params, id, hookData);
+        params.key.hooks.afterMake(params, id, quoteAmount, hookData);
 
         emit Make(bookId, msg.sender, params.amount, params.bounty, orderIndex, params.tick);
     }
@@ -164,7 +168,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         Book.State storage book = _books[bookId];
         book.checkInitialized();
 
-        if (!params.key.hooks.beforeTake(params.key, params, hookData)) return;
+        if (!params.key.hooks.beforeTake(params, hookData)) return;
 
         (Tick tick, uint256 baseAmount) = book.take(params.amount);
         uint256 quoteAmount = uint256(params.amount) * params.key.unit;
@@ -177,7 +181,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         _accountDelta(params.key.quote, -quoteAmount.toInt256());
         _accountDelta(params.key.base, baseAmount.toInt256());
 
-        params.key.hooks.afterTake(params.key, params, hookData);
+        params.key.hooks.afterTake(params, hookData);
 
         emit Take(bookId, msg.sender, tick, params.amount);
     }
@@ -194,7 +198,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         uint64 claimableRaw = book.calculateClaimableRawAmount(pending, tick, orderIndex);
         if (pending == claimableRaw) return;
 
-        if (!key.hooks.beforeCancel(key, params, hookData)) return;
+        if (!key.hooks.beforeCancel(params, hookData)) return;
 
         uint64 canceledRaw = book.cancel(tick, orderIndex, pending, claimableRaw, params.to);
         unchecked {
@@ -210,7 +214,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (claimableRaw == 0) _burn(params.id);
 
-        key.hooks.afterCancel(key, params, canceledRaw, hookData);
+        key.hooks.afterCancel(params, canceledRaw, hookData);
 
         emit Cancel(params.id, canceledRaw);
     }
@@ -231,7 +235,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         uint64 claimableRaw = book.calculateClaimableRawAmount(order.pending, tick, orderIndex);
         if (claimableRaw == 0) return;
 
-        if (!key.hooks.beforeClaim(key, id, hookData)) return;
+        if (!key.hooks.beforeClaim(id, hookData)) return;
 
         unchecked {
             order.pending -= claimableRaw;
@@ -270,7 +274,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (order.pending == 0) _burn(id);
 
-        key.hooks.afterClaim(key, id, claimableRaw, hookData);
+        key.hooks.afterClaim(id, claimableRaw, hookData);
 
         emit Claim(msg.sender, id, claimableRaw, order.bounty);
     }

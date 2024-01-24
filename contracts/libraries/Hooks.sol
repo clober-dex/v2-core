@@ -149,16 +149,13 @@ library Hooks {
     }
 
     /// @notice calls beforeMake hook if permissioned and validates return value
-    function beforeMake(
-        IHooks self,
-        IBookManager.BookKey memory key,
-        IBookManager.MakeParams memory params,
-        bytes calldata hookData
-    ) internal returns (bool shouldExecute) {
-        if (key.hooks.hasPermission(BEFORE_MAKE_FLAG)) {
-            shouldExecute = self.callHookNoopable(
-                abi.encodeWithSelector(IHooks.beforeMake.selector, msg.sender, key, params, hookData)
-            );
+    function beforeMake(IHooks self, IBookManager.MakeParams memory params, bytes calldata hookData)
+        internal
+        returns (bool shouldExecute)
+    {
+        if (self.hasPermission(BEFORE_MAKE_FLAG)) {
+            shouldExecute =
+                self.callHookNoopable(abi.encodeWithSelector(IHooks.beforeMake.selector, msg.sender, params, hookData));
         } else {
             shouldExecute = true;
         }
@@ -167,54 +164,46 @@ library Hooks {
     /// @notice calls afterMake hook if permissioned and validates return value
     function afterMake(
         IHooks self,
-        IBookManager.BookKey memory key,
         IBookManager.MakeParams memory params,
         OrderId orderId,
+        uint256 quoteAmount,
         bytes calldata hookData
     ) internal {
-        if (key.hooks.hasPermission(AFTER_MAKE_FLAG)) {
-            self.callHook(abi.encodeWithSelector(IHooks.afterMake.selector, msg.sender, key, params, orderId, hookData));
+        if (self.hasPermission(AFTER_MAKE_FLAG)) {
+            self.callHook(
+                abi.encodeWithSelector(IHooks.afterMake.selector, msg.sender, params, orderId, quoteAmount, hookData)
+            );
         }
     }
 
     /// @notice calls beforeTake hook if permissioned and validates return value
-    function beforeTake(
-        IHooks self,
-        IBookManager.BookKey memory key,
-        IBookManager.TakeParams memory params,
-        bytes calldata hookData
-    ) internal returns (bool shouldExecute) {
-        if (key.hooks.hasPermission(BEFORE_TAKE_FLAG)) {
-            shouldExecute = self.callHookNoopable(
-                abi.encodeWithSelector(IHooks.beforeTake.selector, msg.sender, key, params, hookData)
-            );
+    function beforeTake(IHooks self, IBookManager.TakeParams memory params, bytes calldata hookData)
+        internal
+        returns (bool shouldExecute)
+    {
+        if (self.hasPermission(BEFORE_TAKE_FLAG)) {
+            shouldExecute =
+                self.callHookNoopable(abi.encodeWithSelector(IHooks.beforeTake.selector, msg.sender, params, hookData));
         } else {
             shouldExecute = true;
         }
     }
 
     /// @notice calls afterTake hook if permissioned and validates return value
-    function afterTake(
-        IHooks self,
-        IBookManager.BookKey memory key,
-        IBookManager.TakeParams memory params,
-        bytes calldata hookData
-    ) internal {
-        if (key.hooks.hasPermission(AFTER_TAKE_FLAG)) {
-            self.callHook(abi.encodeWithSelector(IHooks.afterTake.selector, msg.sender, key, params, hookData));
+    function afterTake(IHooks self, IBookManager.TakeParams memory params, bytes calldata hookData) internal {
+        if (self.hasPermission(AFTER_TAKE_FLAG)) {
+            self.callHook(abi.encodeWithSelector(IHooks.afterTake.selector, msg.sender, params, hookData));
         }
     }
 
     /// @notice calls beforeCancel hook if permissioned and validates return value
-    function beforeCancel(
-        IHooks self,
-        IBookManager.BookKey memory key,
-        IBookManager.CancelParams calldata params,
-        bytes calldata hookData
-    ) internal returns (bool shouldExecute) {
-        if (key.hooks.hasPermission(BEFORE_CANCEL_FLAG)) {
+    function beforeCancel(IHooks self, IBookManager.CancelParams calldata params, bytes calldata hookData)
+        internal
+        returns (bool shouldExecute)
+    {
+        if (self.hasPermission(BEFORE_CANCEL_FLAG)) {
             shouldExecute = self.callHookNoopable(
-                abi.encodeWithSelector(IHooks.beforeCancel.selector, msg.sender, key, params, hookData)
+                abi.encodeWithSelector(IHooks.beforeCancel.selector, msg.sender, params, hookData)
             );
         } else {
             shouldExecute = true;
@@ -224,26 +213,22 @@ library Hooks {
     /// @notice calls afterCancel hook if permissioned and validates return value
     function afterCancel(
         IHooks self,
-        IBookManager.BookKey memory key,
         IBookManager.CancelParams calldata params,
         uint64 canceledAmount,
         bytes calldata hookData
     ) internal {
-        if (key.hooks.hasPermission(AFTER_CANCEL_FLAG)) {
+        if (self.hasPermission(AFTER_CANCEL_FLAG)) {
             self.callHook(
-                abi.encodeWithSelector(IHooks.afterCancel.selector, msg.sender, key, params, canceledAmount, hookData)
+                abi.encodeWithSelector(IHooks.afterCancel.selector, msg.sender, params, canceledAmount, hookData)
             );
         }
     }
 
     /// @notice calls beforeClaim hook if permissioned and validates return value
-    function beforeClaim(IHooks self, IBookManager.BookKey memory key, OrderId orderId, bytes calldata hookData)
-        internal
-        returns (bool shouldExecute)
-    {
-        if (key.hooks.hasPermission(BEFORE_CLAIM_FLAG)) {
+    function beforeClaim(IHooks self, OrderId orderId, bytes calldata hookData) internal returns (bool shouldExecute) {
+        if (self.hasPermission(BEFORE_CLAIM_FLAG)) {
             shouldExecute = self.callHookNoopable(
-                abi.encodeWithSelector(IHooks.beforeClaim.selector, msg.sender, key, orderId, hookData)
+                abi.encodeWithSelector(IHooks.beforeClaim.selector, msg.sender, orderId, hookData)
             );
         } else {
             shouldExecute = true;
@@ -251,16 +236,10 @@ library Hooks {
     }
 
     /// @notice calls afterClaim hook if permissioned and validates return value
-    function afterClaim(
-        IHooks self,
-        IBookManager.BookKey memory key,
-        OrderId orderId,
-        uint64 claimedAmount,
-        bytes calldata hookData
-    ) internal {
-        if (key.hooks.hasPermission(AFTER_CLAIM_FLAG)) {
+    function afterClaim(IHooks self, OrderId orderId, uint64 claimedAmount, bytes calldata hookData) internal {
+        if (self.hasPermission(AFTER_CLAIM_FLAG)) {
             self.callHook(
-                abi.encodeWithSelector(IHooks.afterClaim.selector, msg.sender, key, orderId, claimedAmount, hookData)
+                abi.encodeWithSelector(IHooks.afterClaim.selector, msg.sender, orderId, claimedAmount, hookData)
             );
         }
     }

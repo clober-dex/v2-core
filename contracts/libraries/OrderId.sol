@@ -8,6 +8,13 @@ import "./BookId.sol";
 type OrderId is uint256;
 
 library OrderIdLibrary {
+    /**
+     * @dev Encode the order id.
+     * @param bookId The book id.
+     * @param tick The tick.
+     * @param index The index.
+     * @return id The order id.
+     */
     function encode(BookId bookId, Tick tick, uint40 index) internal pure returns (OrderId id) {
         // @dev If we just use tick at the assembly code, the code will convert tick into bytes32.
         //      e.g. When index == -2, the shifted value( shl(40, tick) ) will be

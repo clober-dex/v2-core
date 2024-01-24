@@ -100,8 +100,11 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @param params The order parameters
      * @param hookData The hook data
      * @return id The order id. Returns 0 if the order is not settled
+     * @return quoteAmount The amount of quote currency to be paid
      */
-    function make(MakeParams calldata params, bytes calldata hookData) external returns (OrderId id);
+    function make(MakeParams calldata params, bytes calldata hookData)
+        external
+        returns (OrderId id, uint256 quoteAmount);
 
     struct TakeParams {
         BookKey key;

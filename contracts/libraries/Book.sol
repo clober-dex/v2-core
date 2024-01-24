@@ -97,6 +97,7 @@ library Book {
             }
         }
 
+        // @dev Assume that orderIndex is always less than type(uint40).max. If not, `make` will revert.
         queue.index = orderIndex + 1;
         queue.tree.update(orderIndex & MAX_ORDER_M, amount);
     }
