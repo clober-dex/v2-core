@@ -8,14 +8,13 @@ import "../interfaces/IBookManager.sol";
 import "./Tick.sol";
 import "./OrderId.sol";
 import "./TotalClaimableMap.sol";
-import "./MockHeap.sol";
+import "./Heap.sol";
 
 library Book {
     using Book for State;
-    using MockHeap for MockHeap.Core;
     using SegmentedSegmentTree for SegmentedSegmentTree.Core;
     using TotalClaimableMap for mapping(uint24 => uint256);
-    using TickLibrary for Tick;
+    using TickLibrary for *;
     using OrderIdLibrary for OrderId;
 
     error CancelFailed(uint64 maxCancelableAmount);
@@ -32,7 +31,7 @@ library Book {
     struct State {
         IBookManager.BookKey key;
         mapping(Tick tick => Queue) queues;
-        MockHeap.Core heap;
+        mapping(uint256 => uint256) heap;
         // four values of totalClaimable are stored in one uint256
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
     }
@@ -66,8 +65,9 @@ library Book {
         Tick tick,
         uint64 amount
     ) internal returns (uint40 orderIndex) {
-        if (!self.heap.has(tick)) {
-            self.heap.push(tick);
+        uint24 tickIndex = tick.toUint24();
+        if (!Heap.has(self.heap, tickIndex)) {
+            Heap.push(self.heap, tickIndex);
         }
 
         Queue storage queue = self.queues[tick];
@@ -102,7 +102,7 @@ library Book {
     }
 
     function take(State storage self, uint64 takeAmount) internal returns (Tick tick, uint256 baseAmount) {
-        tick = self.heap.root();
+        tick = Heap.root(self.heap).fromUint24();
         uint64 currentDepth = self.depth(tick);
         if (currentDepth < takeAmount) revert TooLargeTakeAmount();
 
@@ -131,9 +131,9 @@ library Book {
     }
 
     function _cleanHeap(State storage self) private {
-        while (!self.heap.isEmpty()) {
-            if (self.depth(self.heap.root()) == 0) {
-                self.heap.pop();
+        while (!Heap.isEmpty(self.heap)) {
+            if (self.depth(Heap.root(self.heap).fromUint24()) == 0) {
+                Heap.pop(self.heap);
             } else {
                 break;
             }
