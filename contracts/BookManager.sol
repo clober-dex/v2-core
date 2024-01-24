@@ -123,6 +123,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         return Lockers.lockData();
     }
 
+    function getDepth(BookId id, Tick tick) external view returns (uint64) {
+        return _books[id].depth(tick);
+    }
+
     function make(MakeParams calldata params, bytes calldata hookData)
         external
         onlyByLocker
