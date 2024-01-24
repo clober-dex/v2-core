@@ -66,35 +66,26 @@ library Book {
         Tick tick,
         uint64 amount
     ) internal returns (uint40 orderIndex) {
-        if (!self.heap.has(tick)) {
-            self.heap.push(tick);
-        }
+        if (!self.heap.has(tick)) self.heap.push(tick);
 
         Queue storage queue = self.queues[tick];
         orderIndex = queue.index;
 
         if (orderIndex >= MAX_ORDER) {
-            {
-                uint40 staleOrderIndex;
-                unchecked {
-                    staleOrderIndex = orderIndex - MAX_ORDER;
-                }
+            unchecked {
+                uint40 staleOrderIndex = orderIndex - MAX_ORDER;
                 uint64 stalePendingAmount = orders[OrderIdLibrary.encode(bookId, tick, staleOrderIndex)].pending;
                 if (stalePendingAmount > 0) {
                     // If the order is not settled completely, we cannot replace it
                     uint64 claimable = calculateClaimableRawAmount(self, stalePendingAmount, tick, staleOrderIndex);
-                    if (claimable != stalePendingAmount) {
-                        revert QueueReplaceFailed();
-                    }
+                    if (claimable != stalePendingAmount) revert QueueReplaceFailed();
                 }
             }
 
             // The stale order is settled completely, so remove it from the totalClaimableOf.
             // We can determine the stale order is claimable.
             uint64 staleOrderedAmount = queue.tree.get(orderIndex & MAX_ORDER_M);
-            if (staleOrderedAmount > 0) {
-                self.totalClaimableOf.sub(tick, staleOrderedAmount);
-            }
+            if (staleOrderedAmount > 0) self.totalClaimableOf.sub(tick, staleOrderedAmount);
         }
 
         // @dev Assume that orderIndex is always less than type(uint40).max. If not, `make` will revert.

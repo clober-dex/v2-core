@@ -140,7 +140,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         uint40 orderIndex = book.make(_orders, bookId, params.tick, params.amount);
         id = OrderIdLibrary.encode(bookId, params.tick, orderIndex);
-        quoteAmount = uint256(params.amount) * params.key.unit;
+        unchecked {
+            // @dev uint64 * uint96 < type(uint256).max
+            quoteAmount = uint256(params.amount) * params.key.unit;
+        }
         if (!params.key.makerPolicy.useOutput) {
             (quoteAmount,) = _calculateFee(quoteAmount, params.key.makerPolicy.rate);
         }
@@ -173,7 +176,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         Tick tick;
         (tick, baseAmount) = book.take(params.amount);
-        quoteAmount = uint256(params.amount) * params.key.unit;
+        unchecked {
+            quoteAmount = uint256(params.amount) * params.key.unit;
+        }
         if (params.key.takerPolicy.useOutput) {
             (quoteAmount,) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
         } else {
@@ -215,7 +220,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             _orders[params.id].pending = params.to + claimableRaw;
         }
 
-        uint256 canceledAmount = uint256(canceledRaw) * key.unit;
+        uint256 canceledAmount;
+        unchecked {
+            canceledAmount = uint256(canceledRaw) * key.unit;
+        }
         FeePolicy memory makerPolicy = key.makerPolicy;
         if (!makerPolicy.useOutput) {
             canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate);
@@ -256,7 +264,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         int256 baseFee;
         {
             claimableAmount = tick.rawToBase(claimableRaw, false);
-            uint256 claimedInQuote = uint256(claimableRaw) * key.unit;
+            uint256 claimedInQuote;
+            unchecked {
+                claimedInQuote = uint256(claimableRaw) * key.unit;
+            }
             FeePolicy memory makerPolicy = key.makerPolicy;
             FeePolicy memory takerPolicy = key.takerPolicy;
             if (takerPolicy.useOutput) {
