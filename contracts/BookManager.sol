@@ -142,10 +142,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             // @dev uint64 * uint96 < type(uint256).max
             quoteAmount = uint256(params.amount) * params.key.unit;
         }
+        int256 quoteDelta = quoteAmount.toInt256();
         if (!params.key.makerPolicy.useOutput) {
-            (quoteAmount,) = _calculateFee(quoteAmount, params.key.makerPolicy.rate);
+            quoteDelta -= _calculateFee(quoteAmount, params.key.makerPolicy.rate);
         }
-        _accountDelta(params.key.quote, quoteAmount.toInt256());
+        _accountDelta(params.key.quote, quoteDelta);
 
         _orders[id] = IBookManager.Order({
             initial: params.amount,
@@ -177,14 +178,16 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         unchecked {
             quoteAmount = uint256(params.amount) * params.key.unit;
         }
+        int256 quoteDelta = quoteAmount.toInt256();
+        int256 baseDelta = baseAmount.toInt256();
         if (params.key.takerPolicy.useOutput) {
-            (quoteAmount,) = _calculateFee(quoteAmount, params.key.takerPolicy.rate);
+            quoteDelta -= _calculateFee(quoteAmount, params.key.takerPolicy.rate);
         } else {
-            (baseAmount,) = _calculateFee(baseAmount, params.key.takerPolicy.rate);
+            baseDelta -= _calculateFee(baseAmount, params.key.takerPolicy.rate);
         }
 
-        _accountDelta(params.key.quote, -quoteAmount.toInt256());
-        _accountDelta(params.key.base, baseAmount.toInt256());
+        _accountDelta(params.key.quote, -quoteDelta);
+        _accountDelta(params.key.base, baseDelta);
 
         params.key.hooks.afterTake(params, quoteAmount, baseAmount, hookData);
 
@@ -269,18 +272,17 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             FeePolicy memory makerPolicy = key.makerPolicy;
             FeePolicy memory takerPolicy = key.takerPolicy;
             if (takerPolicy.useOutput) {
-                (, quoteFee) = _calculateFee(claimedInQuote, takerPolicy.rate);
+                quoteFee = _calculateFee(claimedInQuote, takerPolicy.rate);
             } else {
-                (, baseFee) = _calculateFee(claimableAmount, takerPolicy.rate);
+                baseFee = _calculateFee(claimableAmount, takerPolicy.rate);
             }
             if (makerPolicy.useOutput) {
-                int256 makerFee;
-                (claimableAmount, makerFee) = _calculateFee(claimableAmount, makerPolicy.rate);
+                int256 makerFee = _calculateFee(claimableAmount, makerPolicy.rate);
+                claimableAmount =
+                    makerFee > 0 ? claimableAmount - uint256(makerFee) : claimableAmount + uint256(-makerFee);
                 baseFee += makerFee;
             } else {
-                int256 makerFee;
-                (, makerFee) = _calculateFee(claimedInQuote, makerPolicy.rate);
-                quoteFee += makerFee;
+                quoteFee += _calculateFee(claimedInQuote, makerPolicy.rate);
             }
         }
 
@@ -367,14 +369,15 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         currencyDelta[locker][currency] = next;
     }
 
-    function _calculateFee(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount, int256 fee) {
-        if (rate > 0) {
-            fee = int256(Math.divide(amount * uint24(rate), uint256(_RATE_PRECISION), true));
-            adjustedAmount = amount - uint256(fee);
-        } else {
-            fee = -int256(Math.divide(amount * uint24(-rate), uint256(_RATE_PRECISION), false));
-            adjustedAmount = amount + uint256(-fee);
+    function _calculateFee(uint256 amount, int24 rate) internal pure returns (int256) {
+        bool positive = rate > 0;
+        uint256 absRate;
+        unchecked {
+            absRate = uint256(uint24(positive ? rate : -rate));
         }
+        // @dev absFee must be less than type(int256).max
+        uint256 absFee = Math.divide(amount * absRate, uint256(_RATE_PRECISION), positive);
+        return positive ? int256(absFee) : -int256(absFee);
     }
 
     function _calculateAmountInReverse(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount) {
