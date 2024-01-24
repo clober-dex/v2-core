@@ -195,31 +195,20 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function cancel(CancelParams calldata params, bytes calldata hookData) external {
-        address owner = _orders[params.id].owner;
+        Order storage order = _orders[params.id];
+        address owner = order.owner;
         _checkAuthorized(owner, msg.sender, OrderId.unwrap(params.id));
 
         Book.State storage book;
-        Tick tick;
-        uint40 orderIndex;
-        {
-            BookId bookId;
-            (bookId, tick, orderIndex) = params.id.decode();
-            book = _books[bookId];
-        }
+        (BookId bookId,,) = params.id.decode();
+        book = _books[bookId];
 
         BookKey memory key = book.key;
         book.checkInitialized();
 
-        uint64 pending = _orders[params.id].pending;
-        uint64 claimableRaw = book.calculateClaimableRawAmount(pending, tick, orderIndex);
-        if (pending == claimableRaw) return;
-
         if (!key.hooks.beforeCancel(params, hookData)) return;
 
-        uint64 canceledRaw = book.cancel(tick, orderIndex, pending, claimableRaw, params.to);
-        unchecked {
-            _orders[params.id].pending = params.to + claimableRaw;
-        }
+        uint64 canceledRaw = book.cancel(params.id, order, params.to);
 
         uint256 canceledAmount;
         unchecked {
@@ -231,7 +220,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
         key.quote.transfer(owner, canceledAmount);
 
-        if (claimableRaw == 0) _burn(OrderId.unwrap(params.id));
+        if (order.pending == 0) _burn(OrderId.unwrap(params.id));
 
         key.hooks.afterCancel(params, canceledRaw, hookData);
 

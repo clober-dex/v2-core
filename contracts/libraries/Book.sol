@@ -102,10 +102,13 @@ library Book {
         self.cleanHeap();
     }
 
-    function cancel(State storage self, Tick tick, uint40 orderIndex, uint64 pending, uint64 claimableRaw, uint64 to)
+    function cancel(State storage self, OrderId orderId, IBookManager.Order storage order, uint64 to)
         internal
         returns (uint64 canceledAmount)
     {
+        (, Tick tick, uint40 orderIndex) = orderId.decode();
+        uint64 pending = order.pending;
+        uint64 claimableRaw = self.calculateClaimableRawAmount(pending, tick, orderIndex);
         uint64 afterPending = to + claimableRaw;
         unchecked {
             if (pending < afterPending) revert CancelFailed(pending - claimableRaw);
@@ -115,6 +118,8 @@ library Book {
                 orderIndex & MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & MAX_ORDER_M) - canceledAmount
             );
         }
+        order.pending = afterPending;
+
         self.cleanHeap();
     }
 
