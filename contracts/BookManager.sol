@@ -128,9 +128,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         onlyByLocker
         returns (OrderId id, uint256 quoteAmount)
     {
-        if (params.provider != address(0) && !isWhitelisted[params.provider]) {
-            revert NotWhitelisted(params.provider);
-        }
+        if (params.provider != address(0) && !isWhitelisted[params.provider]) revert NotWhitelisted(params.provider);
         params.tick.validate();
         BookId bookId = params.key.toId();
         Book.State storage book = _books[bookId];
@@ -287,9 +285,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
 
         address provider = order.provider;
-        if (provider == address(0)) {
-            provider = defaultProvider;
-        }
+        if (provider == address(0)) provider = defaultProvider;
         tokenOwed[provider][key.quote] += quoteFee.toUint256();
         tokenOwed[provider][key.base] += baseFee.toUint256();
 
@@ -312,10 +308,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function withdraw(Currency currency, address to, uint256 amount) external onlyByLocker {
-        if (amount == 0) return;
-        _accountDelta(currency, amount.toInt256());
-        reservesOf[currency] -= amount;
-        currency.transfer(to, amount);
+        if (amount > 0) {
+            _accountDelta(currency, amount.toInt256());
+            reservesOf[currency] -= amount;
+            currency.transfer(to, amount);
+        }
     }
 
     function settle(Currency currency) external payable onlyByLocker returns (uint256 paid) {
@@ -326,23 +323,19 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         _accountDelta(currency, -(paid.toInt256()));
     }
 
-    function whitelist(address[] calldata providers) external onlyOwner {
-        for (uint256 i = 0; i < providers.length; ++i) {
-            _whitelist(providers[i]);
-        }
+    function whitelist(address provider) external onlyOwner {
+        isWhitelisted[provider] = true;
+        emit Whitelist(provider);
     }
 
-    function delist(address[] calldata providers) external onlyOwner {
-        for (uint256 i = 0; i < providers.length; ++i) {
-            _delist(providers[i]);
-        }
+    function delist(address provider) external onlyOwner {
+        isWhitelisted[provider] = false;
+        emit Delist(provider);
     }
 
     function setDefaultProvider(address newDefaultProvider) public onlyOwner {
         address oldDefaultProvider = defaultProvider;
         defaultProvider = newDefaultProvider;
-        _delist(oldDefaultProvider);
-        _whitelist(newDefaultProvider);
         emit SetDefaultProvider(oldDefaultProvider, newDefaultProvider);
     }
 
@@ -372,16 +365,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
 
         currencyDelta[locker][currency] = next;
-    }
-
-    function _whitelist(address provider) internal {
-        isWhitelisted[provider] = true;
-        emit Whitelist(provider);
-    }
-
-    function _delist(address provider) internal {
-        isWhitelisted[provider] = false;
-        emit Delist(provider);
     }
 
     function _calculateFee(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount, int256 fee) {
