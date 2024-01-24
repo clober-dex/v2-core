@@ -93,7 +93,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         key.hooks.beforeOpen(key, hookData);
 
         BookId id = key.toId();
-        _books[id].initialize(key);
+        _books[id].open(key);
 
         key.hooks.afterOpen(key, hookData);
 
@@ -136,7 +136,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         params.tick.validate();
         BookId bookId = params.key.toId();
         Book.State storage book = _books[bookId];
-        book.checkInitialized();
+        book.checkOpened();
 
         if (!params.key.hooks.beforeMake(params, hookData)) return (OrderId.wrap(0), 0);
 
@@ -173,7 +173,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     {
         BookId bookId = params.key.toId();
         Book.State storage book = _books[bookId];
-        book.checkInitialized();
+        book.checkOpened();
 
         if (!params.key.hooks.beforeTake(params, hookData)) return (0, 0);
 
@@ -208,7 +208,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         book = _books[bookId];
 
         BookKey memory key = book.key;
-        book.checkInitialized();
+        book.checkOpened();
 
         if (!key.hooks.beforeCancel(params, hookData)) return;
 
@@ -240,7 +240,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             (bookId, tick, orderIndex) = id.decode();
             book = _books[bookId];
         }
-        book.checkInitialized();
+        book.checkOpened();
         IBookManager.BookKey memory key = book.key;
         Order storage order = _orders[id];
 
@@ -403,5 +403,4 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     receive() external payable {}
-    // TODO: how to get list of all orders?
 }

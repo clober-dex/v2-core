@@ -19,8 +19,8 @@ library Book {
     using OrderIdLibrary for OrderId;
 
     error CancelFailed(uint64 maxCancelableAmount);
-    error BookAlreadyInitialized();
-    error BookNotInitialized();
+    error BookAlreadyOpened();
+    error BookNotOpened();
     error QueueReplaceFailed();
     error TooLargeTakeAmount();
 
@@ -40,17 +40,17 @@ library Book {
     uint40 internal constant MAX_ORDER = 2 ** 15; // 32768
     uint256 internal constant MAX_ORDER_M = 2 ** 15 - 1; // % 32768
 
-    function initialize(State storage self, IBookManager.BookKey calldata key) internal {
-        if (self.isInitialized()) revert BookAlreadyInitialized();
+    function open(State storage self, IBookManager.BookKey calldata key) internal {
+        if (self.isOpened()) revert BookAlreadyOpened();
         self.key = key;
     }
 
-    function isInitialized(State storage self) internal view returns (bool) {
+    function isOpened(State storage self) internal view returns (bool) {
         return self.key.unit != 0;
     }
 
-    function checkInitialized(State storage self) internal view {
-        if (!self.isInitialized()) revert BookNotInitialized();
+    function checkOpened(State storage self) internal view {
+        if (!self.isOpened()) revert BookNotOpened();
     }
 
     function depth(State storage self, Tick tick) internal view returns (uint64) {
@@ -93,7 +93,7 @@ library Book {
 
     function take(State storage self, uint64 takeAmount) internal returns (Tick tick, uint256 baseAmount) {
         tick = self.heap.root();
-        uint64 currentDepth = self.depth(tick);
+        uint64 currentDepth = depth(self, tick);
         if (currentDepth < takeAmount) revert TooLargeTakeAmount();
 
         baseAmount = tick.rawToBase(takeAmount, true);
@@ -108,7 +108,7 @@ library Book {
     {
         (, Tick tick, uint40 orderIndex) = orderId.decode();
         uint64 pending = order.pending;
-        uint64 claimableRaw = self.calculateClaimableRawAmount(pending, tick, orderIndex);
+        uint64 claimableRaw = calculateClaimableRawAmount(self, pending, tick, orderIndex);
         uint64 afterPending = to + claimableRaw;
         unchecked {
             if (pending < afterPending) revert CancelFailed(pending - claimableRaw);
@@ -125,7 +125,7 @@ library Book {
 
     function cleanHeap(State storage self) internal {
         while (!self.heap.isEmpty()) {
-            if (self.depth(self.heap.root()) == 0) {
+            if (depth(self, self.heap.root()) == 0) {
                 self.heap.pop();
             } else {
                 break;
