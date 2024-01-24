@@ -9,7 +9,7 @@ import "./libraries/BookId.sol";
 import "./libraries/Book.sol";
 import "./libraries/OrderId.sol";
 import "./libraries/Lockers.sol";
-import "./interfaces/IPositionLocker.sol";
+import "./interfaces/ILocker.sol";
 import "./libraries/ERC721Permit.sol";
 import "./libraries/Hooks.sol";
 
