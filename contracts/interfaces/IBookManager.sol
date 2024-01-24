@@ -88,7 +88,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     struct MakeParams {
         BookKey key;
-        address user;
         Tick tick;
         uint64 amount; // times 10**unitDecimals to get actual bid amount
         /// @notice The limit order service provider address to collect fees

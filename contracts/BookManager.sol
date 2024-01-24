@@ -143,20 +143,20 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
         _accountDelta(params.key.quote, quoteAmount.toInt256());
         _accountDelta(CurrencyLibrary.NATIVE, (_CLAIM_BOUNTY_UNIT * params.bounty).toInt256());
-        _mint(params.user, OrderId.unwrap(id));
 
         _orders[id] = IBookManager.Order({
             initial: params.amount,
             nonce: 0,
-            owner: params.user,
+            owner: msg.sender,
             pending: params.amount,
             bounty: params.bounty,
             provider: params.provider
         });
+        _mint(msg.sender, OrderId.unwrap(id));
 
         params.key.hooks.afterMake(params.key, params, id, hookData);
 
-        emit Make(bookId, params.user, params.amount, params.bounty, orderIndex, params.tick);
+        emit Make(bookId, msg.sender, params.amount, params.bounty, orderIndex, params.tick);
     }
 
     function take(TakeParams calldata params, bytes calldata hookData) external onlyByLocker {
