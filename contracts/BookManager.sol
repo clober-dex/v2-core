@@ -22,7 +22,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;
 
-    uint256 private constant _CLAIM_BOUNTY_UNIT = 1 gwei;
     int256 private constant _RATE_PRECISION = 10 ** 6;
     int256 private constant _MAX_FEE_RATE = 10 ** 6 / 2;
     int256 private constant _MIN_FEE_RATE = -10 ** 6 / 2;
@@ -146,21 +145,19 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             (quoteAmount,) = _calculateFee(quoteAmount, params.key.makerPolicy.rate);
         }
         _accountDelta(params.key.quote, quoteAmount.toInt256());
-        _accountDelta(CurrencyLibrary.NATIVE, (_CLAIM_BOUNTY_UNIT * params.bounty).toInt256());
 
         _orders[id] = IBookManager.Order({
             initial: params.amount,
             nonce: 0,
             owner: msg.sender,
             pending: params.amount,
-            bounty: params.bounty,
             provider: params.provider
         });
         _mint(msg.sender, OrderId.unwrap(id));
 
         params.key.hooks.afterMake(params, id, quoteAmount, hookData);
 
-        emit Make(bookId, msg.sender, params.amount, params.bounty, orderIndex, params.tick);
+        emit Make(bookId, msg.sender, params.amount, orderIndex, params.tick);
     }
 
     function take(TakeParams calldata params, bytes calldata hookData) external onlyByLocker {
@@ -220,7 +217,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
         key.quote.transfer(owner, canceledAmount);
 
-        if (claimableRaw == 0) _burn(params.id);
+        if (claimableRaw == 0) _burn(OrderId.unwrap(params.id));
 
         key.hooks.afterCancel(params, canceledRaw, hookData);
 
@@ -280,13 +277,13 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         tokenOwed[provider][key.quote] += quoteFee.toUint256();
         tokenOwed[provider][key.base] += baseFee.toUint256();
 
-        if (order.pending == 0) _burn(id);
+        if (order.pending == 0) _burn(OrderId.unwrap(id));
 
         key.base.transfer(order.owner, claimableAmount);
 
         key.hooks.afterClaim(id, claimableRaw, hookData);
 
-        emit Claim(msg.sender, id, claimableRaw, order.bounty);
+        emit Claim(msg.sender, id, claimableRaw);
     }
 
     function collect(address provider, Currency currency) external {
@@ -392,11 +389,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
     function _setOwner(uint256 tokenId, address owner) internal override {
         _orders[OrderId.wrap(tokenId)].owner = owner;
-    }
-
-    function _burn(OrderId id) internal {
-        _accountDelta(CurrencyLibrary.NATIVE, -(_CLAIM_BOUNTY_UNIT * _orders[id].bounty).toInt256());
-        _burn(OrderId.unwrap(id));
     }
 
     function load(bytes32 slot) external view returns (bytes32 value) {

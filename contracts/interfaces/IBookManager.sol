@@ -29,11 +29,9 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         IHooks hooks
     );
     event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 amount);
-    event Make(
-        BookId indexed bookId, address indexed user, uint64 amount, uint32 claimBounty, uint256 orderIndex, Tick tick
-    );
+    event Make(BookId indexed bookId, address indexed user, uint64 amount, uint256 orderIndex, Tick tick);
     event Cancel(OrderId indexed orderId, uint64 canceledAmount);
-    event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount, uint32 claimBounty);
+    event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount);
     event Whitelist(address indexed provider);
     event Delist(address indexed provider);
     event Collect(address indexed provider, Currency indexed currency, uint256 amount);
@@ -44,7 +42,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint32 nonce;
         address provider;
         uint64 pending; // Unclaimed amount
-        uint32 bounty;
         address owner;
     }
 
@@ -92,7 +89,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint64 amount; // times 10**unitDecimals to get actual bid amount
         /// @notice The limit order service provider address to collect fees
         address provider;
-        uint32 bounty;
     }
 
     /**
