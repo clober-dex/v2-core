@@ -37,8 +37,6 @@ library Book {
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
     }
 
-    uint256 internal constant PRICE_PRECISION = 10 ** 18;
-    uint256 internal constant CLAIM_BOUNTY_UNIT = 1 gwei;
     uint40 internal constant MAX_ORDER = 2 ** 15; // 32768
     uint256 internal constant MAX_ORDER_M = 2 ** 15 - 1; // % 32768
 
@@ -110,9 +108,7 @@ library Book {
     {
         uint64 afterPending = to + claimableRaw;
         unchecked {
-            if (pending < afterPending) {
-                revert CancelFailed(pending - claimableRaw);
-            }
+            if (pending < afterPending) revert CancelFailed(pending - claimableRaw);
             canceledAmount = pending - afterPending;
 
             self.queues[tick].tree.update(
