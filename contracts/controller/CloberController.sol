@@ -52,7 +52,6 @@ contract CloberController is ICloberController, IPositionLocker {
 
     function make(MakeOrderParams[] calldata paramsList, uint64 deadline)
         external
-        payable
         returns (OrderId[] memory ids)
     {
         bytes memory lockData = abi.encode(0, abi.encode(paramsList));
@@ -60,12 +59,12 @@ contract CloberController is ICloberController, IPositionLocker {
         (ids) = abi.decode(result, (OrderId[]));
     }
 
-    function take(TakeOrderParams[] calldata paramsList, uint64 deadline) external payable checkDeadline(deadline) {
+    function take(TakeOrderParams[] calldata paramsList, uint64 deadline) external checkDeadline(deadline) {
         bytes memory lockData = abi.encode(1, abi.encode(paramsList));
         _bookManager.lock(address(this), lockData);
     }
 
-    function spend(SpendOrderParams[] calldata paramsList, uint64 deadline) external payable checkDeadline(deadline) {
+    function spend(SpendOrderParams[] calldata paramsList, uint64 deadline) external checkDeadline(deadline) {
         bytes memory lockData = abi.encode(2, abi.encode(paramsList));
         _bookManager.lock(address(this), lockData);
     }
