@@ -41,7 +41,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint64 initial;
         uint32 nonce;
         address provider;
-        uint64 pending; // Unclaimed amount
+        uint64 pending; // Ordered amount + claimable amount // todo: This value may be modified during user delivery
         address owner;
     }
 

@@ -151,7 +151,7 @@ library Book {
     {
         Queue storage queue = self.queues[tick];
         if (index + MAX_ORDER < queue.index) {
-            // replace order
+            // @dev Book logic always considers replaced orders as claimable.
             return orderAmount;
         }
         uint64 totalClaimable = self.totalClaimableOf.get(tick);
