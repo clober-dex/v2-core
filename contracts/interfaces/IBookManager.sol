@@ -106,7 +106,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     struct TakeParams {
         BookKey key;
-        uint64 amount;
+        uint64 maxAmount;
     }
 
     function take(TakeParams calldata params, bytes calldata hookData)

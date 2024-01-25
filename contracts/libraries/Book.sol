@@ -18,11 +18,11 @@ library Book {
     using TickLibrary for Tick;
     using OrderIdLibrary for OrderId;
 
-    error CancelFailed(uint64 maxCancelableAmount);
     error BookAlreadyOpened();
     error BookNotOpened();
     error QueueReplaceFailed();
     error TooLargeTakeAmount();
+    error CancelFailed(uint64 maxCancelableAmount);
 
     struct Queue {
         SegmentedSegmentTree.Core tree;
@@ -91,12 +91,18 @@ library Book {
         queue.tree.update(orderIndex & MAX_ORDER_M, amount);
     }
 
-    function take(State storage self, uint64 takeAmount) internal returns (Tick tick, uint256 baseAmount) {
+    /**
+     * @notice Take orders from the book
+     * @param self The book state
+     * @param maxTakeAmount The maximum amount to take
+     * @return tick The tick of the order
+     * @return takeAmount The actual amount to take
+     */
+    function take(State storage self, uint64 maxTakeAmount) internal returns (Tick tick, uint64 takeAmount) {
         tick = self.heap.root();
         uint64 currentDepth = depth(self, tick);
-        if (currentDepth < takeAmount) revert TooLargeTakeAmount();
+        takeAmount = currentDepth < maxTakeAmount ? currentDepth : maxTakeAmount;
 
-        baseAmount = tick.rawToBase(takeAmount, true);
         self.totalClaimableOf.add(tick, takeAmount);
 
         self.cleanHeap();

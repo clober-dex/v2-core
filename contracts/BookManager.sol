@@ -177,25 +177,27 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (!params.key.hooks.beforeTake(params, hookData)) return (0, 0);
 
-        Tick tick;
-        (tick, baseAmount) = book.take(params.amount);
+        (Tick tick, uint64 takeAmount) = book.take(params.maxAmount);
+        baseAmount = tick.rawToBase(takeAmount, true);
         unchecked {
-            quoteAmount = uint256(params.amount) * params.key.unit;
-        }
-        int256 quoteDelta = quoteAmount.toInt256();
-        int256 baseDelta = baseAmount.toInt256();
-        if (params.key.takerPolicy.useOutput) {
-            quoteDelta -= _calculateFee(quoteAmount, params.key.takerPolicy.rate);
-        } else {
-            baseDelta -= _calculateFee(baseAmount, params.key.takerPolicy.rate);
+            quoteAmount = uint256(takeAmount) * params.key.unit;
         }
 
-        _accountDelta(params.key.quote, -quoteDelta);
-        _accountDelta(params.key.base, baseDelta);
+        {
+            int256 quoteDelta = quoteAmount.toInt256();
+            int256 baseDelta = baseAmount.toInt256();
+            if (params.key.takerPolicy.useOutput) {
+                quoteDelta -= _calculateFee(quoteAmount, params.key.takerPolicy.rate);
+            } else {
+                baseDelta -= _calculateFee(baseAmount, params.key.takerPolicy.rate);
+            }
+            _accountDelta(params.key.quote, -quoteDelta);
+            _accountDelta(params.key.base, baseDelta);
+        }
 
         params.key.hooks.afterTake(params, quoteAmount, baseAmount, hookData);
 
-        emit Take(bookId, msg.sender, tick, params.amount);
+        emit Take(bookId, msg.sender, tick, takeAmount);
     }
 
     function cancel(CancelParams calldata params, bytes calldata hookData) external {
