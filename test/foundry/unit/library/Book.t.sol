@@ -45,6 +45,11 @@ contract BookTest is Test {
         assertEq(actualKey.takerPolicy.rate, key.takerPolicy.rate);
         assertEq(actualKey.takerPolicy.useOutput, key.takerPolicy.useOutput);
         assertEq(address(actualKey.hooks), address(key.hooks));
+
+        assertTrue(book.isEmpty());
+
+        vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
+        book.getRoot();
     }
 
     function testOpenDuplicatedKey() public {
@@ -59,11 +64,17 @@ contract BookTest is Test {
     }
 
     function testMake() public opened {
+        assertTrue(book.isEmpty());
+
         uint40 index = book.make(Tick.wrap(0), 100);
+        assertFalse(book.isEmpty());
+        assertEq(Tick.unwrap(book.getRoot()), 0);
         assertEq(index, 0);
         assertEq(book.depth(Tick.wrap(0)), 100);
 
         index = book.make(Tick.wrap(0), 200);
+        assertFalse(book.isEmpty());
+        assertEq(Tick.unwrap(book.getRoot()), 0);
         assertEq(index, 1);
         assertEq(book.depth(Tick.wrap(0)), 300);
     }

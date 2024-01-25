@@ -131,6 +131,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         return _books[id].root();
     }
 
+    function isEmpty(BookId id) external view returns (bool) {
+        return _books[id].isEmpty();
+    }
+
     function make(MakeParams calldata params, bytes calldata hookData)
         external
         onlyByLocker

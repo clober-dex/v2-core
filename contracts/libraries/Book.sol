@@ -61,6 +61,10 @@ library Book {
         return self.heap.root().toTick();
     }
 
+    function isEmpty(State storage self) internal view returns (bool) {
+        return self.heap.isEmpty();
+    }
+
     function make(
         State storage self,
         mapping(OrderId => IBookManager.Order) storage orders,
