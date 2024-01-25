@@ -8,14 +8,14 @@ import "../interfaces/IBookManager.sol";
 import "./Tick.sol";
 import "./OrderId.sol";
 import "./TotalClaimableMap.sol";
-import "./MockHeap.sol";
+import "./Heap.sol";
 
 library Book {
     using Book for State;
-    using MockHeap for MockHeap.Core;
+    using Heap for mapping(uint256 => uint256);
     using SegmentedSegmentTree for SegmentedSegmentTree.Core;
     using TotalClaimableMap for mapping(uint24 => uint256);
-    using TickLibrary for Tick;
+    using TickLibrary for *;
     using OrderIdLibrary for OrderId;
 
     error BookAlreadyOpened();
@@ -32,7 +32,7 @@ library Book {
     struct State {
         IBookManager.BookKey key;
         mapping(Tick tick => Queue) queues;
-        MockHeap.Core heap;
+        mapping(uint256 => uint256) heap;
         // four values of totalClaimable are stored in one uint256
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
     }
@@ -58,7 +58,7 @@ library Book {
     }
 
     function root(State storage self) internal view returns (Tick) {
-        return self.heap.root();
+        return self.heap.root().toTick();
     }
 
     function make(
@@ -68,7 +68,8 @@ library Book {
         Tick tick,
         uint64 amount
     ) internal returns (uint40 orderIndex) {
-        if (!self.heap.has(tick)) self.heap.push(tick);
+        uint24 tickIndex = tick.toUint24();
+        if (!self.heap.has(tickIndex)) self.heap.push(tickIndex);
 
         Queue storage queue = self.queues[tick];
         orderIndex = queue.index;
@@ -103,7 +104,7 @@ library Book {
      * @return takeAmount The actual amount to take
      */
     function take(State storage self, uint64 maxTakeAmount) internal returns (Tick tick, uint64 takeAmount) {
-        tick = self.heap.root();
+        tick = self.heap.root().toTick();
         uint64 currentDepth = depth(self, tick);
         takeAmount = currentDepth < maxTakeAmount ? currentDepth : maxTakeAmount;
 
@@ -135,7 +136,7 @@ library Book {
 
     function cleanHeap(State storage self) internal {
         while (!self.heap.isEmpty()) {
-            if (depth(self, self.heap.root()) == 0) {
+            if (depth(self, self.heap.root().toTick()) == 0) {
                 self.heap.pop();
             } else {
                 break;

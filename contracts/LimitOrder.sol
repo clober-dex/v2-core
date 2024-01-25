@@ -38,7 +38,7 @@ abstract contract LimitOrder is ILimitOrder {
         return _get(OrderId.wrap(id)).provider;
     }
 
-    function tick(uint256 id) public view returns (Tick) {
+    function tick(uint256 id) public pure returns (Tick) {
         (, Tick t,) = OrderId.wrap(id).decode();
         return t;
     }
