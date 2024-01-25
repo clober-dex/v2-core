@@ -101,14 +101,14 @@ library Book {
      * @param self The book state
      * @param maxTakeAmount The maximum amount to take
      * @return tick The tick of the order
-     * @return takeAmount The actual amount to take
+     * @return takenAmount The actual amount to take
      */
-    function take(State storage self, uint64 maxTakeAmount) internal returns (Tick tick, uint64 takeAmount) {
+    function take(State storage self, uint64 maxTakeAmount) internal returns (Tick tick, uint64 takenAmount) {
         tick = self.heap.root().toTick();
         uint64 currentDepth = depth(self, tick);
-        takeAmount = currentDepth < maxTakeAmount ? currentDepth : maxTakeAmount;
+        takenAmount = currentDepth < maxTakeAmount ? currentDepth : maxTakeAmount;
 
-        self.totalClaimableOf.add(tick, takeAmount);
+        self.totalClaimableOf.add(tick, takenAmount);
 
         self.cleanHeap();
     }

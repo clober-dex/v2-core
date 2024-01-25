@@ -22,7 +22,6 @@ interface IHooks {
         address sender,
         IBookManager.MakeParams calldata params,
         OrderId orderId,
-        uint256 quoteAmount,
         bytes calldata hookData
     ) external returns (bytes4);
 
@@ -33,8 +32,8 @@ interface IHooks {
     function afterTake(
         address sender,
         IBookManager.TakeParams calldata params,
-        uint256 quoteAmount,
-        uint256 baseAmount,
+        Tick tick,
+        uint64 takenAmount,
         bytes calldata hookData
     ) external returns (bytes4);
 

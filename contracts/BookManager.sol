@@ -165,7 +165,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         });
         _mint(msg.sender, OrderId.unwrap(id));
 
-        params.key.hooks.afterMake(params, id, quoteAmount, hookData);
+        params.key.hooks.afterMake(params, id, hookData);
 
         emit Make(bookId, msg.sender, params.amount, orderIndex, params.tick);
     }
@@ -181,10 +181,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (!params.key.hooks.beforeTake(params, hookData)) return (0, 0);
 
-        (Tick tick, uint64 takeAmount) = book.take(params.maxAmount);
-        baseAmount = tick.rawToBase(takeAmount, true);
+        (Tick tick, uint64 takenAmount) = book.take(params.maxAmount);
+        baseAmount = tick.rawToBase(takenAmount, true);
         unchecked {
-            quoteAmount = uint256(takeAmount) * params.key.unit;
+            quoteAmount = uint256(takenAmount) * params.key.unit;
         }
 
         {
@@ -199,9 +199,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             _accountDelta(params.key.base, baseDelta);
         }
 
-        params.key.hooks.afterTake(params, quoteAmount, baseAmount, hookData);
+        params.key.hooks.afterTake(params, tick, takenAmount, hookData);
 
-        emit Take(bookId, msg.sender, tick, takeAmount);
+        emit Take(bookId, msg.sender, tick, takenAmount);
     }
 
     function cancel(CancelParams calldata params, bytes calldata hookData) external {

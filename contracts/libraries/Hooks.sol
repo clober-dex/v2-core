@@ -162,17 +162,11 @@ library Hooks {
     }
 
     /// @notice calls afterMake hook if permissioned and validates return value
-    function afterMake(
-        IHooks self,
-        IBookManager.MakeParams memory params,
-        OrderId orderId,
-        uint256 quoteAmount,
-        bytes calldata hookData
-    ) internal {
+    function afterMake(IHooks self, IBookManager.MakeParams memory params, OrderId orderId, bytes calldata hookData)
+        internal
+    {
         if (self.hasPermission(AFTER_MAKE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.afterMake.selector, msg.sender, params, orderId, quoteAmount, hookData)
-            );
+            self.callHook(abi.encodeWithSelector(IHooks.afterMake.selector, msg.sender, params, orderId, hookData));
         }
     }
 
@@ -193,13 +187,13 @@ library Hooks {
     function afterTake(
         IHooks self,
         IBookManager.TakeParams memory params,
-        uint256 quoteAmount,
-        uint256 baseAmount,
+        Tick tick,
+        uint64 takenAmount,
         bytes calldata hookData
     ) internal {
         if (self.hasPermission(AFTER_TAKE_FLAG)) {
             self.callHook(
-                abi.encodeWithSelector(IHooks.afterTake.selector, msg.sender, params, quoteAmount, baseAmount, hookData)
+                abi.encodeWithSelector(IHooks.afterTake.selector, msg.sender, params, tick, takenAmount, hookData)
             );
         }
     }
