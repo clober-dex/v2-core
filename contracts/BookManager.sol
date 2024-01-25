@@ -156,14 +156,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
         _accountDelta(params.key.quote, quoteDelta);
 
-        _orders[id] = IBookManager.Order({
-            initial: params.amount,
-            nonce: 0,
-            owner: msg.sender,
-            pending: params.amount,
-            provider: params.provider
-        });
         _mint(msg.sender, OrderId.unwrap(id));
+        Order storage order = _orders[id];
+        order.initial = params.amount;
+        order.pending = params.amount;
+        order.provider = params.provider;
 
         params.key.hooks.afterMake(params, id, hookData);
 
