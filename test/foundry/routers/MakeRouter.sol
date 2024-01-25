@@ -40,6 +40,7 @@ contract MakeRouter is ILocker {
             } else {
                 IERC20(Currency.unwrap(params.key.quote)).transferFrom(payer, address(bookManager), quoteAmount);
             }
+            bookManager.settle(params.key.quote);
         }
     }
 }

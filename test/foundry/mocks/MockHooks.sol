@@ -40,7 +40,7 @@ contract MockHooks is IHooks {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterMake(address, IBookManager.MakeParams calldata, OrderId, uint256, bytes calldata hookData)
+    function afterMake(address, IBookManager.MakeParams calldata, OrderId, bytes calldata hookData)
         external
         returns (bytes4)
     {
@@ -55,7 +55,7 @@ contract MockHooks is IHooks {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterTake(address, IBookManager.TakeParams calldata, uint256, uint256, bytes calldata hookData)
+    function afterTake(address, IBookManager.TakeParams calldata, Tick, uint64, bytes calldata hookData)
         external
         returns (bytes4)
     {
@@ -73,7 +73,7 @@ contract MockHooks is IHooks {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterCancel(address, IBookManager.CancelParams calldata, uint256, bytes calldata hookData)
+    function afterCancel(address, IBookManager.CancelParams calldata, uint64, bytes calldata hookData)
         external
         returns (bytes4)
     {
@@ -88,7 +88,7 @@ contract MockHooks is IHooks {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterClaim(address, OrderId, uint256, bytes calldata hookData) external returns (bytes4) {
+    function afterClaim(address, OrderId, uint64, bytes calldata hookData) external returns (bytes4) {
         afterClaimData = hookData;
         bytes4 selector = MockHooks.afterClaim.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];

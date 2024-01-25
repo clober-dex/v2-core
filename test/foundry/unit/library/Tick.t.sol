@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
+
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
+
 import "../../mocks/TickWrapper.sol";
 
 contract TickUnitTest is Test {
+    using TickLibrary for *;
+
     TickWrapper public tickWrapper;
 
     function setUp() public {
@@ -92,6 +96,23 @@ contract TickUnitTest is Test {
             assertGe(spread, 99);
             assertLe(spread, 100);
             lastPrice = price;
+        }
+    }
+
+    function testToTick(uint24 index) public {
+        if (index > uint24(type(int24).max)) {
+            assertEq(Tick.unwrap(index.toTick()), int24(index - uint24(type(int24).max) - 1));
+        } else {
+            assertEq(Tick.unwrap(index.toTick()), type(int24).min + int24(index));
+        }
+    }
+
+    function testToUint24(Tick tick) public {
+        int24 tickValue = Tick.unwrap(tick);
+        if (tickValue >= 0) {
+            assertEq(tick.toUint24(), uint24(tickValue) + uint24(type(int24).max) + 1);
+        } else {
+            assertEq(tick.toUint24(), uint24(tickValue - type(int24).min));
         }
     }
 

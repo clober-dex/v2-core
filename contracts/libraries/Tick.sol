@@ -60,6 +60,18 @@ library TickLibrary {
         _;
     }
 
+    function toTick(uint24 x) internal pure returns (Tick t) {
+        assembly {
+            t := sub(x, 0x800000)
+        }
+    }
+
+    function toUint24(Tick tick) internal pure returns (uint24 r) {
+        assembly {
+            r := add(tick, 0x800000)
+        }
+    }
+
     function fromPrice(uint256 price) internal pure validatePrice(price) returns (Tick) {
         int256 log = price.log2();
         int256 tick = log / 49089913871092318234424474366155889;

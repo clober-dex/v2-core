@@ -30,7 +30,7 @@ contract TakeRouter is ILocker {
         (uint256 quoteAmount, uint256 baseAmount) = bookManager.take(params, hookData);
         returnData = abi.encode(quoteAmount, baseAmount);
         if (quoteAmount > 0) {
-            params.key.quote.transfer(payer, quoteAmount);
+            bookManager.withdraw(params.key.quote, payer, quoteAmount);
         }
         if (baseAmount > 0) {
             if (params.key.base.isNative()) {
@@ -41,6 +41,7 @@ contract TakeRouter is ILocker {
             } else {
                 IERC20(Currency.unwrap(params.key.base)).transferFrom(payer, address(bookManager), baseAmount);
             }
+            bookManager.settle(params.key.base);
         }
     }
 
