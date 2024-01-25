@@ -57,6 +57,10 @@ library Book {
         return self.queues[tick].tree.total() - self.totalClaimableOf.get(tick);
     }
 
+    function root(State storage self) internal view returns (Tick) {
+        return self.heap.root();
+    }
+
     function make(
         State storage self,
         mapping(OrderId => IBookManager.Order) storage orders,

@@ -81,6 +81,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function getDepth(BookId id, Tick tick) external view returns (uint64);
 
+    function getRoot(BookId id) external view returns (Tick tick);
+
     function open(BookKey calldata key, bytes calldata hookData) external;
 
     function lock(address locker, bytes calldata data) external returns (bytes memory);
