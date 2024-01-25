@@ -31,6 +31,16 @@ contract CloberController is ICloberController, IPositionLocker {
         _;
     }
 
+    modifier flushNative() {
+        _;
+        if (address(this).balance > 0) {
+            (bool success,) = msg.sender.call{value: address(this).balance}("");
+            if (!success) {
+                revert();
+            }
+        }
+    }
+
     function positionLockAcquired(bytes memory data) external returns (bytes memory result) {
         if (msg.sender != address(_bookManager)) revert InvalidAccess();
 
@@ -52,6 +62,9 @@ contract CloberController is ICloberController, IPositionLocker {
 
     function make(MakeOrderParams[] calldata paramsList, uint64 deadline)
         external
+        payable
+        flushNative
+        checkDeadline(deadline)
         returns (OrderId[] memory ids)
     {
         bytes memory lockData = abi.encode(0, abi.encode(paramsList));
@@ -59,12 +72,22 @@ contract CloberController is ICloberController, IPositionLocker {
         (ids) = abi.decode(result, (OrderId[]));
     }
 
-    function take(TakeOrderParams[] calldata paramsList, uint64 deadline) external checkDeadline(deadline) {
+    function take(TakeOrderParams[] calldata paramsList, uint64 deadline)
+        external
+        payable
+        flushNative
+        checkDeadline(deadline)
+    {
         bytes memory lockData = abi.encode(1, abi.encode(paramsList));
         _bookManager.lock(address(this), lockData);
     }
 
-    function spend(SpendOrderParams[] calldata paramsList, uint64 deadline) external checkDeadline(deadline) {
+    function spend(SpendOrderParams[] calldata paramsList, uint64 deadline)
+        external
+        payable
+        flushNative
+        checkDeadline(deadline)
+    {
         bytes memory lockData = abi.encode(2, abi.encode(paramsList));
         _bookManager.lock(address(this), lockData);
     }
@@ -147,7 +170,11 @@ contract CloberController is ICloberController, IPositionLocker {
             if (params.maxBaseAmount < spendBaseAmount) revert ControllerSlippage();
 
             _permitERC20(Currency.unwrap(key.base), params.permitParams);
-            IERC20(Currency.unwrap(key.base)).safeTransferFrom(msg.sender, address(_bookManager), spendBaseAmount);
+            if (key.base.isNative()) {
+                key.base.transfer(address(_bookManager), spendBaseAmount);
+            } else {
+                IERC20(Currency.unwrap(key.base)).safeTransferFrom(msg.sender, address(_bookManager), spendBaseAmount);
+            }
             _bookManager.settle(key.base);
         }
     }
@@ -180,10 +207,15 @@ contract CloberController is ICloberController, IPositionLocker {
             if (takenQuoteAmount < params.minQuoteAmount) revert ControllerSlippage();
 
             _permitERC20(Currency.unwrap(key.base), params.permitParams);
+
+            uint256 spendBaseAmount;
             unchecked {
-                IERC20(Currency.unwrap(key.base)).safeTransferFrom(
-                    msg.sender, address(_bookManager), params.baseAmount - leftBaseAmount
-                );
+                spendBaseAmount = params.baseAmount - leftBaseAmount;
+            }
+            if (key.base.isNative()) {
+                key.base.transfer(address(_bookManager), spendBaseAmount);
+            } else {
+                IERC20(Currency.unwrap(key.base)).safeTransferFrom(msg.sender, address(_bookManager), spendBaseAmount);
             }
             _bookManager.settle(key.base);
         }
