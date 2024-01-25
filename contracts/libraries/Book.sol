@@ -58,7 +58,7 @@ library Book {
     }
 
     function root(State storage self) internal view returns (Tick) {
-        return self.heap.root().fromUint24();
+        return self.heap.root().toTick();
     }
 
     function make(
@@ -104,7 +104,7 @@ library Book {
      * @return takeAmount The actual amount to take
      */
     function take(State storage self, uint64 maxTakeAmount) internal returns (Tick tick, uint64 takeAmount) {
-        tick = self.heap.root().fromUint24();
+        tick = self.heap.root().toTick();
         uint64 currentDepth = depth(self, tick);
         takeAmount = currentDepth < maxTakeAmount ? currentDepth : maxTakeAmount;
 
@@ -136,7 +136,7 @@ library Book {
 
     function cleanHeap(State storage self) internal {
         while (!self.heap.isEmpty()) {
-            if (depth(self, self.heap.root().fromUint24()) == 0) {
+            if (depth(self, self.heap.root().toTick()) == 0) {
                 self.heap.pop();
             } else {
                 break;

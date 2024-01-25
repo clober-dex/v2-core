@@ -60,7 +60,7 @@ library TickLibrary {
         _;
     }
 
-    function fromUint24(uint24 x) internal pure returns (Tick t) {
+    function toTick(uint24 x) internal pure returns (Tick t) {
         assembly {
             t := sub(x, 0x800000)
         }
