@@ -12,6 +12,7 @@ import "./Heap.sol";
 
 library Book {
     using Book for State;
+    using Heap for mapping(uint256 => uint256);
     using SegmentedSegmentTree for SegmentedSegmentTree.Core;
     using TotalClaimableMap for mapping(uint24 => uint256);
     using TickLibrary for *;
@@ -66,8 +67,8 @@ library Book {
         uint64 amount
     ) internal returns (uint40 orderIndex) {
         uint24 tickIndex = tick.toUint24();
-        if (!Heap.has(self.heap, tickIndex)) {
-            Heap.push(self.heap, tickIndex);
+        if (!self.heap.has(tickIndex)) {
+            self.heap.push(tickIndex);
         }
 
         Queue storage queue = self.queues[tick];
@@ -102,7 +103,7 @@ library Book {
     }
 
     function take(State storage self, uint64 takeAmount) internal returns (Tick tick, uint256 baseAmount) {
-        tick = Heap.root(self.heap).fromUint24();
+        tick = self.heap.root().fromUint24();
         uint64 currentDepth = self.depth(tick);
         if (currentDepth < takeAmount) revert TooLargeTakeAmount();
 
@@ -131,9 +132,9 @@ library Book {
     }
 
     function _cleanHeap(State storage self) private {
-        while (!Heap.isEmpty(self.heap)) {
-            if (self.depth(Heap.root(self.heap).fromUint24()) == 0) {
-                Heap.pop(self.heap);
+        while (!self.heap.isEmpty()) {
+            if (self.depth(self.heap.root().fromUint24()) == 0) {
+                self.heap.pop();
             } else {
                 break;
             }
