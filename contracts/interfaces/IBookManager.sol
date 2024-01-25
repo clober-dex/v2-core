@@ -29,11 +29,9 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         IHooks hooks
     );
     event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 amount);
-    event Make(
-        BookId indexed bookId, address indexed user, uint64 amount, uint32 claimBounty, uint256 orderIndex, Tick tick
-    );
+    event Make(BookId indexed bookId, address indexed user, uint64 amount, uint256 orderIndex, Tick tick);
     event Cancel(OrderId indexed orderId, uint64 canceledAmount);
-    event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount, uint32 claimBounty);
+    event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount);
     event Whitelist(address indexed provider);
     event Delist(address indexed provider);
     event Collect(address indexed provider, Currency indexed currency, uint256 amount);
@@ -44,7 +42,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint32 nonce;
         address provider;
         uint64 pending; // Unclaimed amount
-        uint32 bounty;
         address owner;
     }
 
@@ -82,6 +79,10 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function getLockData() external view returns (uint128, uint128);
 
+    function getDepth(BookId id, Tick tick) external view returns (uint64);
+
+    function getRoot(BookId id) external view returns (Tick tick);
+
     function open(BookKey calldata key, bytes calldata hookData) external;
 
     function lock(address locker, bytes calldata data) external returns (bytes memory);
@@ -92,7 +93,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint64 amount; // times 10**unitDecimals to get actual bid amount
         /// @notice The limit order service provider address to collect fees
         address provider;
-        uint32 bounty;
     }
 
     /**
@@ -100,16 +100,20 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @param params The order parameters
      * @param hookData The hook data
      * @return id The order id. Returns 0 if the order is not settled
+     * @return quoteAmount The amount of quote currency to be paid
      */
-    function make(MakeParams calldata params, bytes calldata hookData) external returns (OrderId id);
+    function make(MakeParams calldata params, bytes calldata hookData)
+        external
+        returns (OrderId id, uint256 quoteAmount);
 
     struct TakeParams {
         BookKey key;
-        uint64 amount;
+        uint64 maxAmount;
     }
 
-    // todo: consider return value
-    function take(TakeParams calldata params, bytes calldata hookData) external;
+    function take(TakeParams calldata params, bytes calldata hookData)
+        external
+        returns (uint256 quoteAmount, uint256 baseAmount);
 
     struct CancelParams {
         OrderId id;
@@ -126,9 +130,9 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function settle(Currency currency) external payable returns (uint256);
 
-    function whitelist(address[] calldata providers) external;
+    function whitelist(address provider) external;
 
-    function delist(address[] calldata providers) external;
+    function delist(address provider) external;
 
     function setDefaultProvider(address newDefaultProvider) external;
 }

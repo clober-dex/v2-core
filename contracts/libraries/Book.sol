@@ -18,11 +18,11 @@ library Book {
     using TickLibrary for *;
     using OrderIdLibrary for OrderId;
 
-    error CancelFailed(uint64 maxCancelableAmount);
-    error BookAlreadyInitialized();
-    error BookNotInitialized();
+    error BookAlreadyOpened();
+    error BookNotOpened();
     error QueueReplaceFailed();
     error TooLargeTakeAmount();
+    error CancelFailed(uint64 maxCancelableAmount);
 
     struct Queue {
         SegmentedSegmentTree.Core tree;
@@ -37,26 +37,28 @@ library Book {
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
     }
 
-    uint256 internal constant PRICE_PRECISION = 10 ** 18;
-    uint256 internal constant CLAIM_BOUNTY_UNIT = 1 gwei;
     uint40 internal constant MAX_ORDER = 2 ** 15; // 32768
     uint256 internal constant MAX_ORDER_M = 2 ** 15 - 1; // % 32768
 
-    function initialize(State storage self, IBookManager.BookKey calldata key) internal {
-        if (self.isInitialized()) revert BookAlreadyInitialized();
+    function open(State storage self, IBookManager.BookKey calldata key) internal {
+        if (self.isOpened()) revert BookAlreadyOpened();
         self.key = key;
     }
 
-    function isInitialized(State storage self) internal view returns (bool) {
+    function isOpened(State storage self) internal view returns (bool) {
         return self.key.unit != 0;
     }
 
-    function checkInitialized(State storage self) internal view {
-        if (!self.isInitialized()) revert BookNotInitialized();
+    function checkOpened(State storage self) internal view {
+        if (!self.isOpened()) revert BookNotOpened();
     }
 
     function depth(State storage self, Tick tick) internal view returns (uint64) {
         return self.queues[tick].tree.total() - self.totalClaimableOf.get(tick);
+    }
+
+    function root(State storage self) internal view returns (Tick) {
+        return self.heap.root().fromUint24();
     }
 
     function make(
@@ -67,73 +69,74 @@ library Book {
         uint64 amount
     ) internal returns (uint40 orderIndex) {
         uint24 tickIndex = tick.toUint24();
-        if (!self.heap.has(tickIndex)) {
-            self.heap.push(tickIndex);
-        }
+        if (!self.heap.has(tickIndex)) self.heap.push(tickIndex);
 
         Queue storage queue = self.queues[tick];
         orderIndex = queue.index;
 
         if (orderIndex >= MAX_ORDER) {
-            {
-                uint40 staleOrderIndex;
-                unchecked {
-                    staleOrderIndex = orderIndex - MAX_ORDER;
-                }
+            unchecked {
+                uint40 staleOrderIndex = orderIndex - MAX_ORDER;
                 uint64 stalePendingAmount = orders[OrderIdLibrary.encode(bookId, tick, staleOrderIndex)].pending;
                 if (stalePendingAmount > 0) {
                     // If the order is not settled completely, we cannot replace it
                     uint64 claimable = calculateClaimableRawAmount(self, stalePendingAmount, tick, staleOrderIndex);
-                    if (claimable != stalePendingAmount) {
-                        revert QueueReplaceFailed();
-                    }
+                    if (claimable != stalePendingAmount) revert QueueReplaceFailed();
                 }
             }
 
             // The stale order is settled completely, so remove it from the totalClaimableOf.
             // We can determine the stale order is claimable.
             uint64 staleOrderedAmount = queue.tree.get(orderIndex & MAX_ORDER_M);
-            if (staleOrderedAmount > 0) {
-                self.totalClaimableOf.sub(tick, staleOrderedAmount);
-            }
+            if (staleOrderedAmount > 0) self.totalClaimableOf.sub(tick, staleOrderedAmount);
         }
 
+        // @dev Assume that orderIndex is always less than type(uint40).max. If not, `make` will revert.
         queue.index = orderIndex + 1;
         queue.tree.update(orderIndex & MAX_ORDER_M, amount);
     }
 
-    function take(State storage self, uint64 takeAmount) internal returns (Tick tick, uint256 baseAmount) {
+    /**
+     * @notice Take orders from the book
+     * @param self The book state
+     * @param maxTakeAmount The maximum amount to take
+     * @return tick The tick of the order
+     * @return takeAmount The actual amount to take
+     */
+    function take(State storage self, uint64 maxTakeAmount) internal returns (Tick tick, uint64 takeAmount) {
         tick = self.heap.root().fromUint24();
-        uint64 currentDepth = self.depth(tick);
-        if (currentDepth < takeAmount) revert TooLargeTakeAmount();
+        uint64 currentDepth = depth(self, tick);
+        takeAmount = currentDepth < maxTakeAmount ? currentDepth : maxTakeAmount;
 
-        baseAmount = tick.rawToBase(takeAmount, true);
         self.totalClaimableOf.add(tick, takeAmount);
 
-        _cleanHeap(self);
+        self.cleanHeap();
     }
 
-    function cancel(State storage self, Tick tick, uint40 orderIndex, uint64 pending, uint64 claimableRaw, uint64 to)
+    function cancel(State storage self, OrderId orderId, IBookManager.Order storage order, uint64 to)
         internal
         returns (uint64 canceledAmount)
     {
+        (, Tick tick, uint40 orderIndex) = orderId.decode();
+        uint64 pending = order.pending;
+        uint64 claimableRaw = calculateClaimableRawAmount(self, pending, tick, orderIndex);
         uint64 afterPending = to + claimableRaw;
         unchecked {
-            if (pending < afterPending) {
-                revert CancelFailed(pending - claimableRaw);
-            }
+            if (pending < afterPending) revert CancelFailed(pending - claimableRaw);
             canceledAmount = pending - afterPending;
 
             self.queues[tick].tree.update(
                 orderIndex & MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & MAX_ORDER_M) - canceledAmount
             );
         }
-        // todo: check clean
+        order.pending = afterPending;
+
+        self.cleanHeap();
     }
 
-    function _cleanHeap(State storage self) private {
+    function cleanHeap(State storage self) internal {
         while (!self.heap.isEmpty()) {
-            if (self.depth(self.heap.root().fromUint24()) == 0) {
+            if (depth(self, self.heap.root().fromUint24()) == 0) {
                 self.heap.pop();
             } else {
                 break;
