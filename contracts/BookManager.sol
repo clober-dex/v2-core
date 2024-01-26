@@ -165,9 +165,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             quoteAmount = uint256(params.amount) * params.key.unit;
         }
         int256 quoteDelta = quoteAmount.toInt256();
-        if (!params.key.makerPolicy.useOutput) {
-            quoteDelta -= _calculateFee(quoteAmount, params.key.makerPolicy.rate);
-        }
+
+        if (!params.key.makerPolicy.useOutput) quoteDelta -= _calculateFee(quoteAmount, params.key.makerPolicy.rate);
+
         _accountDelta(params.key.quote, quoteDelta);
 
         _mint(msg.sender, OrderId.unwrap(id));
@@ -236,9 +236,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             canceledAmount = uint256(canceledRaw) * key.unit;
         }
         FeePolicy memory makerPolicy = key.makerPolicy;
-        if (!makerPolicy.useOutput) {
-            canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate);
-        }
+
+        if (!makerPolicy.useOutput) canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate);
+
         key.quote.transfer(owner, canceledAmount);
 
         if (order.pending == 0) _burn(OrderId.unwrap(params.id));
@@ -369,11 +369,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         int256 next = current + delta;
 
         unchecked {
-            if (next == 0) {
-                Lockers.decrementNonzeroDeltaCount();
-            } else if (current == 0) {
-                Lockers.incrementNonzeroDeltaCount();
-            }
+            if (next == 0) Lockers.decrementNonzeroDeltaCount();
+            else if (current == 0) Lockers.incrementNonzeroDeltaCount();
         }
 
         currencyDelta[locker][currency] = next;

@@ -41,22 +41,11 @@ library TickLibrary {
     uint256 private constant _R18 = 0x48a170391f7dc42444e8fa2;
 
     function validate(Tick tick) internal pure {
-        if (Tick.unwrap(tick) > MAX_TICK || Tick.unwrap(tick) < MIN_TICK) {
-            revert InvalidTick();
-        }
-    }
-
-    modifier validateTick(Tick tick) {
-        if (Tick.unwrap(tick) > MAX_TICK || Tick.unwrap(tick) < MIN_TICK) {
-            revert InvalidTick();
-        }
-        _;
+        if (Tick.unwrap(tick) > MAX_TICK || Tick.unwrap(tick) < MIN_TICK) revert InvalidTick();
     }
 
     modifier validatePrice(uint256 price) {
-        if (price > MAX_PRICE || price < MIN_PRICE) {
-            revert InvalidPrice();
-        }
+        if (price > MAX_PRICE || price < MIN_PRICE) revert InvalidPrice();
         _;
     }
 
@@ -79,13 +68,10 @@ library TickLibrary {
             log - int256(uint256((price >> 128 == 0) ? 49089913871092318234424474366155887 : 84124744249948177485425))
         ) / 49089913871092318234424474366155889;
 
-        if (tick == tickLow) {
-            return Tick.wrap(int24(tick));
-        }
+        if (tick == tickLow) return Tick.wrap(int24(tick));
 
-        if (toPrice(Tick.wrap(int24(tick))) <= price) {
-            return Tick.wrap(int24(tick));
-        }
+        if (toPrice(Tick.wrap(int24(tick))) <= price) return Tick.wrap(int24(tick));
+
         return Tick.wrap(int24(tickLow));
     }
 
@@ -124,9 +110,7 @@ library TickLibrary {
 
     function baseToRaw(Tick tick, uint256 baseAmount, bool roundingUp) internal pure returns (uint64) {
         uint256 rawAmount = Math.divide((baseAmount * tick.toPrice()), 1 << 128, roundingUp);
-        if (rawAmount > type(uint64).max) {
-            revert TickOverflow();
-        }
+        if (rawAmount > type(uint64).max) revert TickOverflow();
         return uint64(rawAmount);
     }
 

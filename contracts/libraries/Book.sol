@@ -140,11 +140,8 @@ library Book {
 
     function cleanHeap(State storage self) internal {
         while (!self.heap.isEmpty()) {
-            if (depth(self, self.heap.root().toTick()) == 0) {
-                self.heap.pop();
-            } else {
-                break;
-            }
+            if (depth(self, self.heap.root().toTick()) == 0) self.heap.pop();
+            else break;
         }
     }
 
@@ -154,24 +151,20 @@ library Book {
         returns (uint64)
     {
         Queue storage queue = self.queues[tick];
-        if (index + MAX_ORDER < queue.index) {
-            // @dev Book logic always considers replaced orders as claimable.
-            return orderAmount;
-        }
+        // @dev Book logic always considers replaced orders as claimable.
+        if (index + MAX_ORDER < queue.index) return orderAmount;
         uint64 totalClaimable = self.totalClaimableOf.get(tick);
         uint64 rangeRight = _getClaimRangeRight(queue, index);
         if (rangeRight >= totalClaimable + orderAmount) return 0;
-        if (rangeRight <= totalClaimable) {
-            // -------- totalClaimable ---------|---
-            // ------|---- orderAmount ----|--------
-            //   rangeLeft           rangeRight
-            return orderAmount;
-        } else {
-            // -- totalClaimable --|----------------
-            // ------|---- orderAmount ----|--------
-            //   rangeLeft           rangeRight
-            return totalClaimable + orderAmount - rangeRight;
-        }
+
+        // -------- totalClaimable ---------|---
+        // ------|---- orderAmount ----|--------
+        //   rangeLeft           rangeRight
+        if (rangeRight <= totalClaimable) return orderAmount;
+        // -- totalClaimable --|----------------
+        // ------|---- orderAmount ----|--------
+        //   rangeLeft           rangeRight
+        else return totalClaimable + orderAmount - rangeRight;
     }
 
     function _getClaimRangeRight(Queue storage queue, uint256 orderIndex) private view returns (uint64 rangeRight) {

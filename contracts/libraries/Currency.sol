@@ -60,11 +60,8 @@ library CurrencyLibrary {
     }
 
     function balanceOfSelf(Currency currency) internal view returns (uint256) {
-        if (currency.isNative()) {
-            return address(this).balance;
-        } else {
-            return IERC20Minimal(Currency.unwrap(currency)).balanceOf(address(this));
-        }
+        if (currency.isNative()) return address(this).balance;
+        else return IERC20Minimal(Currency.unwrap(currency)).balanceOf(address(this));
     }
 
     function equals(Currency currency, Currency other) internal pure returns (bool) {
