@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 pragma solidity ^0.8.0;
 
@@ -73,7 +73,14 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function getBookKey(BookId id) external view returns (BookKey memory);
 
-    function getOrder(OrderId id) external view returns (Order memory);
+    struct OrderInfo {
+        address provider;
+        uint64 initial;
+        uint64 open;
+        uint64 claimable;
+    }
+
+    function getOrder(OrderId id) external view returns (OrderInfo memory);
 
     function getLock(uint256 i) external view returns (address locker, address lockCaller);
 
@@ -82,6 +89,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     function getDepth(BookId id, Tick tick) external view returns (uint64);
 
     function getRoot(BookId id) external view returns (Tick tick);
+
+    function isEmpty(BookId id) external view returns (bool);
 
     function open(BookKey calldata key, bytes calldata hookData) external;
 

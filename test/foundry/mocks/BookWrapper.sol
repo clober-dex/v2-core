@@ -67,6 +67,10 @@ contract BookWrapper {
         return _book.root();
     }
 
+    function isEmpty() external view returns (bool) {
+        return _book.isEmpty();
+    }
+
     function setQueueIndex(Tick tick, uint40 index) external {
         _book.queues[tick].index = index;
     }
