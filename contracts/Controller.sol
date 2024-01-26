@@ -109,7 +109,6 @@ contract Controller is IController, ILocker {
                 if (tokens[j] == token) break;
             }
             if (j == tokenIndex) tokens[tokenIndex++] = token;
-
         }
         // Todo duplicate code.
         int256 currencyDelta = _bookManager.currencyDelta(address(this), CurrencyLibrary.NATIVE);
