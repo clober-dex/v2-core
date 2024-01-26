@@ -25,9 +25,7 @@ contract CloberController is ICloberController, IPositionLocker {
     }
 
     modifier checkDeadline(uint64 deadline) {
-        if (block.timestamp > deadline) {
-            revert Deadline();
-        }
+        if (block.timestamp > deadline) revert Deadline();
         _;
     }
 
