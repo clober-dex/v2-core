@@ -37,11 +37,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     event Collect(address indexed provider, Currency indexed currency, uint256 amount);
     event SetDefaultProvider(address indexed oldDefaultProvider, address indexed newDefaultProvider);
 
-    struct Order {
-        address provider;
-        uint64 pending; // Ordered amount + claimable amount // todo: This value may be modified during user delivery
-    }
-
     struct BookKey {
         Currency base;
         uint96 unit;

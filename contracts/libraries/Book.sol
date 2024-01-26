@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@clober/library/contracts/SegmentedSegmentTree.sol";
 
 import "../interfaces/IBookManager.sol";
@@ -20,25 +21,32 @@ library Book {
 
     error BookAlreadyOpened();
     error BookNotOpened();
+    error OrdersOutOfRange();
     error QueueReplaceFailed();
     error TooLargeTakeAmount();
     error CancelFailed(uint64 maxCancelableAmount);
 
+    // @dev Due to the segment tree implementation, the maximum order size is 2 ** 15.
+    uint40 internal constant MAX_ORDER = 2 ** 15; // 32768
+    uint256 internal constant MAX_ORDER_M = 2 ** 15 - 1; // % 32768
+
+    struct Order {
+        address provider;
+        uint64 pending; // @dev unfilled amount + filled(claimable) amount
+    }
+
     struct Queue {
         SegmentedSegmentTree.Core tree;
-        uint40 index; // index of where the next order would go
+        Order[] orders;
     }
 
     struct State {
         IBookManager.BookKey key;
         mapping(Tick tick => Queue) queues;
         mapping(uint256 => uint256) heap;
-        // four values of totalClaimable are stored in one uint256
+        // @dev Four values of totalClaimable are stored in one uint256
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
     }
-
-    uint40 internal constant MAX_ORDER = 2 ** 15; // 32768
-    uint256 internal constant MAX_ORDER_M = 2 ** 15 - 1; // % 32768
 
     function open(State storage self, IBookManager.BookKey calldata key) internal {
         if (self.isOpened()) revert BookAlreadyOpened();
@@ -65,26 +73,32 @@ library Book {
         return self.heap.isEmpty();
     }
 
-    function make(
-        State storage self,
-        mapping(OrderId => IBookManager.Order) storage orders,
-        BookId bookId,
-        Tick tick,
-        uint64 amount
-    ) internal returns (uint40 orderIndex) {
+    function _getOrder(State storage self, Tick tick, uint40 index) private view returns (Order storage) {
+        return self.queues[tick].orders[index];
+    }
+
+    function getOrder(State storage self, Tick tick, uint40 index) internal view returns (Order memory) {
+        return _getOrder(self, tick, index);
+    }
+
+    function make(State storage self, Tick tick, uint64 amount, address provider)
+        internal
+        returns (uint40 orderIndex)
+    {
         uint24 tickIndex = tick.toUint24();
         if (!self.heap.has(tickIndex)) self.heap.push(tickIndex);
 
         Queue storage queue = self.queues[tick];
-        orderIndex = queue.index;
+        // @dev Assume that orders.length cannot reach to type(uint40).max + 1.
+        orderIndex = SafeCast.toUint40(queue.orders.length);
 
         if (orderIndex >= MAX_ORDER) {
             unchecked {
                 uint40 staleOrderIndex = orderIndex - MAX_ORDER;
-                uint64 stalePendingAmount = orders[OrderIdLibrary.encode(bookId, tick, staleOrderIndex)].pending;
+                uint64 stalePendingAmount = queue.orders[staleOrderIndex].pending;
                 if (stalePendingAmount > 0) {
                     // If the order is not settled completely, we cannot replace it
-                    uint64 claimable = calculateClaimableRawAmount(self, stalePendingAmount, tick, staleOrderIndex);
+                    uint64 claimable = self.calculateClaimableRawAmount(tick, staleOrderIndex);
                     if (claimable != stalePendingAmount) revert QueueReplaceFailed();
                 }
             }
@@ -95,9 +109,9 @@ library Book {
             if (staleOrderedAmount > 0) self.totalClaimableOf.sub(tick, staleOrderedAmount);
         }
 
-        // @dev Assume that orderIndex is always less than type(uint40).max. If not, `make` will revert.
-        queue.index = orderIndex + 1;
         queue.tree.update(orderIndex & MAX_ORDER_M, amount);
+
+        queue.orders.push(Order({pending: amount, provider: provider}));
     }
 
     /**
@@ -117,23 +131,24 @@ library Book {
         self.cleanHeap();
     }
 
-    function cancel(State storage self, OrderId orderId, IBookManager.Order storage order, uint64 to)
+    function cancel(State storage self, OrderId orderId, uint64 to)
         internal
-        returns (uint64 canceledAmount)
+        returns (uint64 canceled, uint64 afterPending)
     {
         (, Tick tick, uint40 orderIndex) = orderId.decode();
-        uint64 pending = order.pending;
-        uint64 claimableRaw = calculateClaimableRawAmount(self, pending, tick, orderIndex);
-        uint64 afterPending = to + claimableRaw;
+        Queue storage queue = self.queues[tick];
+        uint64 pending = queue.orders[orderIndex].pending;
+        uint64 claimableRaw = self.calculateClaimableRawAmount(tick, orderIndex);
+        afterPending = to + claimableRaw;
         unchecked {
             if (pending < afterPending) revert CancelFailed(pending - claimableRaw);
-            canceledAmount = pending - afterPending;
+            canceled = pending - afterPending;
 
             self.queues[tick].tree.update(
-                orderIndex & MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & MAX_ORDER_M) - canceledAmount
+                orderIndex & MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & MAX_ORDER_M) - canceled
             );
         }
-        order.pending = afterPending;
+        queue.orders[orderIndex].pending = afterPending;
 
         self.cleanHeap();
     }
@@ -145,14 +160,23 @@ library Book {
         }
     }
 
-    function calculateClaimableRawAmount(State storage self, uint64 orderAmount, Tick tick, uint40 index)
-        internal
-        view
-        returns (uint64)
-    {
+    function claim(State storage self, Tick tick, uint40 index) internal returns (uint64 claimedRaw) {
+        Order storage order = _getOrder(self, tick, index);
+
+        claimedRaw = self.calculateClaimableRawAmount(tick, index);
+        unchecked {
+            order.pending -= claimedRaw;
+        }
+    }
+
+    function calculateClaimableRawAmount(State storage self, Tick tick, uint40 index) internal view returns (uint64) {
+        uint64 orderAmount = self.getOrder(tick, index).pending;
+
         Queue storage queue = self.queues[tick];
         // @dev Book logic always considers replaced orders as claimable.
-        if (index + MAX_ORDER < queue.index) return orderAmount;
+        unchecked {
+            if (uint256(index) + MAX_ORDER < queue.orders.length) return orderAmount;
+        }
         uint64 totalClaimable = self.totalClaimableOf.get(tick);
         uint64 rangeRight = _getClaimRangeRight(queue, index);
         if (rangeRight >= totalClaimable + orderAmount) return 0;
@@ -168,7 +192,7 @@ library Book {
     }
 
     function _getClaimRangeRight(Queue storage queue, uint256 orderIndex) private view returns (uint64 rangeRight) {
-        uint256 l = queue.index & MAX_ORDER_M;
+        uint256 l = queue.orders.length & MAX_ORDER_M;
         uint256 r = (orderIndex + 1) & MAX_ORDER_M;
         rangeRight = (l < r) ? queue.tree.query(l, r) : queue.tree.total() - queue.tree.query(r, l);
     }
