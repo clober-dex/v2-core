@@ -166,7 +166,7 @@ contract CloberController is ICloberController, ILocker {
     function claim(ClaimOrderParams[] calldata paramsList, uint64 deadline) external checkDeadline(deadline) {
         // claim bounty
         uint256 length = paramsList.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             // Todo consider try catch
             _claim(paramsList[i]);
         }
@@ -175,7 +175,7 @@ contract CloberController is ICloberController, ILocker {
     function cancel(CancelOrderParams[] calldata paramsList, uint64 deadline) external checkDeadline(deadline) {
         // claim bounty
         uint256 length = paramsList.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             // Todo consider try catch
             _cancel(paramsList[i]);
         }
@@ -276,11 +276,11 @@ contract CloberController is ICloberController, ILocker {
         _bookManager.settle(key.base);
     }
 
-    function _claim(ClaimOrderParams memory params) internal {
+    function _claim(ClaimOrderParams calldata params) internal {
         _bookManager.claim(params.id, params.hookData);
     }
 
-    function _cancel(CancelOrderParams memory params) internal {
+    function _cancel(CancelOrderParams calldata params) internal {
         (BookId bookId,,) = params.id.decode();
         _permitERC721(OrderId.unwrap(params.id), params.permitParams);
         _bookManager.cancel(
