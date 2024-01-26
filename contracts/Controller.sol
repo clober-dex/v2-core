@@ -5,12 +5,12 @@ import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC2
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "../interfaces/ICloberController.sol";
-import "../interfaces/ILocker.sol";
-import "../interfaces/IBookManager.sol";
-import "../libraries/OrderId.sol";
+import "./interfaces/ICloberController.sol";
+import "./interfaces/ILocker.sol";
+import "./interfaces/IBookManager.sol";
+import "./libraries/OrderId.sol";
 
-contract CloberController is ICloberController, ILocker {
+contract Controller is IController, ILocker {
     using TickLibrary for *;
     using OrderIdLibrary for OrderId;
     using SafeERC20 for IERC20;
