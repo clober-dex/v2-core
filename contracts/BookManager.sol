@@ -69,8 +69,18 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         return _books[id].key;
     }
 
-    function getOrder(OrderId id) external view returns (Order memory) {
-        return _orders[id];
+    function getOrder(OrderId id) external view returns (OrderInfo memory) {
+        (BookId bookId, Tick tick, uint40 orderIndex) = id.decode();
+        Order storage order = _orders[id];
+        uint64 claimable = _books[bookId].calculateClaimableRawAmount(order.pending, tick, orderIndex);
+        unchecked {
+            return OrderInfo({
+                provider: order.provider,
+                initial: order.initial,
+                open: order.pending - claimable,
+                claimable: claimable
+            });
+        }
     }
 
     function open(BookKey calldata key, bytes calldata hookData) external {
