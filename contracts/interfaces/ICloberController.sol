@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "../libraries/OrderId.sol";
+import "../libraries/Currency.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 
 interface IController {
     error InvalidAccess();
@@ -19,6 +21,7 @@ interface IController {
     }
 
     struct ERC20PermitParams {
+        IERC20Permit token;
         uint256 permitAmount;
         PermitSignature signature;
     }
@@ -37,7 +40,6 @@ interface IController {
         address maker;
         uint256 claimBounty;
         bytes hookData;
-        ERC20PermitParams permitParams;
     }
 
     struct TakeOrderParams {
@@ -47,7 +49,6 @@ interface IController {
         uint256 quoteAmount;
         uint256 maxBaseAmount;
         bytes hookData;
-        ERC20PermitParams permitParams;
     }
 
     struct SpendOrderParams {
@@ -57,12 +58,12 @@ interface IController {
         uint256 baseAmount;
         uint256 minQuoteAmount;
         bytes hookData;
-        ERC20PermitParams permitParams;
     }
 
     struct ClaimOrderParams {
         OrderId id;
         bytes hookData;
+        PermitSignature permitParams;
     }
 
     struct CancelOrderParams {
@@ -72,18 +73,34 @@ interface IController {
         PermitSignature permitParams;
     }
 
-    function make(MakeOrderParams[] calldata paramsList, uint64 deadline)
-        external
-        payable
-        returns (OrderId[] memory ids);
+    function execute(
+        Action actionList,
+        bytes[] memory orderParamsList,
+        ERC20PermitParams[] memory permitParamsList,
+        uint64 deadline
+    ) external payable returns (OrderId[] memory ids);
 
-    function take(TakeOrderParams[] calldata paramsList, uint64 deadline) external payable;
+    function make(
+        MakeOrderParams[] calldata orderParamsList,
+        ERC20PermitParams[] memory permitParamsList,
+        uint64 deadline
+    ) external payable returns (OrderId[] memory ids);
 
-    function spend(SpendOrderParams[] calldata paramsList, uint64 deadline) external payable;
+    function take(
+        TakeOrderParams[] calldata orderParamsList,
+        ERC20PermitParams[] memory permitParamsList,
+        uint64 deadline
+    ) external payable;
 
-    function claim(ClaimOrderParams[] calldata paramsList, uint64 deadline) external;
+    function spend(
+        SpendOrderParams[] calldata orderParamsList,
+        ERC20PermitParams[] memory permitParamsList,
+        uint64 deadline
+    ) external payable;
 
-    function cancel(CancelOrderParams[] calldata paramsList, uint64 deadline) external;
+    function claim(ClaimOrderParams[] calldata orderParamsList, uint64 deadline) external;
+
+    function cancel(CancelOrderParams[] calldata orderParamsList, uint64 deadline) external;
 
     //    function makeAfterClaim(
     //        ClaimOrderParams[] calldata claimOrderParamsList,
