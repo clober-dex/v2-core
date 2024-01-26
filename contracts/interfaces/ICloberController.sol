@@ -8,6 +8,7 @@ interface ICloberController {
     error Deadline();
     error InvalidMarket();
     error ControllerSlippage();
+    error ValueTransferFailed();
 
     struct ERC20PermitParams {
         uint256 permitAmount;
@@ -21,11 +22,19 @@ interface ICloberController {
         bytes32 s;
     }
 
+    struct OrderParams {
+        MakeOrderParams makeOrderParams;
+        TakeOrderParams takeOrderParams;
+        SpendOrderParams spendOrderParams;
+        ClaimOrderParams claimOrderParams;
+        CancelOrderParams cancelOrderParams;
+    }
+
     struct MakeOrderParams {
         BookId id;
-        uint256 price;
+        Tick tick;
         uint256 quoteAmount;
-        address user;
+        address maker;
         uint256 bounty;
         bytes hookData;
         ERC20PermitParams permitParams;
