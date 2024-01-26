@@ -30,14 +30,6 @@ interface IController {
         bytes32 s;
     }
 
-    struct OrderParams {
-        MakeOrderParams makeOrderParams;
-        TakeOrderParams takeOrderParams;
-        SpendOrderParams spendOrderParams;
-        ClaimOrderParams claimOrderParams;
-        CancelOrderParams cancelOrderParams;
-    }
-
     struct MakeOrderParams {
         BookId id;
         Tick tick;
@@ -75,8 +67,7 @@ interface IController {
 
     struct CancelOrderParams {
         OrderId id;
-        // Todo change to quote amount
-        uint64 to;
+        uint256 leftQuoteAmount;
         bytes hookData;
         PermitSignature permitParams;
     }

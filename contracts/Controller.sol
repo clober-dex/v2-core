@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "./interfaces/ICloberController.sol";
 import "./interfaces/ILocker.sol";
@@ -14,6 +15,8 @@ contract Controller is IController, ILocker {
     using TickLibrary for *;
     using OrderIdLibrary for OrderId;
     using SafeERC20 for IERC20;
+    using SafeCast for uint256;
+    using Math for uint256;
     using CurrencyLibrary for Currency;
 
     IBookManager private immutable _bookManager;
@@ -158,19 +161,15 @@ contract Controller is IController, ILocker {
     }
 
     function claim(ClaimOrderParams[] calldata paramsList, uint64 deadline) external checkDeadline(deadline) {
-        // claim bounty
         uint256 length = paramsList.length;
         for (uint256 i = 0; i < length; ++i) {
-            // Todo consider try catch
             _claim(paramsList[i]);
         }
     }
 
     function cancel(CancelOrderParams[] calldata paramsList, uint64 deadline) external checkDeadline(deadline) {
-        // claim bounty
         uint256 length = paramsList.length;
         for (uint256 i = 0; i < length; ++i) {
-            // Todo consider try catch
             _cancel(paramsList[i]);
         }
     }
@@ -182,8 +181,7 @@ contract Controller is IController, ILocker {
             IBookManager.MakeParams({
                 key: key,
                 tick: params.tick,
-                // Todo use safe toUint64
-                amount: uint64(params.quoteAmount / key.unit),
+                amount: (params.quoteAmount / key.unit).toUint64(),
                 provider: address(0)
             }),
             params.hookData
@@ -206,21 +204,19 @@ contract Controller is IController, ILocker {
         uint256 leftQuoteAmount = params.quoteAmount;
         uint256 spendBaseAmount;
 
-        while (leftQuoteAmount > 0) {
-            // Todo revert when book is empty
-            (uint256 quoteAmount, uint256 baseAmount) = _bookManager.take(
-                // Todo use safe toUint64
-                IBookManager.TakeParams({key: key, maxAmount: uint64(leftQuoteAmount / key.unit)}),
+        uint256 quoteAmount;
+        uint256 baseAmount;
+        while (leftQuoteAmount > quoteAmount) {
+            unchecked {
+                leftQuoteAmount -= quoteAmount;
+                spendBaseAmount += baseAmount;
+            }
+            (quoteAmount, baseAmount) = _bookManager.take(
+                IBookManager.TakeParams({key: key, maxAmount: leftQuoteAmount.divide(key.unit, true).toUint64()}),
                 params.hookData
             );
             if (quoteAmount == 0) break;
             _bookManager.withdraw(key.quote, address(this), quoteAmount);
-
-            unchecked {
-                // Todo check underflow, overflow
-                leftQuoteAmount -= quoteAmount;
-                spendBaseAmount += baseAmount;
-            }
         }
         if (params.maxBaseAmount < spendBaseAmount) revert ControllerSlippage();
 
@@ -239,8 +235,7 @@ contract Controller is IController, ILocker {
         uint256 takenQuoteAmount;
         uint256 leftBaseAmount = params.baseAmount;
 
-        while (leftBaseAmount > 0) {
-            // Todo revert when book is empty
+        while (leftBaseAmount > 0 && !_bookManager.isEmpty(params.id)) {
             Tick tick = _bookManager.getRoot(params.id);
             (uint256 quoteAmount, uint256 baseAmount) = _bookManager.take(
                 IBookManager.TakeParams({key: key, maxAmount: tick.baseToRaw(leftBaseAmount, false)}), params.hookData
@@ -249,7 +244,6 @@ contract Controller is IController, ILocker {
             _bookManager.withdraw(key.quote, address(this), quoteAmount);
 
             unchecked {
-                // Todo check underflow, overflow
                 leftBaseAmount -= baseAmount;
                 takenQuoteAmount += quoteAmount;
             }
@@ -277,11 +271,13 @@ contract Controller is IController, ILocker {
     function _cancel(CancelOrderParams memory params) internal {
         (BookId bookId,,) = params.id.decode();
         _permitERC721(OrderId.unwrap(params.id), params.permitParams);
-        _bookManager.cancel(
-            // Todo use safe toUint64
-            IBookManager.CancelParams({id: params.id, to: uint64(params.to / _bookManager.getBookKey(bookId).unit)}),
+        try _bookManager.cancel(
+            IBookManager.CancelParams({
+                id: params.id,
+                to: (params.leftQuoteAmount / _bookManager.getBookKey(bookId).unit).toUint64()
+            }),
             params.hookData
-        );
+        ) {} catch {}
     }
 
     function _permitERC20(address token, ERC20PermitParams memory p) internal {
