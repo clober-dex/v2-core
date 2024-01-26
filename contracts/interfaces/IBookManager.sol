@@ -39,10 +39,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     struct Order {
         uint64 initial;
-        uint32 nonce;
         address provider;
         uint64 pending; // Ordered amount + claimable amount // todo: This value may be modified during user delivery
-        address owner;
     }
 
     struct BookKey {

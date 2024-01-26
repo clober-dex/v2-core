@@ -61,10 +61,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         revert LockedBy(locker, address(hook));
     }
 
-    function nonces(uint256 id) external view returns (uint256) {
-        return _orders[OrderId.wrap(id)].nonce;
-    }
-
     function getBookKey(BookId id) external view returns (BookKey memory) {
         return _books[id].key;
     }
@@ -216,8 +212,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function cancel(CancelParams calldata params, bytes calldata hookData) external {
-        Order storage order = _orders[params.id];
-        address owner = order.owner;
+        address owner = _ownerOf(OrderId.unwrap(params.id));
         _checkAuthorized(owner, msg.sender, OrderId.unwrap(params.id));
 
         Book.State storage book;
@@ -229,6 +224,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (!key.hooks.beforeCancel(params, hookData)) return;
 
+        Order storage order = _orders[params.id];
         uint64 canceledRaw = book.cancel(params.id, order, params.to);
 
         uint256 canceledAmount;
@@ -301,9 +297,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         tokenOwed[provider][key.quote] += quoteFee.toUint256();
         tokenOwed[provider][key.base] += baseFee.toUint256();
 
+        // @dev Must load owner before burning
+        address owner = _ownerOf(OrderId.unwrap(id));
         if (order.pending == 0) _burn(OrderId.unwrap(id));
 
-        key.base.transfer(order.owner, claimableAmount);
+        key.base.transfer(owner, claimableAmount);
 
         key.hooks.afterClaim(id, claimableRaw, hookData);
 
@@ -351,12 +349,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         emit SetDefaultProvider(oldDefaultProvider, newDefaultProvider);
     }
 
-    function _getAndIncrementNonce(uint256 id) internal override returns (uint256 nonce) {
-        OrderId orderId = OrderId.wrap(id);
-        nonce = _orders[orderId].nonce;
-        _orders[orderId].nonce = uint32(nonce) + 1;
-    }
-
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
     }
@@ -390,14 +382,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     function _calculateAmountInReverse(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount) {
         uint256 fee = Math.divide(amount * uint256(_RATE_PRECISION), uint256(_RATE_PRECISION - rate), rate < 0);
         adjustedAmount = rate > 0 ? amount - fee : amount + fee;
-    }
-
-    function _ownerOf(uint256 tokenId) internal view override returns (address) {
-        return _orders[OrderId.wrap(tokenId)].owner;
-    }
-
-    function _setOwner(uint256 tokenId, address owner) internal override {
-        _orders[OrderId.wrap(tokenId)].owner = owner;
     }
 
     function load(bytes32 slot) external view returns (bytes32 value) {
