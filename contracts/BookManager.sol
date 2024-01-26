@@ -70,12 +70,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         Order storage order = _orders[id];
         uint64 claimable = _books[bookId].calculateClaimableRawAmount(order.pending, tick, orderIndex);
         unchecked {
-            return OrderInfo({
-                provider: order.provider,
-                initial: order.initial,
-                open: order.pending - claimable,
-                claimable: claimable
-            });
+            return OrderInfo({provider: order.provider, open: order.pending - claimable, claimable: claimable});
         }
     }
 
@@ -168,7 +163,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         _mint(msg.sender, OrderId.unwrap(id));
         Order storage order = _orders[id];
-        order.initial = params.amount;
         order.pending = params.amount;
         order.provider = params.provider;
 

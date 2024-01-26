@@ -34,7 +34,7 @@ contract BookWrapper {
     function make(Tick tick, uint64 amount) external returns (uint40 orderIndex) {
         orderIndex = _book.make(_orders, BOOK_ID, tick, amount);
         OrderId id = OrderIdLibrary.encode(BOOK_ID, tick, orderIndex);
-        _orders[id] = IBookManager.Order({initial: amount, pending: amount, provider: address(0)});
+        _orders[id] = IBookManager.Order({pending: amount, provider: address(0)});
     }
 
     function take(uint64 maxAmount) external returns (Tick, uint64) {
