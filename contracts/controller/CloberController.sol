@@ -59,76 +59,53 @@ contract CloberController is ICloberController, ILocker {
         claimableQuoteAmount = unit * orderInfo.claimable;
     }
 
-    function fromPrice(uint256 price) external view returns (Tick) {
+    function fromPrice(uint256 price) external pure returns (Tick) {
         return price.fromPrice();
     }
 
-    function toPrice(Tick tick) external view returns (uint256) {
+    function toPrice(Tick tick) external pure returns (uint256) {
         return tick.toPrice();
     }
 
     function lockAcquired(address, bytes memory data) external returns (bytes memory returnData) {
         if (msg.sender != address(_bookManager)) revert InvalidAccess();
-
-        uint256 action;
-        address user;
-        (action, user, data) = abi.decode(data, (uint256, address, bytes));
-
-        if (action == 0) {
-            (OrderParams[] memory paramsList) = abi.decode(data, (OrderParams[]));
-            uint256 length = paramsList.length;
-            OrderId[] memory ids = new OrderId[](length);
-            uint256 orderIdIndex;
-            for (uint256 i = 0; i < length; ++i) {
-                if (paramsList[i].makeOrderParams.maker != address(0)) {
-                    ids[orderIdIndex++] = _make(user, paramsList[i].makeOrderParams);
-                } else if (paramsList[i].spendOrderParams.recipient != address(0)) {
-                    _take(user, paramsList[i].takeOrderParams);
-                } else if (paramsList[i].takeOrderParams.recipient != address(0)) {
-                    _spend(user, paramsList[i].spendOrderParams);
-                } else if (OrderId.unwrap(paramsList[i].claimOrderParams.id) != 0) {
-                    _claim(paramsList[i].claimOrderParams);
-                } else if (OrderId.unwrap(paramsList[i].cancelOrderParams.id) != 0) {
-                    _cancel(paramsList[i].cancelOrderParams);
-                }
-            }
-            assembly {
-                mstore(ids, orderIdIndex)
-            }
-            returnData = abi.encode(ids);
-        } else if (action == 1) {
-            (MakeOrderParams[] memory paramsList) = abi.decode(data, (MakeOrderParams[]));
-            uint256 length = paramsList.length;
-            OrderId[] memory ids = new OrderId[](length);
-            for (uint256 i = 0; i < length; ++i) {
-                ids[i] = _make(user, paramsList[i]);
-            }
-            returnData = abi.encode(ids);
-        } else if (action == 2) {
-            (TakeOrderParams[] memory paramsList) = abi.decode(data, (TakeOrderParams[]));
-            uint256 length = paramsList.length;
-            for (uint256 i = 0; i < length; ++i) {
-                _take(user, paramsList[i]);
-            }
-        } else if (action == 3) {
-            (SpendOrderParams[] memory paramsList) = abi.decode(data, (SpendOrderParams[]));
-            uint256 length = paramsList.length;
-            for (uint256 i = 0; i < length; ++i) {
-                _spend(user, paramsList[i]);
+        (address user, Action[] memory actionList, bytes[] memory paramsList) =
+            abi.decode(data, (address, Action[], bytes[]));
+        uint256 length = actionList.length;
+        OrderId[] memory ids = new OrderId[](length);
+        uint256 orderIdIndex;
+        for (uint256 i = 0; i < length; ++i) {
+            Action action = actionList[i];
+            if (action == Action.MAKE) {
+                ids[orderIdIndex++] = _make(user, abi.decode(paramsList[i], (MakeOrderParams)));
+            } else if (action == Action.TAKE) {
+                _take(user, abi.decode(paramsList[i], (TakeOrderParams)));
+            } else if (action == Action.SPEND) {
+                _spend(user, abi.decode(paramsList[i], (SpendOrderParams)));
+            } else if (action == Action.CLAIM) {
+                _claim(abi.decode(paramsList[i], (ClaimOrderParams)));
+            } else if (action == Action.CANCEL) {
+                _cancel(abi.decode(paramsList[i], (CancelOrderParams)));
             }
         }
+        assembly {
+            mstore(ids, orderIdIndex)
+        }
+        returnData = abi.encode(ids);
     }
 
-    function action(OrderParams[] calldata paramsList, uint64 deadline)
+    function action(Action actionList, bytes[] memory paramsList, uint64 deadline)
         external
         payable
         flushNative
         checkDeadline(deadline)
         returns (OrderId[] memory ids)
     {
-        bytes memory lockData = abi.encode(0, msg.sender, abi.encode(paramsList));
+        bytes memory lockData = abi.encode(msg.sender, actionList, abi.encode(paramsList));
         bytes memory result = _bookManager.lock(address(this), lockData);
-        (ids) = abi.decode(result, (OrderId[]));
+        if (result.length != 0) {
+            (ids) = abi.decode(result, (OrderId[]));
+        }
     }
 
     function make(MakeOrderParams[] calldata paramsList, uint64 deadline)
@@ -138,7 +115,14 @@ contract CloberController is ICloberController, ILocker {
         checkDeadline(deadline)
         returns (OrderId[] memory ids)
     {
-        bytes memory lockData = abi.encode(1, msg.sender, abi.encode(paramsList));
+        uint256 length = paramsList.length;
+        Action[] memory actionList = new Action[](length);
+        bytes[] memory paramsDataList = new bytes[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            actionList[i] = Action.MAKE;
+            paramsDataList[i] = abi.encode(paramsList[i]);
+        }
+        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList);
         bytes memory result = _bookManager.lock(address(this), lockData);
         (ids) = abi.decode(result, (OrderId[]));
     }
@@ -149,7 +133,12 @@ contract CloberController is ICloberController, ILocker {
         flushNative
         checkDeadline(deadline)
     {
-        bytes memory lockData = abi.encode(2, msg.sender, abi.encode(paramsList));
+        uint256 length = paramsList.length;
+        Action[] memory actionList = new Action[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            actionList[i] = Action.TAKE;
+        }
+        bytes memory lockData = abi.encode(msg.sender, actionList, abi.encode(paramsList));
         _bookManager.lock(address(this), lockData);
     }
 
@@ -159,7 +148,12 @@ contract CloberController is ICloberController, ILocker {
         flushNative
         checkDeadline(deadline)
     {
-        bytes memory lockData = abi.encode(3, msg.sender, abi.encode(paramsList));
+        uint256 length = paramsList.length;
+        Action[] memory actionList = new Action[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            actionList[i] = Action.SPEND;
+        }
+        bytes memory lockData = abi.encode(msg.sender, actionList, abi.encode(paramsList));
         _bookManager.lock(address(this), lockData);
     }
 
@@ -276,11 +270,11 @@ contract CloberController is ICloberController, ILocker {
         _bookManager.settle(key.base);
     }
 
-    function _claim(ClaimOrderParams calldata params) internal {
+    function _claim(ClaimOrderParams memory params) internal {
         _bookManager.claim(params.id, params.hookData);
     }
 
-    function _cancel(CancelOrderParams calldata params) internal {
+    function _cancel(CancelOrderParams memory params) internal {
         (BookId bookId,,) = params.id.decode();
         _permitERC721(OrderId.unwrap(params.id), params.permitParams);
         _bookManager.cancel(

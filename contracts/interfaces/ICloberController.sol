@@ -10,6 +10,14 @@ interface ICloberController {
     error ControllerSlippage();
     error ValueTransferFailed();
 
+    enum Action {
+        MAKE,
+        TAKE,
+        SPEND,
+        CLAIM,
+        CANCEL
+    }
+
     struct ERC20PermitParams {
         uint256 permitAmount;
         PermitSignature signature;
@@ -35,7 +43,7 @@ interface ICloberController {
         Tick tick;
         uint256 quoteAmount;
         address maker;
-        uint256 bounty;
+        uint256 claimBounty;
         bytes hookData;
         ERC20PermitParams permitParams;
     }
