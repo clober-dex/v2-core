@@ -14,10 +14,9 @@ import "./IHooks.sol";
 interface IBookManager is IERC721Metadata, IERC721Permit {
     error InvalidUnit();
     error InvalidFeePolicy();
-    error Slippage(BookId bookId);
+    error InvalidProvider(address provider);
     error LockedBy(address locker, address hook);
     error CurrencyNotSettled();
-    error NotWhitelisted(address provider);
 
     event Open(
         BookId indexed id,
