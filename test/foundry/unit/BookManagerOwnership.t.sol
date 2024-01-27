@@ -10,7 +10,7 @@ import "../../../contracts/BookManager.sol";
 import "../routers/MakeRouter.sol";
 import "../routers/TakeRouter.sol";
 
-contract BookManagerTest is Test {
+contract BookManagerOwnershipTest is Test {
     address public constant DEFAULT_PROVIDER = address(0x1312);
 
     BookManager public bookManager;
