@@ -34,7 +34,7 @@ contract BookManagerNativeTest is Test {
     receive() external payable {}
 
     function setUp() public {
-        bookManager = new BookManager(address(this), DEFAULT_PROVIDER, "URI", "name", "SYMBOL");
+        bookManager = new BookManager(address(this), DEFAULT_PROVIDER, "URI", "URI", "name", "SYMBOL");
 
         mockErc20 = new MockERC20("Mock", "MOCK", 18);
 

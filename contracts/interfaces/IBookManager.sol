@@ -52,6 +52,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function baseURI() external view returns (string memory);
 
+    function contractURI() external view returns (string memory);
+
     function defaultProvider() external view returns (address);
 
     function currencyDelta(address locker, Currency currency) external view returns (int256);

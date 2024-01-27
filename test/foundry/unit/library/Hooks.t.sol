@@ -51,7 +51,7 @@ contract HooksTest is Test {
         unopenedKey = key;
         unopenedKey.unit = 1e11;
 
-        manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "url", "name", "symbol");
+        manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "url", "url", "name", "symbol");
         manager.open(key, "");
 
         makeRouter = new MakeRouter(manager);

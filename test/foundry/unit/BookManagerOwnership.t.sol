@@ -16,7 +16,7 @@ contract BookManagerOwnershipTest is Test {
     BookManager public bookManager;
 
     function setUp() public {
-        bookManager = new BookManager(address(this), DEFAULT_PROVIDER, "URI", "name", "SYMBOL");
+        bookManager = new BookManager(address(this), DEFAULT_PROVIDER, "URI", "URI", "name", "SYMBOL");
     }
 
     function testWhitelist() public {

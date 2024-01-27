@@ -26,7 +26,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     int24 private constant _MAX_FEE_RATE = 10 ** 6 / 2;
     int24 private constant _MIN_FEE_RATE = -(10 ** 6 / 2);
 
-    string public override baseURI;
+    string public override baseURI; // slot 10
+    string public override contractURI;
     address public override defaultProvider;
 
     mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public override currencyDelta;
@@ -39,11 +40,13 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         address owner_,
         address defaultProvider_,
         string memory baseURI_,
+        string memory contractURI_,
         string memory name_,
         string memory symbol_
     ) Ownable(owner_) ERC721Permit(name_, symbol_, "2") {
         setDefaultProvider(defaultProvider_);
         baseURI = baseURI_;
+        contractURI = contractURI_;
         Lockers.initialize();
     }
 
