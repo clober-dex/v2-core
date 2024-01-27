@@ -12,7 +12,7 @@ import "../routers/MakeRouter.sol";
 import "../routers/TakeRouter.sol";
 
 // @dev Test without fee.
-contract BookManagerTest is Test {
+contract BookManagerNativeTest is Test {
     using BookIdLibrary for IBookManager.BookKey;
     using OrderIdLibrary for OrderId;
     using TickLibrary for Tick;
