@@ -23,8 +23,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     using Hooks for IHooks;
 
     int256 private constant _RATE_PRECISION = 10 ** 6;
-    int256 private constant _MAX_FEE_RATE = 10 ** 6 / 2;
-    int256 private constant _MIN_FEE_RATE = -(10 ** 6 / 2);
+    int24 private constant _MAX_FEE_RATE = 10 ** 6 / 2;
+    int24 private constant _MIN_FEE_RATE = -(10 ** 6 / 2);
 
     string public override baseURI;
     address public override defaultProvider;
@@ -75,6 +75,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function open(BookKey calldata key, bytes calldata hookData) external {
+        // @dev Also, the book opener should set unit at least circulatingTotalSupply / type(uint64).max to avoid overflow.
+        //      But it is not checked here because it is not possible to check it without knowing circulatingTotalSupply.
         if (key.unit == 0) revert InvalidUnit();
 
         if (
