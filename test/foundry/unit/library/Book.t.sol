@@ -129,6 +129,11 @@ contract BookTest is Test {
         assertEq(book.depth(Tick.wrap(0)), 0);
     }
 
+    function testTakeEmptyBook() public opened {
+        vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
+        book.take(100);
+    }
+
     function testTakeAndCleanHeap() public opened {
         book.make(Tick.wrap(0), 100);
         book.make(Tick.wrap(4), 200);
