@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 
 import "../../../contracts/hooks/BountyPlatform.sol";
 
-contract BountyPlatformImplementation is BountyPlatform {
+contract BountyPlatformWrapper is BountyPlatform {
     constructor(IBookManager _bookManager, address owner_, address defaultClaimer_, BountyPlatform addressToEtch)
         BountyPlatform(_bookManager, owner_, defaultClaimer_)
     {

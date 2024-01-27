@@ -5,14 +5,14 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 
 import "../../../../contracts/hooks/BountyPlatform.sol";
-import "../../mocks/BountyPlatformImplementation.sol";
+import "../../mocks/BountyPlatformWrapper.sol";
 
 contract BountyPlatformTest is Test {
     address public constant DEFAULT_CLAIMER = address(0x1312);
     address public constant CLAIMER = address(0x13423);
     address public constant CANCELER = address(0x423123);
 
-    BountyPlatformImplementation public bountyPlatform = BountyPlatformImplementation(
+    BountyPlatformWrapper public bountyPlatform = BountyPlatformWrapper(
         payable(address(uint160(Hooks.AFTER_MAKE_FLAG | Hooks.AFTER_CANCEL_FLAG | Hooks.AFTER_CLAIM_FLAG)))
     );
 
@@ -21,9 +21,8 @@ contract BountyPlatformTest is Test {
 
     function setUp() public {
         vm.record();
-        BountyPlatformImplementation impl = new BountyPlatformImplementation(
-            IBookManager(address(this)), address(this), DEFAULT_CLAIMER, bountyPlatform
-        );
+        BountyPlatformWrapper impl =
+            new BountyPlatformWrapper(IBookManager(address(this)), address(this), DEFAULT_CLAIMER, bountyPlatform);
         (, bytes32[] memory writes) = vm.accesses(address(impl));
         vm.etch(address(bountyPlatform), address(impl).code);
         // for each storage key that was written during the hook implementation, copy the value over
