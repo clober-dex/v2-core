@@ -32,11 +32,19 @@ library Lockers {
 
     uint256 internal constant NONZERO_DELTA_COUNT_OFFSET = 2 ** 128;
 
-    // TODO: check performance
-    //    uint256 public constant EMPTY_ADDRESS_STORAGE = 2 << 255;
+    uint256 internal constant EMPTY_ADDRESS_STORAGE = 1 << 255;
 
     function initialize() internal {
         clear();
+        uint256 lockersSlot = LOCKERS_SLOT;
+        // @dev To reduce lock sstore gas, we set 5 lockers storages dirty
+        assembly {
+            for { let i := 0 } lt(i, 5) { i := add(i, 1) } {
+                sstore(lockersSlot, EMPTY_ADDRESS_STORAGE)
+                sstore(add(lockersSlot, 1), EMPTY_ADDRESS_STORAGE)
+                lockersSlot := add(lockersSlot, LOCKER_STRUCT_SIZE)
+            }
+        }
     }
 
     /// @dev Pushes a locker onto the end of the queue, and updates the sentinel storage slot.
@@ -171,7 +179,7 @@ library Lockers {
         unchecked {
             uint256 indexToWrite = HOOK_ADDRESS_SLOT + length();
             assembly {
-                sstore(indexToWrite, 0)
+                sstore(indexToWrite, EMPTY_ADDRESS_STORAGE)
             }
         }
     }
