@@ -3,12 +3,14 @@
 pragma solidity ^0.8.0;
 
 import "./IHooks.sol";
+import "../libraries/Currency.sol";
 
 interface IBountyPlatform {
     error NotEnoughBalance();
 
     event BountyOffered(OrderId indexed orderId, Currency indexed curreny, uint256 amount);
     event BountyClaimed(OrderId indexed orderId, address indexed claimer);
+    event BountyCanceled(OrderId indexed orderId);
     event SetDefaultClaimer(address indexed claimer);
 
     struct Bounty {

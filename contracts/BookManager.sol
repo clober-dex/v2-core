@@ -236,7 +236,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
     function claim(OrderId id, bytes calldata hookData) external {
         // @dev Load owner with nonexistent token check.
-        //      We don't need to check the authorization because claiming another's order is allowed.
+        //      We don't need to check the authorization because claiming another user's order is allowed.
         address owner = _requireOwned(OrderId.unwrap(id));
 
         Tick tick;

@@ -28,6 +28,7 @@ contract BountyPlatform is BaseHook, Ownable2Step, IBountyPlatform {
     function getHooksCalls() public pure override returns (Hooks.Permissions memory) {
         Hooks.Permissions memory permissions;
         permissions.afterMake = true;
+        permissions.afterCancel = true;
         permissions.afterClaim = true;
         return permissions;
     }
@@ -74,6 +75,29 @@ contract BountyPlatform is BaseHook, Ownable2Step, IBountyPlatform {
         return BaseHook.afterClaim.selector;
     }
 
+    function afterCancel(address, IBookManager.CancelParams calldata params, uint64, bytes calldata hookData)
+        external
+        override
+        onlyBookManager
+        returns (bytes4)
+    {
+        address receiver = hookData.length > 0 ? abi.decode(hookData, (address)) : defaultClaimer;
+        IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(params.id);
+        if (orderInfo.open == 0 && orderInfo.claimable == 0) {
+            Bounty memory bounty = _bountyMap[params.id];
+            uint256 amount = _getAmount(bounty);
+            if (amount > 0) {
+                unchecked {
+                    balance[bounty.currency] -= amount;
+                }
+                delete _bountyMap[params.id];
+                bounty.currency.transfer(receiver, amount);
+                emit BountyCanceled(params.id);
+            }
+        }
+        return BaseHook.afterCancel.selector;
+    }
+
     function _getAmount(Bounty memory bounty) internal pure returns (uint256) {
         return uint256(bounty.amount) << bounty.shifter;
     }
@@ -87,4 +111,6 @@ contract BountyPlatform is BaseHook, Ownable2Step, IBountyPlatform {
         defaultClaimer = claimer;
         emit SetDefaultClaimer(claimer);
     }
+
+    receive() external payable {}
 }
