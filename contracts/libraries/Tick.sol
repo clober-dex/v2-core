@@ -108,13 +108,13 @@ library TickLibrary {
         return Tick.unwrap(a) > Tick.unwrap(b);
     }
 
-    function baseToRaw(Tick tick, uint256 baseAmount, bool roundingUp) internal pure returns (uint64) {
-        uint256 rawAmount = Math.divide((baseAmount * tick.toPrice()), 1 << 128, roundingUp);
-        if (rawAmount > type(uint64).max) revert TickOverflow();
-        return uint64(rawAmount);
+    function baseToQuote(Tick tick, uint256 base, bool roundingUp) internal pure returns (uint256) {
+        return Math.divide((base * tick.toPrice()), 1 << 128, roundingUp);
     }
 
-    function rawToBase(Tick tick, uint64 rawAmount, bool roundingUp) internal pure returns (uint256) {
-        return Math.divide(rawAmount << 128, tick.toPrice(), roundingUp);
+    function quoteToBase(Tick tick, uint256 quote, bool roundingUp) internal pure returns (uint256) {
+        // @dev quote = raw(uint64) * unit(uint64) < 2^128
+        //      We don't need to check overflow here
+        return Math.divide(quote << 128, tick.toPrice(), roundingUp);
     }
 }

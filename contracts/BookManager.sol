@@ -182,10 +182,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         if (!params.key.hooks.beforeTake(params, hookData)) return (0, 0);
 
         (Tick tick, uint64 takenAmount) = book.take(params.maxAmount);
-        baseAmount = tick.rawToBase(takenAmount, true);
         unchecked {
             quoteAmount = uint256(takenAmount) * params.key.unit;
         }
+        baseAmount = tick.quoteToBase(quoteAmount, true);
 
         {
             int256 quoteDelta = quoteAmount.toInt256();
@@ -257,11 +257,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         int256 quoteFee;
         int256 baseFee;
         {
-            claimableAmount = tick.rawToBase(claimed, false);
             uint256 claimedInQuote;
             unchecked {
                 claimedInQuote = uint256(claimed) * key.unit;
             }
+            claimableAmount = tick.quoteToBase(claimedInQuote, false);
             FeePolicy memory makerPolicy = key.makerPolicy;
             FeePolicy memory takerPolicy = key.takerPolicy;
             if (takerPolicy.useOutput) {
