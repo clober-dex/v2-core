@@ -14,11 +14,11 @@ library TickLibrary {
     error InvalidPrice();
     error TickOverflow();
 
-    int24 public constant MAX_TICK = 2 ** 19 - 1;
-    int24 public constant MIN_TICK = -MAX_TICK;
+    int24 internal constant MAX_TICK = 2 ** 19 - 1;
+    int24 internal constant MIN_TICK = -MAX_TICK;
 
-    uint256 public constant MIN_PRICE = 5800731190957938;
-    uint256 public constant MAX_PRICE = 19961636804996334433808922353085948875386438476189866322430503;
+    uint256 internal constant MIN_PRICE = 5800731190957938;
+    uint256 internal constant MAX_PRICE = 19961636804996334433808922353085948875386438476189866322430503;
 
     uint256 private constant _R0 = 0xfff97272373d413259a46990580e2139; // 2^128 / r^(2^0)
     uint256 private constant _R1 = 0xfff2e50f5f656932ef12357cf3c7fdcb;
