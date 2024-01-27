@@ -112,22 +112,30 @@ contract BookManagerNativeTest is Test {
 
     function testOpenWithInvalidFeePolicyBoundary() public {
         IBookManager.BookKey memory copiedKey = unopenedKey;
-        copiedKey.makerPolicy = FeePolicyLibrary.encode(copiedKey.makerPolicy.useOutput(), _MIN_FEE_RATE - 1);
+        copiedKey.makerPolicy = FeePolicy.wrap(
+            FeePolicy.unwrap(FeePolicyLibrary.encode(copiedKey.makerPolicy.useOutput(), _MIN_FEE_RATE)) - 1
+        );
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
 
         copiedKey = unopenedKey;
-        copiedKey.makerPolicy = FeePolicyLibrary.encode(copiedKey.makerPolicy.useOutput(), _MAX_FEE_RATE + 1);
+        copiedKey.makerPolicy = FeePolicy.wrap(
+            FeePolicy.unwrap(FeePolicyLibrary.encode(copiedKey.makerPolicy.useOutput(), _MAX_FEE_RATE)) + 1
+        );
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
 
         copiedKey = unopenedKey;
-        copiedKey.takerPolicy = FeePolicyLibrary.encode(copiedKey.takerPolicy.useOutput(), _MIN_FEE_RATE - 1);
+        copiedKey.takerPolicy = FeePolicy.wrap(
+            FeePolicy.unwrap(FeePolicyLibrary.encode(copiedKey.takerPolicy.useOutput(), _MIN_FEE_RATE)) - 1
+        );
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
 
         copiedKey = unopenedKey;
-        copiedKey.takerPolicy = FeePolicyLibrary.encode(copiedKey.takerPolicy.useOutput(), _MAX_FEE_RATE + 1);
+        copiedKey.takerPolicy = FeePolicy.wrap(
+            FeePolicy.unwrap(FeePolicyLibrary.encode(copiedKey.takerPolicy.useOutput(), _MAX_FEE_RATE)) + 1
+        );
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
     }
