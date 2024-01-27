@@ -20,8 +20,9 @@ interface IController {
         CANCEL
     }
 
+    // Todo rename struct
     struct ERC20PermitParams {
-        IERC20Permit token;
+        address token;
         uint256 permitAmount;
         PermitSignature signature;
     }
@@ -33,27 +34,27 @@ interface IController {
         bytes32 s;
     }
 
+    // Todo Consider maker
     struct MakeOrderParams {
         BookId id;
         Tick tick;
         uint256 quoteAmount;
-        address maker;
         uint256 claimBounty;
         bytes hookData;
     }
 
+    // Todo Consider recipient
     struct TakeOrderParams {
         BookId id;
-        address recipient;
         uint256 limitPrice;
         uint256 quoteAmount;
         uint256 maxBaseAmount;
         bytes hookData;
     }
 
+    // Todo Consider recipient
     struct SpendOrderParams {
         BookId id;
-        address recipient;
         uint256 limitPrice;
         uint256 baseAmount;
         uint256 minQuoteAmount;

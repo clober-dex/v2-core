@@ -48,31 +48,33 @@ contract ControllerMakeOrderTest is Test {
     {
         mockErc20.mint(maker, quoteAmount);
         IController.MakeOrderParams[] memory paramsList = new IController.MakeOrderParams[](1);
-        IController.ERC20PermitParams[] memory permitParamsList;
+        IController.ERC20PermitParams[] memory relatedTokenList = new IController.ERC20PermitParams[](1);
+        IController.PermitSignature memory signature;
+        relatedTokenList[0] =
+            IController.ERC20PermitParams({token: address(mockErc20), permitAmount: 0, signature: signature});
         paramsList[0] = IController.MakeOrderParams({
             id: key.toId(),
             tick: Tick.wrap(tick),
             quoteAmount: quoteAmount,
-            maker: maker,
             claimBounty: 0,
             hookData: ""
         });
 
-        vm.startPrank(Constants.MAKER1);
-        mockErc20.approve(address(controller), Constants.QUOTE_AMOUNT);
-        id = controller.make(paramsList, permitParamsList, uint64(block.timestamp))[0];
+        vm.startPrank(maker);
+        mockErc20.approve(address(controller), quoteAmount);
+        id = controller.make(paramsList, relatedTokenList, uint64(block.timestamp))[0];
         vm.stopPrank();
     }
 
     function testMakeOrder() public {
-        OrderId id = _makeOrder(key, Constants.PRICE_TICK, Constants.QUOTE_AMOUNT, Constants.MAKER1);
+        OrderId id = _makeOrder(key, Constants.PRICE_TICK, Constants.QUOTE_AMOUNT1, Constants.MAKER1);
 
         (BookId bookId,,) = id.decode();
 
         assertEq(manager.ownerOf(OrderId.unwrap(id)), Constants.MAKER1);
         (address provider, uint256 price, uint256 openQuoteAmount, uint256 claimableQuoteAmount) =
             controller.getOrder(id);
-        assertEq(Constants.QUOTE_AMOUNT - openQuoteAmount, mockErc20.balanceOf(Constants.MAKER1));
+        assertEq(Constants.QUOTE_AMOUNT1 - openQuoteAmount, mockErc20.balanceOf(Constants.MAKER1));
         assertEq(controller.toPrice(Tick.wrap(Constants.PRICE_TICK)), price);
         assertEq(claimableQuoteAmount, 0);
         assertEq(provider, address(0));
