@@ -223,6 +223,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (!makerPolicy.useOutput) canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate);
 
+        reservesOf[key.quote] -= canceledAmount;
         key.quote.transfer(owner, canceledAmount);
 
         if (pending == 0) _burn(OrderId.unwrap(params.id));
@@ -286,6 +287,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         address owner = _ownerOf(OrderId.unwrap(id));
         if (order.pending == 0) _burn(OrderId.unwrap(id));
 
+        reservesOf[key.base] -= claimableAmount;
         key.base.transfer(owner, claimableAmount);
 
         key.hooks.afterClaim(id, claimed, hookData);
