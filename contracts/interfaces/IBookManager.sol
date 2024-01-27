@@ -42,8 +42,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint64 unit;
         Currency quote;
         FeePolicy makerPolicy;
-        FeePolicy takerPolicy;
         IHooks hooks;
+        FeePolicy takerPolicy;
     }
 
     function baseURI() external view returns (string memory);
