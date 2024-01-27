@@ -210,7 +210,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         (BookId bookId,,) = params.id.decode();
         Book.State storage book = _books[bookId];
-        book.checkOpened();
         BookKey memory key = book.key;
 
         if (!key.hooks.beforeCancel(params, hookData)) return;
@@ -236,7 +235,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function claim(OrderId id, bytes calldata hookData) external {
-        _requireOwned(OrderId.unwrap(id));
+        // @dev Load owner with nonexistent token check
+        address owner = _ownerOf(OrderId.unwrap(id));
 
         Tick tick;
         uint40 orderIndex;
@@ -246,7 +246,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             (bookId, tick, orderIndex) = id.decode();
             book = _books[bookId];
         }
-        book.checkOpened();
         IBookManager.BookKey memory key = book.key;
 
         if (!key.hooks.beforeClaim(id, hookData)) return;
@@ -285,8 +284,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         tokenOwed[provider][key.quote] += quoteFee.toUint256();
         tokenOwed[provider][key.base] += baseFee.toUint256();
 
-        // @dev Must load owner before burning
-        address owner = _ownerOf(OrderId.unwrap(id));
         if (order.pending == 0) _burn(OrderId.unwrap(id));
 
         reservesOf[key.base] -= claimableAmount;
