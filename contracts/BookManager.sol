@@ -167,7 +167,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         params.key.hooks.afterMake(params, id, hookData);
 
-        emit Make(bookId, msg.sender, params.amount, orderIndex, params.tick);
+        emit Make(bookId, msg.sender, params.tick, orderIndex, params.amount);
     }
 
     function take(TakeParams calldata params, bytes calldata hookData)
