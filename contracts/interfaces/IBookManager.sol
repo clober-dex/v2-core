@@ -22,7 +22,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         BookId indexed id,
         Currency indexed base,
         Currency indexed quote,
-        uint96 unit,
+        uint64 unit,
         FeePolicy makerPolicy,
         FeePolicy takerPolicy,
         IHooks hooks
@@ -38,7 +38,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     struct BookKey {
         Currency base;
-        uint96 unit;
+        uint64 unit;
         Currency quote;
         FeePolicy makerPolicy;
         FeePolicy takerPolicy;
