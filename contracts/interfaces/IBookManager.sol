@@ -8,6 +8,7 @@ import "../libraries/Book.sol";
 import "../libraries/Currency.sol";
 import "../libraries/OrderId.sol";
 import "../libraries/Tick.sol";
+import "../libraries/FeePolicy.sol";
 import "./IERC721Permit.sol";
 import "./IHooks.sol";
 
@@ -43,11 +44,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         FeePolicy makerPolicy;
         FeePolicy takerPolicy;
         IHooks hooks;
-    }
-
-    struct FeePolicy {
-        int24 rate;
-        bool useOutput;
     }
 
     function baseURI() external view returns (string memory);

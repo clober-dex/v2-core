@@ -16,6 +16,7 @@ contract BookManagerNativeTest is Test {
     using BookIdLibrary for IBookManager.BookKey;
     using OrderIdLibrary for OrderId;
     using TickLibrary for Tick;
+    using FeePolicyLibrary for FeePolicy;
 
     address public constant DEFAULT_PROVIDER = address(0x1312);
     int24 private constant _MAX_FEE_RATE = 10 ** 6 / 2;
@@ -42,8 +43,8 @@ contract BookManagerNativeTest is Test {
             base: Currency.wrap(address(mockErc20)),
             unit: 1e12,
             quote: CurrencyLibrary.NATIVE,
-            makerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
-            takerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
+            makerPolicy: FeePolicyLibrary.encode(true, 0),
+            takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });
 
@@ -51,8 +52,8 @@ contract BookManagerNativeTest is Test {
             base: CurrencyLibrary.NATIVE,
             unit: 1e14,
             quote: Currency.wrap(address(mockErc20)),
-            makerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
-            takerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
+            makerPolicy: FeePolicyLibrary.encode(true, 0),
+            takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });
 
@@ -60,8 +61,8 @@ contract BookManagerNativeTest is Test {
             base: CurrencyLibrary.NATIVE,
             unit: 1e12,
             quote: Currency.wrap(address(mockErc20)),
-            makerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
-            takerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
+            makerPolicy: FeePolicyLibrary.encode(true, 0),
+            takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });
 
@@ -95,10 +96,10 @@ contract BookManagerNativeTest is Test {
         assertEq(Currency.unwrap(remoteBookKey.base), Currency.unwrap(unopenedKey.base));
         assertEq(Currency.unwrap(remoteBookKey.quote), Currency.unwrap(unopenedKey.quote));
         assertEq(remoteBookKey.unit, unopenedKey.unit);
-        assertEq(remoteBookKey.makerPolicy.rate, unopenedKey.makerPolicy.rate);
-        assertEq(remoteBookKey.makerPolicy.useOutput, unopenedKey.makerPolicy.useOutput);
-        assertEq(remoteBookKey.takerPolicy.rate, unopenedKey.takerPolicy.rate);
-        assertEq(remoteBookKey.takerPolicy.useOutput, unopenedKey.takerPolicy.useOutput);
+        assertEq(remoteBookKey.makerPolicy.rate(), unopenedKey.makerPolicy.rate());
+        assertEq(remoteBookKey.makerPolicy.useOutput(), unopenedKey.makerPolicy.useOutput());
+        assertEq(remoteBookKey.takerPolicy.rate(), unopenedKey.takerPolicy.rate());
+        assertEq(remoteBookKey.takerPolicy.useOutput(), unopenedKey.takerPolicy.useOutput());
         assertEq(address(remoteBookKey.hooks), address(unopenedKey.hooks));
     }
 
@@ -111,22 +112,22 @@ contract BookManagerNativeTest is Test {
 
     function testOpenWithInvalidFeePolicyBoundary() public {
         IBookManager.BookKey memory copiedKey = unopenedKey;
-        copiedKey.makerPolicy.rate = _MIN_FEE_RATE - 1;
+        copiedKey.makerPolicy = FeePolicyLibrary.encode(copiedKey.makerPolicy.useOutput(), _MIN_FEE_RATE - 1);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
 
         copiedKey = unopenedKey;
-        copiedKey.makerPolicy.rate = _MAX_FEE_RATE + 1;
+        copiedKey.makerPolicy = FeePolicyLibrary.encode(copiedKey.makerPolicy.useOutput(), _MAX_FEE_RATE + 1);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
 
         copiedKey = unopenedKey;
-        copiedKey.takerPolicy.rate = _MIN_FEE_RATE - 1;
+        copiedKey.takerPolicy = FeePolicyLibrary.encode(copiedKey.takerPolicy.useOutput(), _MIN_FEE_RATE - 1);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
 
         copiedKey = unopenedKey;
-        copiedKey.takerPolicy.rate = _MAX_FEE_RATE + 1;
+        copiedKey.takerPolicy = FeePolicyLibrary.encode(copiedKey.takerPolicy.useOutput(), _MAX_FEE_RATE + 1);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
     }
@@ -138,42 +139,34 @@ contract BookManagerNativeTest is Test {
         );
 
         IBookManager.BookKey memory copiedKey = unopenedKey;
-        copiedKey.makerPolicy.rate = makerRate;
-        copiedKey.takerPolicy.rate = takerRate;
+        copiedKey.makerPolicy = FeePolicyLibrary.encode(copiedKey.makerPolicy.useOutput(), makerRate);
+        copiedKey.takerPolicy = FeePolicyLibrary.encode(copiedKey.takerPolicy.useOutput(), takerRate);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
     }
 
     function testOpenWithInvalidFeePolicyUnmatchedUseOutputWithNegativeRate() public {
         IBookManager.BookKey memory copiedKey = unopenedKey;
-        copiedKey.makerPolicy.rate = -1;
-        copiedKey.makerPolicy.useOutput = true;
-        copiedKey.takerPolicy.rate = 2;
-        copiedKey.takerPolicy.useOutput = true;
+        copiedKey.makerPolicy = FeePolicyLibrary.encode(true, -1);
+        copiedKey.takerPolicy = FeePolicyLibrary.encode(true, 2);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
 
         copiedKey = unopenedKey;
-        copiedKey.makerPolicy.rate = -1;
-        copiedKey.makerPolicy.useOutput = false;
-        copiedKey.takerPolicy.rate = 2;
-        copiedKey.takerPolicy.useOutput = false;
+        copiedKey.makerPolicy = FeePolicyLibrary.encode(false, -1);
+        copiedKey.takerPolicy = FeePolicyLibrary.encode(false, 2);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
 
         copiedKey = unopenedKey;
-        copiedKey.makerPolicy.rate = 2;
-        copiedKey.makerPolicy.useOutput = true;
-        copiedKey.takerPolicy.rate = -1;
-        copiedKey.takerPolicy.useOutput = true;
+        copiedKey.makerPolicy = FeePolicyLibrary.encode(true, 2);
+        copiedKey.takerPolicy = FeePolicyLibrary.encode(true, -1);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
 
         copiedKey = unopenedKey;
-        copiedKey.makerPolicy.rate = 2;
-        copiedKey.makerPolicy.useOutput = false;
-        copiedKey.takerPolicy.rate = -1;
-        copiedKey.takerPolicy.useOutput = false;
+        copiedKey.makerPolicy = FeePolicyLibrary.encode(false, 2);
+        copiedKey.takerPolicy = FeePolicyLibrary.encode(false, -1);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
         bookManager.open(copiedKey, "");
     }

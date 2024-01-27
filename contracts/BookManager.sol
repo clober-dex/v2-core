@@ -20,11 +20,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     using Book for Book.State;
     using OrderIdLibrary for OrderId;
     using CurrencyLibrary for Currency;
+    using FeePolicyLibrary for FeePolicy;
     using Hooks for IHooks;
 
     int256 private constant _RATE_PRECISION = 10 ** 6;
-    int24 private constant _MAX_FEE_RATE = 10 ** 6 / 2;
-    int24 private constant _MIN_FEE_RATE = -(10 ** 6 / 2);
 
     string public override baseURI; // slot 10
     string public override contractURI;
@@ -82,17 +81,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         //      But it is not checked here because it is not possible to check it without knowing circulatingTotalSupply.
         if (key.unit == 0) revert InvalidUnit();
 
-        if (
-            key.makerPolicy.rate > _MAX_FEE_RATE || key.takerPolicy.rate > _MAX_FEE_RATE
-                || key.makerPolicy.rate < _MIN_FEE_RATE || key.takerPolicy.rate < _MIN_FEE_RATE
-        ) {
-            revert InvalidFeePolicy();
-        }
+        if (!(key.makerPolicy.isValid() && key.takerPolicy.isValid())) revert InvalidFeePolicy();
         unchecked {
-            if (key.makerPolicy.rate + key.takerPolicy.rate < 0) revert InvalidFeePolicy();
+            if (key.makerPolicy.rate() + key.takerPolicy.rate() < 0) revert InvalidFeePolicy();
         }
-        if (key.makerPolicy.rate < 0 || key.takerPolicy.rate < 0) {
-            if (key.makerPolicy.useOutput == key.takerPolicy.useOutput) revert InvalidFeePolicy();
+        if (key.makerPolicy.rate() < 0 || key.takerPolicy.rate() < 0) {
+            if (key.makerPolicy.useOutput() == key.takerPolicy.useOutput()) revert InvalidFeePolicy();
         }
         if (!key.hooks.isValidHookAddress()) revert Hooks.HookAddressNotValid(address(key.hooks));
 
@@ -162,7 +156,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
         int256 quoteDelta = quoteAmount.toInt256();
 
-        if (!params.key.makerPolicy.useOutput) quoteDelta -= _calculateFee(quoteAmount, params.key.makerPolicy.rate);
+        if (!params.key.makerPolicy.useOutput()) {
+            quoteDelta -= _calculateFee(quoteAmount, params.key.makerPolicy.rate());
+        }
 
         _accountDelta(params.key.quote, quoteDelta);
 
@@ -193,10 +189,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         {
             int256 quoteDelta = quoteAmount.toInt256();
             int256 baseDelta = baseAmount.toInt256();
-            if (params.key.takerPolicy.useOutput) {
-                quoteDelta -= _calculateFee(quoteAmount, params.key.takerPolicy.rate);
+            if (params.key.takerPolicy.useOutput()) {
+                quoteDelta -= _calculateFee(quoteAmount, params.key.takerPolicy.rate());
             } else {
-                baseDelta -= _calculateFee(baseAmount, params.key.takerPolicy.rate);
+                baseDelta -= _calculateFee(baseAmount, params.key.takerPolicy.rate());
             }
             _accountDelta(params.key.quote, -quoteDelta);
             _accountDelta(params.key.base, baseDelta);
@@ -223,9 +219,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         unchecked {
             canceledAmount = uint256(canceled) * key.unit;
         }
-        FeePolicy memory makerPolicy = key.makerPolicy;
+        FeePolicy makerPolicy = key.makerPolicy;
 
-        if (!makerPolicy.useOutput) canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate);
+        if (!makerPolicy.useOutput()) canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate());
 
         reservesOf[key.quote] -= canceledAmount;
         key.quote.transfer(owner, canceledAmount);
@@ -265,20 +261,20 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
                 claimedInQuote = uint256(claimed) * key.unit;
             }
             claimableAmount = tick.quoteToBase(claimedInQuote, false);
-            FeePolicy memory makerPolicy = key.makerPolicy;
-            FeePolicy memory takerPolicy = key.takerPolicy;
-            if (takerPolicy.useOutput) {
-                quoteFee = _calculateFee(claimedInQuote, takerPolicy.rate);
+            FeePolicy makerPolicy = key.makerPolicy;
+            FeePolicy takerPolicy = key.takerPolicy;
+            if (takerPolicy.useOutput()) {
+                quoteFee = _calculateFee(claimedInQuote, takerPolicy.rate());
             } else {
-                baseFee = _calculateFee(claimableAmount, takerPolicy.rate);
+                baseFee = _calculateFee(claimableAmount, takerPolicy.rate());
             }
-            if (makerPolicy.useOutput) {
-                int256 makerFee = _calculateFee(claimableAmount, makerPolicy.rate);
+            if (makerPolicy.useOutput()) {
+                int256 makerFee = _calculateFee(claimableAmount, makerPolicy.rate());
                 claimableAmount =
                     makerFee > 0 ? claimableAmount - uint256(makerFee) : claimableAmount + uint256(-makerFee);
                 baseFee += makerFee;
             } else {
-                quoteFee += _calculateFee(claimedInQuote, makerPolicy.rate);
+                quoteFee += _calculateFee(claimedInQuote, makerPolicy.rate());
             }
         }
 

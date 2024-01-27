@@ -44,8 +44,8 @@ contract HooksTest is Test {
             base: CurrencyLibrary.NATIVE,
             unit: 1e12,
             quote: Currency.wrap(address(mockErc20)),
-            makerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
-            takerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
+            makerPolicy: FeePolicyLibrary.encode(true, 0),
+            takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: mockHooks
         });
         unopenedKey = key;

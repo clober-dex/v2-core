@@ -3,12 +3,14 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
+
 import "../../../../contracts/interfaces/IHooks.sol";
 import "../../../../contracts/libraries/Currency.sol";
-
+import "../../../../contracts/libraries/FeePolicy.sol";
 import "../../mocks/BookWrapper.sol";
 
 contract BookTest is Test {
+    using FeePolicyLibrary for FeePolicy;
     using CurrencyLibrary for Currency;
 
     BookId public constant BOOK_ID = BookId.wrap(123);
@@ -22,8 +24,8 @@ contract BookTest is Test {
             base: CurrencyLibrary.NATIVE,
             unit: 1e12,
             quote: Currency.wrap(address(123)),
-            makerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
-            takerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
+            makerPolicy: FeePolicyLibrary.encode(true, 0),
+            takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });
     }
@@ -40,10 +42,10 @@ contract BookTest is Test {
         assertEq(Currency.unwrap(actualKey.base), Currency.unwrap(key.base));
         assertEq(actualKey.unit, key.unit);
         assertEq(Currency.unwrap(actualKey.quote), Currency.unwrap(key.quote));
-        assertEq(actualKey.makerPolicy.rate, key.makerPolicy.rate);
-        assertEq(actualKey.makerPolicy.useOutput, key.makerPolicy.useOutput);
-        assertEq(actualKey.takerPolicy.rate, key.takerPolicy.rate);
-        assertEq(actualKey.takerPolicy.useOutput, key.takerPolicy.useOutput);
+        assertEq(actualKey.makerPolicy.rate(), key.makerPolicy.rate());
+        assertEq(actualKey.makerPolicy.useOutput(), key.makerPolicy.useOutput());
+        assertEq(actualKey.takerPolicy.rate(), key.takerPolicy.rate());
+        assertEq(actualKey.takerPolicy.useOutput(), key.takerPolicy.useOutput());
         assertEq(address(actualKey.hooks), address(key.hooks));
 
         assertTrue(book.isEmpty());
