@@ -2,64 +2,89 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
+
 import "../interfaces/IBountyPlatform.sol";
 import "./BaseHook.sol";
 
-contract BountyPlatform is BaseHook, IBountyPlatform {
+contract BountyPlatform is BaseHook, Ownable2Step, IBountyPlatform {
+    using CurrencyLibrary for Currency;
     using OrderIdLibrary for OrderId;
     using BookIdLibrary for IBookManager.BookKey;
 
-    mapping(BookId => bool) public isRegisteredBook;
-    mapping(OrderId => uint256) public bounty;
+    address public override defaultClaimer;
 
-    constructor(IBookManager bookManager_) BaseHook(bookManager_) {}
+    mapping(Currency => uint256) public override balance;
+    mapping(OrderId => Bounty) private _bountyMap;
+
+    constructor(IBookManager bookManager_, address owner_, address defaultClaimer_)
+        BaseHook(bookManager_)
+        Ownable(owner_)
+    {
+        defaultClaimer = defaultClaimer_;
+        emit SetDefaultClaimer(defaultClaimer_);
+    }
 
     function getHooksCalls() public pure override returns (Hooks.Permissions memory) {
-        return Hooks.Permissions({
-            beforeOpen: false,
-            afterOpen: true,
-            beforeMake: false,
-            afterMake: false,
-            beforeTake: false,
-            afterTake: false,
-            beforeCancel: false,
-            afterCancel: false,
-            beforeClaim: false,
-            afterClaim: true,
-            noOp: false,
-            accessLock: false
-        });
+        Hooks.Permissions memory permissions;
+        permissions.afterMake = true;
+        permissions.afterClaim = true;
+        return permissions;
     }
 
-    function afterOpen(address, IBookManager.BookKey calldata bookKey, bytes calldata)
+    function afterMake(address, IBookManager.MakeParams calldata, OrderId id, bytes calldata hookData)
         external
         override
         onlyBookManager
         returns (bytes4)
     {
-        isRegisteredBook[bookKey.toId()] = true;
-        return BaseHook.afterOpen.selector;
+        if (hookData.length > 0) {
+            Bounty memory bounty = abi.decode(hookData, (Bounty));
+            uint256 amount = _getAmount(bounty);
+            if (amount > 0) {
+                if (bounty.currency.balanceOfSelf() < amount) revert NotEnoughBalance();
+                balance[bounty.currency] += amount;
+                _bountyMap[id] = bounty;
+                emit BountyOffered(id, bounty.currency, amount);
+            }
+        }
+
+        return BaseHook.afterMake.selector;
     }
 
-    function offer(OrderId id) external payable {
-        (BookId bookId,,) = id.decode();
-        if (!isRegisteredBook[bookId]) revert InvalidBook();
-        bounty[id] += msg.value;
-    }
-
-    function afterClaim(address, OrderId orderId, uint64 claimedAmount, bytes calldata hookData)
+    function afterClaim(address, OrderId id, uint64 claimedAmount, bytes calldata hookData)
         external
         override
         onlyBookManager
         returns (bytes4)
     {
-        uint256 bountyAmount = bounty[orderId];
-        if (claimedAmount > 0 && bountyAmount > 0 && bookManager.getOrder(orderId).open == 0) {
-            address hunter = abi.decode(hookData, (address));
-            bounty[orderId] = 0;
-            (bool success,) = hunter.call{value: bountyAmount}("");
-            if (!success) revert BountyTransferFailed();
+        address claimer = hookData.length > 0 ? abi.decode(hookData, (address)) : defaultClaimer;
+        if (claimedAmount > 0 && bookManager.getOrder(id).open == 0) {
+            Bounty memory bounty = _bountyMap[id];
+            uint256 amount = _getAmount(bounty);
+            if (amount > 0) {
+                unchecked {
+                    balance[bounty.currency] -= amount;
+                }
+                delete _bountyMap[id];
+                bounty.currency.transfer(claimer, amount);
+                emit BountyClaimed(id, claimer);
+            }
         }
         return BaseHook.afterClaim.selector;
+    }
+
+    function _getAmount(Bounty memory bounty) internal pure returns (uint256) {
+        return uint256(bounty.amount) << bounty.shifter;
+    }
+
+    function getBounty(OrderId orderId) external view returns (Currency, uint256) {
+        Bounty memory bounty = _bountyMap[orderId];
+        return (bounty.currency, _getAmount(bounty));
+    }
+
+    function setDefaultClaimer(address claimer) external onlyOwner {
+        defaultClaimer = claimer;
+        emit SetDefaultClaimer(claimer);
     }
 }

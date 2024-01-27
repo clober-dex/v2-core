@@ -5,12 +5,23 @@ pragma solidity ^0.8.0;
 import "./IHooks.sol";
 
 interface IBountyPlatform {
-    error BountyTransferFailed();
-    error InvalidBook();
+    error NotEnoughBalance();
 
-    function isRegisteredBook(BookId bookId) external view returns (bool);
+    event BountyOffered(OrderId indexed orderId, Currency indexed curreny, uint256 amount);
+    event BountyClaimed(OrderId indexed orderId, address indexed claimer);
+    event SetDefaultClaimer(address indexed claimer);
 
-    function bounty(OrderId orderId) external view returns (uint256);
+    struct Bounty {
+        Currency currency;
+        uint88 amount;
+        uint8 shifter;
+    }
 
-    function offer(OrderId orderId) external payable;
+    function defaultClaimer() external view returns (address);
+
+    function balance(Currency currency) external view returns (uint256);
+
+    function getBounty(OrderId orderId) external view returns (Currency, uint256);
+
+    function setDefaultClaimer(address claimer) external;
 }
