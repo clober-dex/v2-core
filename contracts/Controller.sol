@@ -288,9 +288,13 @@ contract Controller is IController, ILocker {
                 IERC20(relatedTokenList[i].token).safeTransferFrom(user, address(_bookManager), uint256(currencyDelta));
                 _bookManager.settle(currency);
             }
-            // consider when currencyDelta < 0
+            uint256 balance = IERC20(relatedTokenList[i].token).balanceOf(address (this));
+            if (balance > 0) {
+                IERC20(relatedTokenList[i].token).transfer(user, balance);
+            }
+            // Todo consider when currencyDelta < 0
         }
-        if (address(this).balance > 0) native.transfer(msg.sender, address(this).balance);
+        if (address(this).balance > 0) native.transfer(user, address(this).balance);
     }
 
     function _permitERC20(ERC20PermitParams[] memory permitParamsList) internal {
