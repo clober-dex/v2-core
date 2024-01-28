@@ -161,10 +161,8 @@ contract ControllerExecuteOrderTest is Test {
         beforeTokenBalance = mockErc20.balanceOf(Constants.MAKER1);
 
         vm.startPrank(Constants.TAKER1);
-        manager.approve(address (controller), OrderId.unwrap(orderId2));
-        controller.execute(
-            actionList, paramsDataList, relatedTokenList, uint64(block.timestamp)
-        );
+        manager.approve(address(controller), OrderId.unwrap(orderId2));
+        controller.execute(actionList, paramsDataList, relatedTokenList, uint64(block.timestamp));
         vm.stopPrank();
 
         assertEq(Constants.TAKER1.balance - beforeBalance, 78043083000000000000);
