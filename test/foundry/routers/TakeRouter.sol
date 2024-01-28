@@ -21,7 +21,12 @@ contract TakeRouter is ILocker {
         payable
         returns (uint256 quoteAmount, uint256 baseAmount)
     {
-        return abi.decode(bookManager.lock(address(this), abi.encode(msg.sender, params, hookData)), (uint256, uint256));
+        (quoteAmount, baseAmount) =
+            abi.decode(bookManager.lock(address(this), abi.encode(msg.sender, params, hookData)), (uint256, uint256));
+        if (address(this).balance > 0) {
+            (bool success,) = payable(msg.sender).call{value: address(this).balance}("");
+            require(success, "TakeRouter: transfer failed");
+        }
     }
 
     function lockAcquired(address, bytes calldata data) external returns (bytes memory returnData) {
@@ -35,8 +40,6 @@ contract TakeRouter is ILocker {
         if (baseAmount > 0) {
             if (params.key.base.isNative()) {
                 (bool success,) = address(bookManager).call{value: baseAmount}("");
-                require(success, "TakeRouter: transfer failed");
-                (success,) = payable(msg.sender).call{value: address(this).balance}("");
                 require(success, "TakeRouter: transfer failed");
             } else {
                 IERC20(Currency.unwrap(params.key.base)).transferFrom(payer, address(bookManager), baseAmount);

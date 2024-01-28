@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: UNLICENSED
+
 pragma solidity ^0.8.0;
 
 import "../../../contracts/libraries/Book.sol";
@@ -8,7 +10,6 @@ contract BookWrapper {
 
     BookId public immutable BOOK_ID;
 
-    mapping(OrderId => IBookManager.Order) private _orders;
     Book.State private _book;
 
     constructor(BookId bookId) {
@@ -32,35 +33,38 @@ contract BookWrapper {
     }
 
     function make(Tick tick, uint64 amount) external returns (uint40 orderIndex) {
-        orderIndex = _book.make(_orders, BOOK_ID, tick, amount);
-        OrderId id = OrderIdLibrary.encode(BOOK_ID, tick, orderIndex);
-        _orders[id] =
-            IBookManager.Order({initial: amount, nonce: 0, owner: msg.sender, pending: amount, provider: address(0)});
+        orderIndex = _book.make(tick, amount, address(0));
     }
 
     function take(uint64 maxAmount) external returns (Tick, uint64) {
         return _book.take(maxAmount);
     }
 
-    function cancel(OrderId orderId, uint64 to) external returns (uint64) {
-        return _book.cancel(orderId, _orders[orderId], to);
+    function cancel(OrderId orderId, uint64 to) external returns (uint64, uint64) {
+        return _book.cancel(orderId, to);
     }
 
     function cleanHeap() external {
         _book.cleanHeap();
     }
 
+    function claim(OrderId orderId) external returns (uint64) {
+        (, Tick tick, uint40 index) = orderId.decode();
+        return _book.claim(tick, index);
+    }
+
     function calculateClaimableRawAmount(OrderId orderId) external view returns (uint64) {
         (, Tick tick, uint40 index) = orderId.decode();
-        return _book.calculateClaimableRawAmount(_orders[orderId].pending, tick, index);
+        return _book.calculateClaimableRawAmount(tick, index);
     }
 
     function getBookKey() external view returns (IBookManager.BookKey memory) {
         return _book.key;
     }
 
-    function getOrder(OrderId id) external view returns (IBookManager.Order memory) {
-        return _orders[id];
+    function getOrder(OrderId id) external view returns (Book.Order memory) {
+        (, Tick tick, uint40 index) = id.decode();
+        return _book.getOrder(tick, index);
     }
 
     function getRoot() external view returns (Tick) {
@@ -72,6 +76,9 @@ contract BookWrapper {
     }
 
     function setQueueIndex(Tick tick, uint40 index) external {
-        _book.queues[tick].index = index;
+        Book.Order[] storage orders = _book.queues[tick].orders;
+        assembly {
+            sstore(orders.slot, index)
+        }
     }
 }

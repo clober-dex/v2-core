@@ -8,28 +8,28 @@ import "../libraries/Book.sol";
 import "../libraries/Currency.sol";
 import "../libraries/OrderId.sol";
 import "../libraries/Tick.sol";
+import "../libraries/FeePolicy.sol";
 import "./IERC721Permit.sol";
 import "./IHooks.sol";
 
 interface IBookManager is IERC721Metadata, IERC721Permit {
     error InvalidUnit();
     error InvalidFeePolicy();
-    error Slippage(BookId bookId);
+    error InvalidProvider(address provider);
     error LockedBy(address locker, address hook);
     error CurrencyNotSettled();
-    error NotWhitelisted(address provider);
 
     event Open(
         BookId indexed id,
         Currency indexed base,
         Currency indexed quote,
-        uint96 unit,
+        uint64 unit,
         FeePolicy makerPolicy,
         FeePolicy takerPolicy,
         IHooks hooks
     );
+    event Make(BookId indexed bookId, address indexed user, Tick tick, uint256 orderIndex, uint64 amount);
     event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 amount);
-    event Make(BookId indexed bookId, address indexed user, uint64 amount, uint256 orderIndex, Tick tick);
     event Cancel(OrderId indexed orderId, uint64 canceledAmount);
     event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount);
     event Whitelist(address indexed provider);
@@ -37,29 +37,18 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     event Collect(address indexed provider, Currency indexed currency, uint256 amount);
     event SetDefaultProvider(address indexed oldDefaultProvider, address indexed newDefaultProvider);
 
-    struct Order {
-        uint64 initial;
-        uint32 nonce;
-        address provider;
-        uint64 pending; // Ordered amount + claimable amount // todo: This value may be modified during user delivery
-        address owner;
-    }
-
     struct BookKey {
         Currency base;
-        uint96 unit;
+        uint64 unit;
         Currency quote;
         FeePolicy makerPolicy;
-        FeePolicy takerPolicy;
         IHooks hooks;
-    }
-
-    struct FeePolicy {
-        int24 rate;
-        bool useOutput;
+        FeePolicy takerPolicy;
     }
 
     function baseURI() external view returns (string memory);
+
+    function contractURI() external view returns (string memory);
 
     function defaultProvider() external view returns (address);
 
@@ -75,7 +64,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     struct OrderInfo {
         address provider;
-        uint64 initial;
         uint64 open;
         uint64 claimable;
     }
@@ -91,6 +79,10 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     function getRoot(BookId id) external view returns (Tick tick);
 
     function isEmpty(BookId id) external view returns (bool);
+
+    function load(bytes32 slot) external view returns (bytes32);
+
+    function load(bytes32 startSlot, uint256 nSlot) external view returns (bytes memory);
 
     function open(BookKey calldata key, bytes calldata hookData) external;
 

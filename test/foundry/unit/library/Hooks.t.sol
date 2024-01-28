@@ -44,14 +44,14 @@ contract HooksTest is Test {
             base: CurrencyLibrary.NATIVE,
             unit: 1e12,
             quote: Currency.wrap(address(mockErc20)),
-            makerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
-            takerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
+            makerPolicy: FeePolicyLibrary.encode(true, 0),
+            takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: mockHooks
         });
         unopenedKey = key;
         unopenedKey.unit = 1e11;
 
-        manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "url", "name", "symbol");
+        manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "url", "url", "name", "symbol");
         manager.open(key, "");
 
         makeRouter = new MakeRouter(manager);
@@ -110,7 +110,7 @@ contract HooksTest is Test {
     function testTakeSucceedsWithHook() public {
         _make();
         vm.deal(address(this), 1 ether);
-        takeRouter.take(IBookManager.TakeParams(key, 1 ether), new bytes(222));
+        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, 1 ether), new bytes(222));
 
         assertEq(mockHooks.beforeTakeData(), new bytes(222));
         assertEq(mockHooks.afterTakeData(), new bytes(222));
@@ -122,7 +122,7 @@ contract HooksTest is Test {
 
         mockHooks.setReturnValue(mockHooks.beforeTake.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        takeRouter.take(IBookManager.TakeParams(key, 1 ether), "");
+        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, 1 ether), "");
     }
 
     function testAfterTakeInvalidReturn() public {
@@ -131,12 +131,12 @@ contract HooksTest is Test {
 
         mockHooks.setReturnValue(mockHooks.afterTake.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        takeRouter.take(IBookManager.TakeParams(key, 1 ether), "");
+        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, 1 ether), "");
     }
 
     function _take() internal {
         vm.deal(address(this), 1 ether);
-        takeRouter.take(IBookManager.TakeParams(key, 1 ether), "");
+        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, 1 ether), "");
     }
 
     function testCancelSucceedsWithHook() public {

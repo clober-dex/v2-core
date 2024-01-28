@@ -115,9 +115,7 @@ library Hooks {
     function callHook(IHooks self, bytes memory data) internal {
         (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
 
-        if (selector != expectedSelector) {
-            revert InvalidHookResponse();
-        }
+        if (selector != expectedSelector) revert InvalidHookResponse();
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
@@ -125,13 +123,9 @@ library Hooks {
     function callHookNoopable(IHooks self, bytes memory data) internal returns (bool shouldExecute) {
         (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
 
-        if (selector == expectedSelector) {
-            shouldExecute = true;
-        } else if (selector == NO_OP_SELECTOR && self.hasPermission(NO_OP_FLAG)) {
-            shouldExecute = false;
-        } else {
-            revert InvalidHookResponse();
-        }
+        if (selector == expectedSelector) shouldExecute = true;
+        else if (selector == NO_OP_SELECTOR && self.hasPermission(NO_OP_FLAG)) shouldExecute = false;
+        else revert InvalidHookResponse();
     }
 
     /// @notice calls beforeOpen hook if permissioned and validates return value

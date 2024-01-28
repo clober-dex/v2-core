@@ -24,6 +24,10 @@ contract MakeRouter is ILocker {
         (id, quoteAmount) =
             abi.decode(bookManager.lock(address(this), abi.encode(msg.sender, params, hookData)), (OrderId, uint256));
         bookManager.transferFrom(address(this), msg.sender, OrderId.unwrap(id));
+        if (address(this).balance > 0) {
+            (bool success,) = payable(msg.sender).call{value: address(this).balance}("");
+            require(success, "MakeRouter: transfer failed");
+        }
     }
 
     function lockAcquired(address, bytes calldata data) external returns (bytes memory returnData) {
@@ -34,8 +38,6 @@ contract MakeRouter is ILocker {
         if (quoteAmount > 0) {
             if (params.key.quote.isNative()) {
                 (bool success,) = address(bookManager).call{value: quoteAmount}("");
-                require(success, "MakeRouter: transfer failed");
-                (success,) = payable(msg.sender).call{value: address(this).balance}("");
                 require(success, "MakeRouter: transfer failed");
             } else {
                 IERC20(Currency.unwrap(params.key.quote)).transferFrom(payer, address(bookManager), quoteAmount);

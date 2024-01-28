@@ -48,9 +48,7 @@ library Heap {
         (uint256 b0b1, uint256 b2) = _split(value);
         uint256 mask = 1 << b2;
         uint256 b2Bitmap = heap[b0b1];
-        if (b2Bitmap & mask > 0) {
-            revert AlreadyExistsError();
-        }
+        if (b2Bitmap & mask > 0) revert AlreadyExistsError();
 
         heap[b0b1] = b2Bitmap | mask;
         if (b2Bitmap == 0) {
@@ -58,9 +56,8 @@ library Heap {
             uint256 b1BitmapKey = ~(b0b1 >> 8);
             uint256 b1Bitmap = heap[b1BitmapKey];
             heap[b1BitmapKey] = b1Bitmap | mask;
-            if (b1Bitmap == 0) {
-                heap[B0_BITMAP_KEY] = heap[B0_BITMAP_KEY] | (1 << ~b1BitmapKey);
-            }
+
+            if (b1Bitmap == 0) heap[B0_BITMAP_KEY] = heap[B0_BITMAP_KEY] | (1 << ~b1BitmapKey);
         }
     }
 
