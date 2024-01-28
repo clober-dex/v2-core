@@ -74,6 +74,19 @@ interface IController {
         PermitSignature permitParams;
     }
 
+    function getDepth(BookId id, Tick tick) external view returns (uint256);
+
+    function getLowestPrice(BookId id) external view returns (uint256);
+
+    function getOrder(OrderId orderId)
+        external
+        view
+        returns (address provider, uint256 price, uint256 openAmount, uint256 claimableAmount);
+
+    function fromPrice(uint256 price) external pure returns (Tick);
+
+    function toPrice(Tick tick) external pure returns (uint256);
+
     function execute(
         Action[] memory actionList,
         bytes[] memory orderParamsList,

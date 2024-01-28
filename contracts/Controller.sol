@@ -18,6 +18,7 @@ contract Controller is IController, ILocker {
     using SafeCast for uint256;
     using Math for uint256;
     using CurrencyLibrary for Currency;
+    using FeePolicyLibrary for FeePolicy;
 
     IBookManager private immutable _bookManager;
     address private immutable _provider;
@@ -43,15 +44,21 @@ contract Controller is IController, ILocker {
     function getOrder(OrderId orderId)
         external
         view
-        returns (address provider, uint256 price, uint256 openQuoteAmount, uint256 claimableQuoteAmount)
+        returns (address provider, uint256 price, uint256 openAmount, uint256 claimableAmount)
     {
         (BookId bookId, Tick tick,) = orderId.decode();
-        uint256 unit = _bookManager.getBookKey(bookId).unit;
+        IBookManager.BookKey memory key = _bookManager.getBookKey(bookId);
+        uint256 unit = key.unit;
         price = tick.toPrice();
         IBookManager.OrderInfo memory orderInfo = _bookManager.getOrder(orderId);
         provider = orderInfo.provider;
-        openQuoteAmount = unit * orderInfo.open;
-        claimableQuoteAmount = unit * orderInfo.claimable;
+        openAmount = unit * orderInfo.open;
+        FeePolicy makerPolicy = key.makerPolicy;
+        claimableAmount = tick.quoteToBase(unit * orderInfo.claimable, false);
+        if (makerPolicy.useOutput()) {
+            claimableAmount = claimableAmount * uint256(FeePolicyLibrary.RATE_PRECISION - makerPolicy.rate())
+                / uint256(FeePolicyLibrary.RATE_PRECISION);
+        }
     }
 
     function fromPrice(uint256 price) external pure returns (Tick) {
@@ -214,7 +221,6 @@ contract Controller is IController, ILocker {
                 IBookManager.TakeParams({key: key, maxAmount: leftQuoteAmount.divide(key.unit, true).toUint64()}),
                 params.hookData
             );
-            console.log(quoteAmount, baseAmount);
             if (quoteAmount == 0) break;
             _bookManager.withdraw(key.quote, address(this), quoteAmount);
         }
@@ -230,7 +236,11 @@ contract Controller is IController, ILocker {
         while (leftBaseAmount > 0 && !_bookManager.isEmpty(params.id)) {
             Tick tick = _bookManager.getRoot(params.id);
             (uint256 quoteAmount, uint256 baseAmount) = _bookManager.take(
-                IBookManager.TakeParams({key: key, maxAmount: tick.baseToRaw(leftBaseAmount, false)}), params.hookData
+                IBookManager.TakeParams({
+                    key: key,
+                    maxAmount: (tick.baseToQuote(leftBaseAmount, false) / key.unit).toUint64()
+                }),
+                params.hookData
             );
             if (quoteAmount == 0) break;
             _bookManager.withdraw(key.quote, address(this), quoteAmount);
@@ -281,7 +291,10 @@ contract Controller is IController, ILocker {
         _permitERC20(relatedTokenList);
         Currency native = CurrencyLibrary.NATIVE;
         int256 currencyDelta = _bookManager.currencyDelta(address(this), native);
-        if (currencyDelta > 0) native.transfer(address(_bookManager), uint256(currencyDelta));
+        if (currencyDelta > 0) {
+            native.transfer(address(_bookManager), uint256(currencyDelta));
+            _bookManager.settle(native);
+        }
         for (uint256 i = 0; i < length; ++i) {
             Currency currency = Currency.wrap(relatedTokenList[i].token);
             currencyDelta = _bookManager.currencyDelta(address(this), currency);
@@ -289,7 +302,7 @@ contract Controller is IController, ILocker {
                 IERC20(relatedTokenList[i].token).safeTransferFrom(user, address(_bookManager), uint256(currencyDelta));
                 _bookManager.settle(currency);
             }
-            uint256 balance = IERC20(relatedTokenList[i].token).balanceOf(address (this));
+            uint256 balance = IERC20(relatedTokenList[i].token).balanceOf(address(this));
             if (balance > 0) {
                 IERC20(relatedTokenList[i].token).transfer(user, balance);
             }
@@ -323,4 +336,6 @@ contract Controller is IController, ILocker {
             ) {} catch {}
         }
     }
+
+    receive() external payable {}
 }
