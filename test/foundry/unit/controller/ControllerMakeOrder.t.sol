@@ -21,37 +21,35 @@ contract ControllerMakeOrderTest is Test {
     IBookManager.BookKey public unopenedKey;
     IBookManager public manager;
     Controller public controller;
+    OrderId public orderId;
 
     function setUp() public {
         mockErc20 = new MockERC20("Mock", "MOCK", 18);
 
         key = IBookManager.BookKey({
-            base: CurrencyLibrary.NATIVE,
+            base: Currency.wrap(address(mockErc20)),
             unit: 1e12,
-            quote: Currency.wrap(address(mockErc20)),
-            makerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
-            takerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
+            quote: CurrencyLibrary.NATIVE,
+            makerPolicy: FeePolicyLibrary.encode(true, 0),
+            takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });
         unopenedKey = key;
         unopenedKey.unit = 1e11;
 
-        manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "url", "name", "symbol");
+        manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "baseUrl", "contractUrl", "name", "symbol");
         manager.open(key, "");
 
         controller = new Controller(address(manager));
+
+        vm.deal(Constants.MAKER1, 1000 * 10 ** 18);
+        vm.deal(Constants.MAKER2, 1000 * 10 ** 18);
+        vm.deal(Constants.MAKER3, 1000 * 10 ** 18);
     }
 
-    function _makeOrder(IBookManager.BookKey memory key, int24 tick, uint256 quoteAmount, address maker)
-        internal
-        returns (OrderId id)
-    {
-        mockErc20.mint(maker, quoteAmount);
+    function _makeOrder(int24 tick, uint256 quoteAmount, address maker) internal returns (OrderId id) {
         IController.MakeOrderParams[] memory paramsList = new IController.MakeOrderParams[](1);
-        IController.ERC20PermitParams[] memory relatedTokenList = new IController.ERC20PermitParams[](1);
-        IController.PermitSignature memory signature;
-        relatedTokenList[0] =
-            IController.ERC20PermitParams({token: address(mockErc20), permitAmount: 0, signature: signature});
+        IController.ERC20PermitParams[] memory relatedTokenList;
         paramsList[0] = IController.MakeOrderParams({
             id: key.toId(),
             tick: Tick.wrap(tick),
@@ -60,21 +58,18 @@ contract ControllerMakeOrderTest is Test {
             hookData: ""
         });
 
-        vm.startPrank(maker);
-        mockErc20.approve(address(controller), quoteAmount);
-        id = controller.make(paramsList, relatedTokenList, uint64(block.timestamp))[0];
-        vm.stopPrank();
+        vm.prank(maker);
+        id = controller.make{value: quoteAmount}(paramsList, relatedTokenList, uint64(block.timestamp))[0];
     }
 
     function testMakeOrder() public {
-        OrderId id = _makeOrder(key, Constants.PRICE_TICK, Constants.QUOTE_AMOUNT1, Constants.MAKER1);
-
-        (BookId bookId,,) = id.decode();
+        uint256 beforeBalance = Constants.MAKER1.balance;
+        OrderId id = _makeOrder(Constants.PRICE_TICK, Constants.QUOTE_AMOUNT1, Constants.MAKER1);
 
         assertEq(manager.ownerOf(OrderId.unwrap(id)), Constants.MAKER1);
         (address provider, uint256 price, uint256 openQuoteAmount, uint256 claimableQuoteAmount) =
             controller.getOrder(id);
-        assertEq(Constants.QUOTE_AMOUNT1 - openQuoteAmount, mockErc20.balanceOf(Constants.MAKER1));
+        assertEq(openQuoteAmount, beforeBalance - Constants.MAKER1.balance);
         assertEq(controller.toPrice(Tick.wrap(Constants.PRICE_TICK)), price);
         assertEq(claimableQuoteAmount, 0);
         assertEq(provider, address(0));
