@@ -75,7 +75,7 @@ interface IController {
     }
 
     function execute(
-        Action actionList,
+        Action[] memory actionList,
         bytes[] memory orderParamsList,
         ERC20PermitParams[] memory permitParamsList,
         uint64 deadline

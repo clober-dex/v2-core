@@ -99,7 +99,7 @@ contract Controller is IController, ILocker {
     }
 
     function execute(
-        Action actionList,
+        Action[] memory actionList,
         bytes[] memory paramsDataList,
         ERC20PermitParams[] memory relatedTokenList,
         uint64 deadline
@@ -214,6 +214,7 @@ contract Controller is IController, ILocker {
                 IBookManager.TakeParams({key: key, maxAmount: leftQuoteAmount.divide(key.unit, true).toUint64()}),
                 params.hookData
             );
+            console.log(quoteAmount, baseAmount);
             if (quoteAmount == 0) break;
             _bookManager.withdraw(key.quote, address(this), quoteAmount);
         }
