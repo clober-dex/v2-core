@@ -88,15 +88,19 @@ contract ControllerTakeOrderTest is Test {
         });
 
         vm.prank(taker);
-        controller.take(paramsList, relatedTokenList, uint64(block.timestamp));
+        controller.take{value: maxBaseAmount}(paramsList, relatedTokenList, uint64(block.timestamp));
     }
 
     function testTakeOrder() public {
         vm.deal(Constants.TAKER1, type(uint256).max);
 
+        uint256 lowestPrice = controller.getLowestPrice(key.toId());
         uint256 beforeBalance = Constants.TAKER1.balance;
-        _takeOrder(key, Constants.QUOTE_AMOUNT2, type(uint256).max, Constants.TAKER1);
-        assertEq(mockErc20.balanceOf(Constants.TAKER1), 152000001000000000000);
-        assertEq(beforeBalance - Constants.TAKER1.balance, 0);
+        uint256 takeAmount = 152000001000000000000;
+        uint256 baseAmount = takeAmount << 128 / lowestPrice + 1;
+        _takeOrder(key, Constants.QUOTE_AMOUNT2, baseAmount, Constants.TAKER1);
+        assertEq(mockErc20.balanceOf(Constants.TAKER1), takeAmount);
+        assertEq(beforeBalance - Constants.TAKER1.balance, baseAmount);
+
     }
 }
