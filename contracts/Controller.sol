@@ -265,7 +265,9 @@ contract Controller is IController, ILocker {
             if (_bookManager.getOrder(params.id).open > 0) {
                 _bookManager.transferFrom(address(this), user, orderId);
             }
-        } else _bookManager.claim(params.id, params.hookData);
+        } else {
+            _bookManager.claim(params.id, params.hookData);
+        }
     }
 
     function _cancel(address user, CancelOrderParams memory params) internal {
@@ -291,14 +293,18 @@ contract Controller is IController, ILocker {
         if (currencyDelta > 0) {
             native.transfer(address(_bookManager), uint256(currencyDelta));
             _bookManager.settle(native);
-        } else if (currencyDelta < 0) _bookManager.withdraw(CurrencyLibrary.NATIVE, user, uint256(-currencyDelta));
+        } else if (currencyDelta < 0) {
+            _bookManager.withdraw(CurrencyLibrary.NATIVE, user, uint256(-currencyDelta));
+        }
         for (uint256 i = 0; i < length; ++i) {
             Currency currency = Currency.wrap(relatedTokenList[i].token);
             currencyDelta = _bookManager.currencyDelta(address(this), currency);
             if (currencyDelta > 0) {
                 IERC20(relatedTokenList[i].token).safeTransferFrom(user, address(_bookManager), uint256(currencyDelta));
                 _bookManager.settle(currency);
-            } else if (currencyDelta < 0) _bookManager.withdraw(Currency.wrap(relatedTokenList[i].token), user, uint256(-currencyDelta));
+            } else if (currencyDelta < 0) {
+                _bookManager.withdraw(Currency.wrap(relatedTokenList[i].token), user, uint256(-currencyDelta));
+            }
             uint256 balance = IERC20(relatedTokenList[i].token).balanceOf(address(this));
             if (balance > 0) {
                 IERC20(relatedTokenList[i].token).transfer(user, balance);
