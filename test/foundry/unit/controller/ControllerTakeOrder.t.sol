@@ -11,6 +11,7 @@ import "../../../../contracts/BookManager.sol";
 import "../../mocks/MockERC20.sol";
 
 contract ControllerTakeOrderTest is Test {
+    using TickLibrary for Tick;
     using OrderIdLibrary for OrderId;
     using BookIdLibrary for IBookManager.BookKey;
     using Hooks for IHooks;
@@ -26,37 +27,38 @@ contract ControllerTakeOrderTest is Test {
         mockErc20 = new MockERC20("Mock", "MOCK", 18);
 
         key = IBookManager.BookKey({
-            base: CurrencyLibrary.NATIVE,
+            base: Currency.wrap(address(mockErc20)),
             unit: 1e12,
-            quote: Currency.wrap(address(mockErc20)),
-            makerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
-            takerPolicy: IBookManager.FeePolicy({rate: 0, useOutput: true}),
+            quote: CurrencyLibrary.NATIVE,
+            makerPolicy: FeePolicyLibrary.encode(true, 0),
+            takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });
         unopenedKey = key;
         unopenedKey.unit = 1e11;
 
-        manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "url", "name", "symbol");
+        manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "baseUrl", "contractUrl", "name", "symbol");
         manager.open(key, "");
 
         controller = new Controller(address(manager));
 
-        _makeOrder(key, Constants.PRICE_TICK, Constants.QUOTE_AMOUNT1, Constants.MAKER1);
-        _makeOrder(key, Constants.PRICE_TICK + 1, Constants.QUOTE_AMOUNT2, Constants.MAKER2);
-        _makeOrder(key, Constants.PRICE_TICK + 1, Constants.QUOTE_AMOUNT3, Constants.MAKER3);
-        _makeOrder(key, Constants.PRICE_TICK + 2, Constants.QUOTE_AMOUNT2, Constants.MAKER1);
+        vm.deal(Constants.MAKER1, 1000 * 10 ** 18);
+        vm.deal(Constants.MAKER2, 1000 * 10 ** 18);
+        vm.deal(Constants.MAKER3, 1000 * 10 ** 18);
+
+        mockErc20.mint(Constants.TAKER1, 1000 * 10 ** 18);
+        mockErc20.mint(Constants.TAKER2, 1000 * 10 ** 18);
+        mockErc20.mint(Constants.TAKER3, 1000 * 10 ** 18);
+
+        _makeOrder(Constants.PRICE_TICK, Constants.QUOTE_AMOUNT1, Constants.MAKER1);
+        _makeOrder(Constants.PRICE_TICK + 1, Constants.QUOTE_AMOUNT2, Constants.MAKER2);
+        _makeOrder(Constants.PRICE_TICK + 1, Constants.QUOTE_AMOUNT3, Constants.MAKER3);
+        _makeOrder(Constants.PRICE_TICK + 2, Constants.QUOTE_AMOUNT2, Constants.MAKER1);
     }
 
-    function _makeOrder(IBookManager.BookKey memory key, int24 tick, uint256 quoteAmount, address maker)
-        internal
-        returns (OrderId id)
-    {
-        mockErc20.mint(maker, quoteAmount);
+    function _makeOrder(int24 tick, uint256 quoteAmount, address maker) internal returns (OrderId id) {
         IController.MakeOrderParams[] memory paramsList = new IController.MakeOrderParams[](1);
-        IController.ERC20PermitParams[] memory relatedTokenList = new IController.ERC20PermitParams[](1);
-        IController.PermitSignature memory signature;
-        relatedTokenList[0] =
-            IController.ERC20PermitParams({token: address(mockErc20), permitAmount: 0, signature: signature});
+        IController.ERC20PermitParams[] memory relatedTokenList;
         paramsList[0] = IController.MakeOrderParams({
             id: key.toId(),
             tick: Tick.wrap(tick),
@@ -65,15 +67,11 @@ contract ControllerTakeOrderTest is Test {
             hookData: ""
         });
 
-        vm.startPrank(maker);
-        mockErc20.approve(address(controller), quoteAmount);
-        id = controller.make(paramsList, relatedTokenList, uint64(block.timestamp))[0];
-        vm.stopPrank();
+        vm.prank(maker);
+        id = controller.make{value: quoteAmount}(paramsList, relatedTokenList, uint64(block.timestamp))[0];
     }
 
-    function _takeOrder(IBookManager.BookKey memory key, uint256 quoteAmount, uint256 maxBaseAmount, address taker)
-        internal
-    {
+    function _takeOrder(uint256 quoteAmount, uint256 maxBaseAmount, address taker) internal {
         IController.TakeOrderParams[] memory paramsList = new IController.TakeOrderParams[](1);
         IController.ERC20PermitParams[] memory relatedTokenList = new IController.ERC20PermitParams[](1);
         IController.PermitSignature memory signature;
@@ -87,20 +85,33 @@ contract ControllerTakeOrderTest is Test {
             hookData: ""
         });
 
-        vm.prank(taker);
-        controller.take{value: maxBaseAmount}(paramsList, relatedTokenList, uint64(block.timestamp));
+        vm.startPrank(taker);
+        mockErc20.approve(address(controller), maxBaseAmount);
+        controller.take(paramsList, relatedTokenList, uint64(block.timestamp));
+        vm.stopPrank();
     }
 
     function testTakeOrder() public {
-        vm.deal(Constants.TAKER1, type(uint256).max);
-
-        uint256 lowestPrice = controller.getLowestPrice(key.toId());
-        uint256 beforeBalance = Constants.TAKER1.balance;
         uint256 takeAmount = 152000001000000000000;
-        uint256 baseAmount = takeAmount << 128 / lowestPrice + 1;
-        _takeOrder(key, Constants.QUOTE_AMOUNT2, baseAmount, Constants.TAKER1);
-        assertEq(mockErc20.balanceOf(Constants.TAKER1), takeAmount);
-        assertEq(beforeBalance - Constants.TAKER1.balance, baseAmount);
+        uint256 baseAmount = Tick.wrap(Constants.PRICE_TICK).quoteToBase(takeAmount, true);
 
+        uint256 beforeBalance = Constants.TAKER1.balance;
+        uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
+        _takeOrder(Constants.QUOTE_AMOUNT2, type(uint256).max, Constants.TAKER1);
+        assertEq(Constants.TAKER1.balance - beforeBalance, takeAmount);
+        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), baseAmount);
+    }
+
+    function testTake3TickOrder() public {
+        uint256 takeAmount = 500000001000000000000;
+        uint256 baseAmount = Tick.wrap(Constants.PRICE_TICK).quoteToBase(200000000000000000000, true)
+            + Tick.wrap(Constants.PRICE_TICK + 1).quoteToBase(246000000000000000000, true)
+            + Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(54000001000000000000, true);
+
+        uint256 beforeBalance = Constants.TAKER1.balance;
+        uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
+        _takeOrder(Constants.QUOTE_AMOUNT4, type(uint256).max, Constants.TAKER1);
+        assertEq(Constants.TAKER1.balance - beforeBalance, takeAmount);
+        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), baseAmount);
     }
 }
