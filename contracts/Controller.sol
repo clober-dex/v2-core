@@ -33,6 +33,21 @@ contract Controller is IController, ILocker {
         _;
     }
 
+    modifier checkParamsListLength(Action[] calldata actionList, bytes[] calldata paramsDataList) {
+        if (actionList.length != paramsDataList.length) revert InvalidLength();
+        _;
+    }
+
+    modifier permitERC20(ERC20PermitParams[] calldata permitParamsList) {
+        _permitERC20(permitParamsList);
+        _;
+    }
+
+    modifier permitERC721(ERC721PermitParams[] calldata permitParamsList) {
+        _permitERC721(permitParamsList);
+        _;
+    }
+
     function getDepth(BookId id, Tick tick) external view returns (uint256) {
         return uint256(_bookManager.getDepth(id, tick)) * _bookManager.getBookKey(id).unit;
     }
@@ -71,12 +86,8 @@ contract Controller is IController, ILocker {
 
     function lockAcquired(address, bytes memory data) external returns (bytes memory returnData) {
         if (msg.sender != address(_bookManager)) revert InvalidAccess();
-        (
-            address user,
-            Action[] memory actionList,
-            bytes[] memory orderParamsList,
-            ERC20PermitParams[] memory relatedTokenList
-        ) = abi.decode(data, (address, Action[], bytes[], ERC20PermitParams[]));
+        (address user, Action[] memory actionList, bytes[] memory orderParamsList, address[] memory tokensToSettle) =
+            abi.decode(data, (address, Action[], bytes[], address[]));
 
         uint256 length = actionList.length;
         OrderId[] memory ids = new OrderId[](length);
@@ -91,13 +102,13 @@ contract Controller is IController, ILocker {
             } else if (action == Action.SPEND) {
                 _spend(abi.decode(orderParamsList[i], (SpendOrderParams)));
             } else if (action == Action.CLAIM) {
-                _claim(user, abi.decode(orderParamsList[i], (ClaimOrderParams)));
+                _claim(abi.decode(orderParamsList[i], (ClaimOrderParams)));
             } else if (action == Action.CANCEL) {
-                _cancel(user, abi.decode(orderParamsList[i], (CancelOrderParams)));
+                _cancel(abi.decode(orderParamsList[i], (CancelOrderParams)));
             }
         }
 
-        _settleTokens(user, relatedTokenList);
+        _settleTokens(user, tokensToSettle);
 
         assembly {
             mstore(ids, orderIdIndex)
@@ -106,23 +117,44 @@ contract Controller is IController, ILocker {
     }
 
     function execute(
-        Action[] memory actionList,
-        bytes[] memory paramsDataList,
-        ERC20PermitParams[] memory relatedTokenList,
+        Action[] calldata actionList,
+        bytes[] calldata paramsDataList,
+        address[] calldata tokensToSettle,
+        ERC20PermitParams[] calldata erc20PermitParamsList,
+        ERC721PermitParams[] calldata erc721PermitParamsList,
         uint64 deadline
     ) external payable checkDeadline(deadline) returns (OrderId[] memory ids) {
-        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, relatedTokenList);
+        if (actionList.length != paramsDataList.length) revert InvalidLength();
+        _permitERC20(erc20PermitParamsList);
+        _permitERC721(erc721PermitParamsList);
+
+        for (uint256 i = 0; i < erc721PermitParamsList.length; ++i) {
+            _bookManager.transferFrom(msg.sender, address(this), erc721PermitParamsList[i].tokenId);
+        }
+
+        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
         bytes memory result = _bookManager.lock(address(this), lockData);
+
+        for (uint256 i = 0; i < erc721PermitParamsList.length; ++i) {
+            uint256 orderId = erc721PermitParamsList[i].tokenId;
+            IBookManager.OrderInfo memory orderInfo = _bookManager.getOrder(OrderId.wrap(orderId));
+            if (orderInfo.claimable > 0 || orderInfo.open > 0) {
+                _bookManager.transferFrom(address(this), msg.sender, orderId);
+            }
+        }
+
         if (result.length != 0) {
             (ids) = abi.decode(result, (OrderId[]));
         }
+        return ids;
     }
 
     function make(
         MakeOrderParams[] calldata orderParamsList,
-        ERC20PermitParams[] memory relatedTokenList,
+        address[] calldata tokensToSettle,
+        ERC20PermitParams[] calldata permitParamsList,
         uint64 deadline
-    ) external payable checkDeadline(deadline) returns (OrderId[] memory ids) {
+    ) external payable checkDeadline(deadline) permitERC20(permitParamsList) returns (OrderId[] memory ids) {
         uint256 length = orderParamsList.length;
         Action[] memory actionList = new Action[](length);
         bytes[] memory paramsDataList = new bytes[](length);
@@ -130,16 +162,17 @@ contract Controller is IController, ILocker {
             actionList[i] = Action.MAKE;
             paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
-        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, relatedTokenList);
+        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
         bytes memory result = _bookManager.lock(address(this), lockData);
         (ids) = abi.decode(result, (OrderId[]));
     }
 
     function take(
         TakeOrderParams[] calldata orderParamsList,
-        ERC20PermitParams[] memory relatedTokenList,
+        address[] calldata tokensToSettle,
+        ERC20PermitParams[] calldata permitParamsList,
         uint64 deadline
-    ) external payable checkDeadline(deadline) {
+    ) external payable checkDeadline(deadline) permitERC20(permitParamsList) {
         uint256 length = orderParamsList.length;
         Action[] memory actionList = new Action[](length);
         bytes[] memory paramsDataList = new bytes[](length);
@@ -147,15 +180,16 @@ contract Controller is IController, ILocker {
             actionList[i] = Action.TAKE;
             paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
-        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, relatedTokenList);
+        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
         _bookManager.lock(address(this), lockData);
     }
 
     function spend(
         SpendOrderParams[] calldata orderParamsList,
-        ERC20PermitParams[] memory relatedTokenList,
+        address[] calldata tokensToSettle,
+        ERC20PermitParams[] calldata permitParamsList,
         uint64 deadline
-    ) external payable checkDeadline(deadline) {
+    ) external payable checkDeadline(deadline) permitERC20(permitParamsList) {
         uint256 length = orderParamsList.length;
         Action[] memory actionList = new Action[](length);
         bytes[] memory paramsDataList = new bytes[](length);
@@ -163,7 +197,7 @@ contract Controller is IController, ILocker {
             actionList[i] = Action.SPEND;
             paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
-        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, relatedTokenList);
+        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
         _bookManager.lock(address(this), lockData);
     }
 
@@ -175,7 +209,12 @@ contract Controller is IController, ILocker {
         }
     }
 
-    function cancel(CancelOrderParams[] calldata orderParamsList, uint64 deadline) external checkDeadline(deadline) {
+    function cancel(
+        CancelOrderParams[] calldata orderParamsList,
+        ERC721PermitParams[] calldata permitParamsList,
+        uint64 deadline
+    ) external checkDeadline(deadline) {
+        _permitERC721(permitParamsList);
         uint256 length = orderParamsList.length;
         for (uint256 i = 0; i < length; ++i) {
             CancelOrderParams memory params = orderParamsList[i];
@@ -217,6 +256,7 @@ contract Controller is IController, ILocker {
                 leftQuoteAmount -= quoteAmount;
                 spendBaseAmount += baseAmount;
             }
+            if (_bookManager.getRoot(params.id).toPrice() > params.limitPrice) break;
             (quoteAmount, baseAmount) = _bookManager.take(
                 IBookManager.TakeParams({key: key, maxAmount: leftQuoteAmount.divide(key.unit, true).toUint64()}),
                 params.hookData
@@ -234,6 +274,7 @@ contract Controller is IController, ILocker {
 
         while (leftBaseAmount > 0 && !_bookManager.isEmpty(params.id)) {
             Tick tick = _bookManager.getRoot(params.id);
+            if (tick.toPrice() > params.limitPrice) break;
             (uint256 quoteAmount, uint256 baseAmount) = _bookManager.take(
                 IBookManager.TakeParams({
                     key: key,
@@ -256,38 +297,20 @@ contract Controller is IController, ILocker {
         }
     }
 
-    function _claim(address user, ClaimOrderParams memory params) internal {
-        uint256 orderId = OrderId.unwrap(params.id);
-        _permitERC721(orderId, params.permitParams);
-        if (_bookManager.getApproved(orderId) == address(this)) {
-            _bookManager.transferFrom(user, address(this), orderId);
-            _bookManager.claim(params.id, params.hookData);
-            if (_bookManager.getOrder(params.id).open > 0) {
-                _bookManager.transferFrom(address(this), user, orderId);
-            }
-        } else {
-            _bookManager.claim(params.id, params.hookData);
-        }
+    function _claim(ClaimOrderParams memory params) internal {
+        _bookManager.claim(params.id, params.hookData);
     }
 
-    function _cancel(address user, CancelOrderParams memory params) internal {
-        uint256 orderId = OrderId.unwrap(params.id);
-        _permitERC721(orderId, params.permitParams);
-        _bookManager.transferFrom(user, address(this), orderId);
+    function _cancel(CancelOrderParams memory params) internal {
         (BookId bookId,,) = params.id.decode();
         IBookManager.BookKey memory key = _bookManager.getBookKey(bookId);
         try _bookManager.cancel(
             IBookManager.CancelParams({id: params.id, to: (params.leftQuoteAmount / key.unit).toUint64()}),
             params.hookData
         ) {} catch {}
-        if (_bookManager.getOrder(params.id).claimable > 0 || params.leftQuoteAmount > 0) {
-            _bookManager.transferFrom(address(this), user, orderId);
-        }
     }
 
-    function _settleTokens(address user, ERC20PermitParams[] memory relatedTokenList) internal {
-        uint256 length = relatedTokenList.length;
-        _permitERC20(relatedTokenList);
+    function _settleTokens(address user, address[] memory tokensToSettle) internal {
         Currency native = CurrencyLibrary.NATIVE;
         int256 currencyDelta = _bookManager.currencyDelta(address(this), native);
         if (currencyDelta > 0) {
@@ -296,26 +319,27 @@ contract Controller is IController, ILocker {
         } else if (currencyDelta < 0) {
             _bookManager.withdraw(CurrencyLibrary.NATIVE, user, uint256(-currencyDelta));
         }
+
+        uint256 length = tokensToSettle.length;
         for (uint256 i = 0; i < length; ++i) {
-            Currency currency = Currency.wrap(relatedTokenList[i].token);
+            Currency currency = Currency.wrap(tokensToSettle[i]);
             currencyDelta = _bookManager.currencyDelta(address(this), currency);
             if (currencyDelta > 0) {
-                IERC20(relatedTokenList[i].token).safeTransferFrom(user, address(_bookManager), uint256(currencyDelta));
+                IERC20(tokensToSettle[i]).safeTransferFrom(user, address(_bookManager), uint256(currencyDelta));
                 _bookManager.settle(currency);
             } else if (currencyDelta < 0) {
-                _bookManager.withdraw(Currency.wrap(relatedTokenList[i].token), user, uint256(-currencyDelta));
+                _bookManager.withdraw(Currency.wrap(tokensToSettle[i]), user, uint256(-currencyDelta));
             }
-            uint256 balance = IERC20(relatedTokenList[i].token).balanceOf(address(this));
+            uint256 balance = IERC20(tokensToSettle[i]).balanceOf(address(this));
             if (balance > 0) {
-                IERC20(relatedTokenList[i].token).transfer(user, balance);
+                IERC20(tokensToSettle[i]).transfer(user, balance);
             }
         }
         if (address(this).balance > 0) native.transfer(user, address(this).balance);
     }
 
-    function _permitERC20(ERC20PermitParams[] memory permitParamsList) internal {
-        uint256 length = permitParamsList.length;
-        for (uint256 i = 0; i < length; ++i) {
+    function _permitERC20(ERC20PermitParams[] calldata permitParamsList) internal {
+        for (uint256 i = 0; i < permitParamsList.length; ++i) {
             ERC20PermitParams memory permitParams = permitParamsList[i];
             if (permitParams.signature.deadline > 0) {
                 try IERC20Permit(permitParams.token).permit(
@@ -331,11 +355,14 @@ contract Controller is IController, ILocker {
         }
     }
 
-    function _permitERC721(uint256 tokenId, PermitSignature memory permitParams) internal {
-        if (permitParams.deadline > 0) {
-            try IERC721Permit(address(_bookManager)).permit(
-                msg.sender, tokenId, permitParams.deadline, permitParams.v, permitParams.r, permitParams.s
-            ) {} catch {}
+    function _permitERC721(ERC721PermitParams[] calldata permitParamsList) internal {
+        for (uint256 i = 0; i < permitParamsList.length; ++i) {
+            PermitSignature memory signature = permitParamsList[i].signature;
+            if (signature.deadline > 0) {
+                try IERC721Permit(address(_bookManager)).permit(
+                    msg.sender, permitParamsList[i].tokenId, signature.deadline, signature.v, signature.r, signature.s
+                ) {} catch {}
+            }
         }
     }
 
