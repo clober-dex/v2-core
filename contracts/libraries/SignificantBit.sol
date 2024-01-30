@@ -22,50 +22,50 @@ library SignificantBit {
         return uint8(DEBRUIJN_INDEX[index]); // can optimize with CODECOPY opcode
     }
 
-//    function mostSignificantBit2(uint256 x) internal pure returns (uint8) {
-//        uint256 r;
-//        uint256 t;
-//        assembly {
-//            t := shr(128, x)
-//            if gt(t, 0) {
-//                x := t
-//                r := or(r, 128)
-//            }
-//            t := shr(64, x)
-//            if gt(t, 0) {
-//                x := t
-//                r := or(r, 64)
-//            }
-//            t := shr(32, x)
-//            if gt(t, 0) {
-//                x := t
-//                r := or(r, 32)
-//            }
-//            t := shr(16, x)
-//            if gt(t, 0) {
-//                x := t
-//                r := or(r, 16)
-//            }
-//            t := shr(8, x)
-//            if gt(t, 0) {
-//                x := t
-//                r := or(r, 8)
-//            }
-//            t := shr(4, x)
-//            if gt(t, 0) {
-//                x := t
-//                r := or(r, 4)
-//            }
-//            t := shr(2, x)
-//            if gt(t, 0) {
-//                x := t
-//                r := or(r, 2)
-//            }
-//            t := shr(1, x)
-//            if gt(t, 0) { r := or(r, 2) }
-//        }
-//        return uint8(r);
-//    }
+    //    function mostSignificantBit2(uint256 x) internal pure returns (uint8) {
+    //        uint256 r;
+    //        uint256 t;
+    //        assembly {
+    //            t := shr(128, x)
+    //            if gt(t, 0) {
+    //                x := t
+    //                r := or(r, 128)
+    //            }
+    //            t := shr(64, x)
+    //            if gt(t, 0) {
+    //                x := t
+    //                r := or(r, 64)
+    //            }
+    //            t := shr(32, x)
+    //            if gt(t, 0) {
+    //                x := t
+    //                r := or(r, 32)
+    //            }
+    //            t := shr(16, x)
+    //            if gt(t, 0) {
+    //                x := t
+    //                r := or(r, 16)
+    //            }
+    //            t := shr(8, x)
+    //            if gt(t, 0) {
+    //                x := t
+    //                r := or(r, 8)
+    //            }
+    //            t := shr(4, x)
+    //            if gt(t, 0) {
+    //                x := t
+    //                r := or(r, 4)
+    //            }
+    //            t := shr(2, x)
+    //            if gt(t, 0) {
+    //                x := t
+    //                r := or(r, 2)
+    //            }
+    //            t := shr(1, x)
+    //            if gt(t, 0) { r := or(r, 2) }
+    //        }
+    //        return uint8(r);
+    //    }
 
     function mostSignificantBit(uint256 x) internal pure returns (uint8) {
         require(x > 0);
