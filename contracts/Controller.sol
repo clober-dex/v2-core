@@ -33,11 +33,6 @@ contract Controller is IController, ILocker {
         _;
     }
 
-    modifier checkParamsListLength(Action[] calldata actionList, bytes[] calldata paramsDataList) {
-        if (actionList.length != paramsDataList.length) revert InvalidLength();
-        _;
-    }
-
     modifier permitERC20(ERC20PermitParams[] calldata permitParamsList) {
         _permitERC20(permitParamsList);
         _;
