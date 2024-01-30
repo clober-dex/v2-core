@@ -114,19 +114,4 @@ contract ControllerTakeOrderTest is Test {
         assertEq(Constants.TAKER1.balance - beforeBalance, takeAmount);
         assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), baseAmount);
     }
-
-    //    function testTakeLimitPriceOrder() public {
-    //        uint256 takeAmount = 500000001000000000000;
-    //        uint256 baseAmount = Tick.wrap(Constants.PRICE_TICK).quoteToBase(200000000000000000000, true)
-    //            + Tick.wrap(Constants.PRICE_TICK + 1).quoteToBase(246000000000000000000, true)
-    //            + Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(54000001000000000000, true);
-    //
-    //        uint256 beforeBalance = Constants.TAKER1.balance;
-    //        uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
-    //        _takeOrder(
-    //            Constants.QUOTE_AMOUNT4, type(uint256).max, Tick.wrap(Constants.PRICE_TICK).toPrice(), Constants.TAKER1
-    //        );
-    //        assertEq(Constants.TAKER1.balance - beforeBalance, takeAmount);
-    //        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), baseAmount);
-    //    }
 }
