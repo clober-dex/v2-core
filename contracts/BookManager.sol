@@ -157,7 +157,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         int256 quoteDelta = quoteAmount.toInt256();
 
         if (!params.key.makerPolicy.useOutput()) {
-            quoteDelta -= _calculateFee(quoteAmount, params.key.makerPolicy.rate());
+            quoteDelta += _calculateFee(quoteAmount, params.key.makerPolicy.rate());
         }
 
         _accountDelta(params.key.quote, quoteDelta);
@@ -192,7 +192,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             if (params.key.takerPolicy.useOutput()) {
                 quoteDelta -= _calculateFee(quoteAmount, params.key.takerPolicy.rate());
             } else {
-                baseDelta -= _calculateFee(baseAmount, params.key.takerPolicy.rate());
+                baseDelta += _calculateFee(baseAmount, params.key.takerPolicy.rate());
             }
             _accountDelta(params.key.quote, -quoteDelta);
             _accountDelta(params.key.base, baseDelta);
