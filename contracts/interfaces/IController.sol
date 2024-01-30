@@ -11,6 +11,7 @@ interface IController {
     error InvalidMarket();
     error ControllerSlippage();
     error ValueTransferFailed();
+    error InvalidAction();
 
     enum Action {
         MAKE,
