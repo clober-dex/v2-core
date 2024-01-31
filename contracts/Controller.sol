@@ -38,11 +38,6 @@ contract Controller is IController, ILocker {
         _;
     }
 
-    modifier permitERC721(ERC721PermitParams[] calldata permitParamsList) {
-        _permitERC721(permitParamsList);
-        _;
-    }
-
     function getDepth(BookId id, Tick tick) external view returns (uint256) {
         return uint256(_bookManager.getDepth(id, tick)) * _bookManager.getBookKey(id).unit;
     }
