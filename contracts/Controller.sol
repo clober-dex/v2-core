@@ -280,11 +280,6 @@ contract Controller is IController, ILocker {
             }
         }
         if (takenQuoteAmount < params.minQuoteAmount) revert ControllerSlippage();
-
-        uint256 spendBaseAmount;
-        unchecked {
-            spendBaseAmount = params.baseAmount - leftBaseAmount;
-        }
     }
 
     function _claim(ClaimOrderParams memory params) internal {
