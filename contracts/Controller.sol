@@ -74,8 +74,8 @@ contract Controller is IController, ILocker {
         return tick.toPrice();
     }
 
-    function lockAcquired(address, bytes memory data) external returns (bytes memory returnData) {
-        if (msg.sender != address(_bookManager)) revert InvalidAccess();
+    function lockAcquired(address sender, bytes memory data) external returns (bytes memory returnData) {
+        if (msg.sender != address(_bookManager) || sender != address(this)) revert InvalidAccess();
         (address user, Action[] memory actionList, bytes[] memory orderParamsList, address[] memory tokensToSettle) =
             abi.decode(data, (address, Action[], bytes[], address[]));
 
