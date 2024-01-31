@@ -251,9 +251,7 @@ contract Controller is IController, ILocker {
                 params.hookData
             );
             if (quoteAmount == 0) break;
-            unchecked {
-                spendBaseAmount += baseAmount;
-            }
+            spendBaseAmount += baseAmount;
         }
         if (params.maxBaseAmount < spendBaseAmount) revert ControllerSlippage();
     }
