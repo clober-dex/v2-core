@@ -95,6 +95,8 @@ contract Controller is IController, ILocker {
                 _claim(abi.decode(orderParamsList[i], (ClaimOrderParams)));
             } else if (action == Action.CANCEL) {
                 _cancel(abi.decode(orderParamsList[i], (CancelOrderParams)));
+            } else {
+                revert InvalidAction();
             }
         }
 
