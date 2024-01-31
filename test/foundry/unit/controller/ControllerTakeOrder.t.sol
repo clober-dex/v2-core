@@ -58,7 +58,8 @@ contract ControllerTakeOrderTest is Test {
 
     function _makeOrder(int24 tick, uint256 quoteAmount, address maker) internal returns (OrderId id) {
         IController.MakeOrderParams[] memory paramsList = new IController.MakeOrderParams[](1);
-        IController.ERC20PermitParams[] memory relatedTokenList;
+        address[] memory tokensToSettle;
+        IController.ERC20PermitParams[] memory permitParamsList;
         paramsList[0] = IController.MakeOrderParams({
             id: key.toId(),
             tick: Tick.wrap(tick),
@@ -68,15 +69,14 @@ contract ControllerTakeOrderTest is Test {
         });
 
         vm.prank(maker);
-        id = controller.make{value: quoteAmount}(paramsList, relatedTokenList, uint64(block.timestamp))[0];
+        id = controller.make{value: quoteAmount}(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp))[0];
     }
 
     function _takeOrder(uint256 quoteAmount, uint256 maxBaseAmount, address taker) internal {
         IController.TakeOrderParams[] memory paramsList = new IController.TakeOrderParams[](1);
-        IController.ERC20PermitParams[] memory relatedTokenList = new IController.ERC20PermitParams[](1);
-        IController.PermitSignature memory signature;
-        relatedTokenList[0] =
-            IController.ERC20PermitParams({token: address(mockErc20), permitAmount: 0, signature: signature});
+        address[] memory tokensToSettle = new address[](1);
+        tokensToSettle[0] = address(mockErc20);
+        IController.ERC20PermitParams[] memory permitParamsList;
         paramsList[0] = IController.TakeOrderParams({
             id: key.toId(),
             limitPrice: type(uint256).max,
@@ -87,7 +87,7 @@ contract ControllerTakeOrderTest is Test {
 
         vm.startPrank(taker);
         mockErc20.approve(address(controller), maxBaseAmount);
-        controller.take(paramsList, relatedTokenList, uint64(block.timestamp));
+        controller.take(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp));
         vm.stopPrank();
     }
 
