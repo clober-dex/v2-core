@@ -49,7 +49,8 @@ contract ControllerMakeOrderTest is Test {
 
     function _makeOrder(int24 tick, uint256 quoteAmount, address maker) internal returns (OrderId id) {
         IController.MakeOrderParams[] memory paramsList = new IController.MakeOrderParams[](1);
-        IController.ERC20PermitParams[] memory relatedTokenList;
+        address[] memory tokensToSettle;
+        IController.ERC20PermitParams[] memory permitParamsList;
         paramsList[0] = IController.MakeOrderParams({
             id: key.toId(),
             tick: Tick.wrap(tick),
@@ -59,7 +60,7 @@ contract ControllerMakeOrderTest is Test {
         });
 
         vm.prank(maker);
-        id = controller.make{value: quoteAmount}(paramsList, relatedTokenList, uint64(block.timestamp))[0];
+        id = controller.make{value: quoteAmount}(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp))[0];
     }
 
     function testMakeOrder() public {

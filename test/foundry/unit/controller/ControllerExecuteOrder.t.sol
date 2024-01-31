@@ -51,12 +51,14 @@ contract ControllerExecuteOrderTest is Test {
         mockErc20.mint(Constants.TAKER1, 1000 * 10 ** 18);
 
         IController.MakeOrderParams[] memory paramsList = new IController.MakeOrderParams[](1);
-        IController.ERC20PermitParams[] memory relatedTokenList;
+        IController.ERC20PermitParams[] memory permitParamsList;
+        address[] memory tokensToSettle;
         paramsList[0] = _makeOrder(Constants.PRICE_TICK, Constants.QUOTE_AMOUNT3);
 
         vm.prank(Constants.MAKER1);
-        orderId1 =
-            controller.make{value: Constants.QUOTE_AMOUNT3}(paramsList, relatedTokenList, uint64(block.timestamp))[0];
+        orderId1 = controller.make{value: Constants.QUOTE_AMOUNT3}(
+            paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp)
+        )[0];
     }
 
     function _makeOrder(int24 tick, uint256 quoteAmount)
@@ -106,13 +108,11 @@ contract ControllerExecuteOrderTest is Test {
     }
 
     function _claimOrder(OrderId id) internal pure returns (IController.ClaimOrderParams memory) {
-        IController.PermitSignature memory signature;
-        return IController.ClaimOrderParams({id: id, hookData: "", permitParams: signature});
+        return IController.ClaimOrderParams({id: id, hookData: ""});
     }
 
     function _cancelOrder(OrderId id) internal pure returns (IController.CancelOrderParams memory) {
-        IController.PermitSignature memory signature;
-        return IController.CancelOrderParams({id: id, leftQuoteAmount: 0, hookData: "", permitParams: signature});
+        return IController.CancelOrderParams({id: id, leftQuoteAmount: 0, hookData: ""});
     }
 
     function testExecuteOrder() public {
@@ -126,10 +126,10 @@ contract ControllerExecuteOrderTest is Test {
         paramsDataList[1] = abi.encode(_takeOrder(Constants.QUOTE_AMOUNT2, type(uint256).max));
         paramsDataList[2] = abi.encode(_spendOrder(Constants.BASE_AMOUNT1, 0));
 
-        IController.ERC20PermitParams[] memory relatedTokenList = new IController.ERC20PermitParams[](1);
-        IController.PermitSignature memory signature;
-        relatedTokenList[0] =
-            IController.ERC20PermitParams({token: address(mockErc20), permitAmount: 0, signature: signature});
+        address[] memory tokensToSettle = new address[](1);
+        tokensToSettle[0] = address(mockErc20);
+        IController.ERC20PermitParams[] memory erc20PermitParamsList;
+        IController.ERC721PermitParams[] memory erc721PermitParamsList;
 
         uint256 beforeBalance = Constants.TAKER1.balance;
         uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
@@ -137,7 +137,12 @@ contract ControllerExecuteOrderTest is Test {
         vm.startPrank(Constants.TAKER1);
         mockErc20.approve(address(controller), type(uint256).max);
         OrderId orderId2 = controller.execute{value: Constants.QUOTE_AMOUNT2}(
-            actionList, paramsDataList, relatedTokenList, uint64(block.timestamp)
+            actionList,
+            paramsDataList,
+            tokensToSettle,
+            erc20PermitParamsList,
+            erc721PermitParamsList,
+            uint64(block.timestamp)
         )[0];
         vm.stopPrank();
 
@@ -160,9 +165,21 @@ contract ControllerExecuteOrderTest is Test {
         beforeBalance = Constants.TAKER1.balance;
         beforeTokenBalance = mockErc20.balanceOf(Constants.MAKER1);
 
+        IController.PermitSignature memory signature;
+        erc721PermitParamsList = new IController.ERC721PermitParams[](1);
+        erc721PermitParamsList[0] =
+            IController.ERC721PermitParams({tokenId: OrderId.unwrap(orderId2), signature: signature});
+
         vm.startPrank(Constants.TAKER1);
         manager.approve(address(controller), OrderId.unwrap(orderId2));
-        controller.execute(actionList, paramsDataList, relatedTokenList, uint64(block.timestamp));
+        controller.execute(
+            actionList,
+            paramsDataList,
+            tokensToSettle,
+            erc20PermitParamsList,
+            erc721PermitParamsList,
+            uint64(block.timestamp)
+        );
         vm.stopPrank();
 
         assertEq(Constants.TAKER1.balance - beforeBalance, 78043083000000000000);
