@@ -299,9 +299,11 @@ contract Controller is IController, ILocker {
         Currency native = CurrencyLibrary.NATIVE;
         int256 currencyDelta = _bookManager.currencyDelta(address(this), native);
         if (currencyDelta > 0) {
-            uint256 amountToTransfer =
-                uint256(currencyDelta) + address(_bookManager).balance - _bookManager.reservesOf(native);
-            native.transfer(address(_bookManager), amountToTransfer);
+            unchecked {
+                uint256 amountToTransfer =
+                    uint256(currencyDelta) + address(_bookManager).balance - _bookManager.reservesOf(native);
+                native.transfer(address(_bookManager), amountToTransfer);
+            }
             _bookManager.settle(native);
         } else if (currencyDelta < 0) {
             _bookManager.withdraw(CurrencyLibrary.NATIVE, user, uint256(-currencyDelta));
@@ -312,9 +314,11 @@ contract Controller is IController, ILocker {
             Currency currency = Currency.wrap(tokensToSettle[i]);
             currencyDelta = _bookManager.currencyDelta(address(this), currency);
             if (currencyDelta > 0) {
-                uint256 amountToTransfer = uint256(currencyDelta)
-                    + IERC20(tokensToSettle[i]).balanceOf(address(_bookManager)) - _bookManager.reservesOf(currency);
-                IERC20(tokensToSettle[i]).safeTransferFrom(user, address(_bookManager), amountToTransfer);
+                unchecked {
+                    uint256 amountToTransfer = uint256(currencyDelta)
+                        + IERC20(tokensToSettle[i]).balanceOf(address(_bookManager)) - _bookManager.reservesOf(currency);
+                    IERC20(tokensToSettle[i]).safeTransferFrom(user, address(_bookManager), amountToTransfer);
+                }
                 _bookManager.settle(currency);
             } else if (currencyDelta < 0) {
                 _bookManager.withdraw(Currency.wrap(tokensToSettle[i]), user, uint256(-currencyDelta));
