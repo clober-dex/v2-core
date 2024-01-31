@@ -86,7 +86,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             if (key.makerPolicy.rate() + key.takerPolicy.rate() < 0) revert InvalidFeePolicy();
         }
         if (key.makerPolicy.rate() < 0 || key.takerPolicy.rate() < 0) {
-            if (key.makerPolicy.useOutput() == key.takerPolicy.useOutput()) revert InvalidFeePolicy();
+            if (key.makerPolicy.usesQuote() != key.takerPolicy.usesQuote()) revert InvalidFeePolicy();
         }
         if (!key.hooks.isValidHookAddress()) revert Hooks.HookAddressNotValid(address(key.hooks));
 
@@ -156,7 +156,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
         int256 quoteDelta = quoteAmount.toInt256();
 
-        if (!params.key.makerPolicy.useOutput()) {
+        if (params.key.makerPolicy.usesQuote()) {
             quoteDelta += _calculateFee(quoteAmount, params.key.makerPolicy.rate());
         }
 
@@ -189,7 +189,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         {
             int256 quoteDelta = quoteAmount.toInt256();
             int256 baseDelta = baseAmount.toInt256();
-            if (params.key.takerPolicy.useOutput()) {
+            if (params.key.takerPolicy.usesQuote()) {
                 quoteDelta -= _calculateFee(quoteAmount, params.key.takerPolicy.rate());
             } else {
                 baseDelta += _calculateFee(baseAmount, params.key.takerPolicy.rate());
@@ -221,7 +221,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
         FeePolicy makerPolicy = key.makerPolicy;
 
-        if (!makerPolicy.useOutput()) canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate());
+        if (makerPolicy.usesQuote()) canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate());
 
         reservesOf[key.quote] -= canceledAmount;
         key.quote.transfer(owner, canceledAmount);
@@ -263,12 +263,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             claimableAmount = tick.quoteToBase(claimedInQuote, false);
             FeePolicy makerPolicy = key.makerPolicy;
             FeePolicy takerPolicy = key.takerPolicy;
-            if (takerPolicy.useOutput()) {
+            if (takerPolicy.usesQuote()) {
                 quoteFee = _calculateFee(claimedInQuote, takerPolicy.rate());
             } else {
                 baseFee = _calculateFee(claimableAmount, takerPolicy.rate());
             }
-            if (makerPolicy.useOutput()) {
+            if (!makerPolicy.usesQuote()) {
                 int256 makerFee = _calculateFee(claimableAmount, makerPolicy.rate());
                 claimableAmount =
                     makerFee > 0 ? claimableAmount - uint256(makerFee) : claimableAmount + uint256(-makerFee);

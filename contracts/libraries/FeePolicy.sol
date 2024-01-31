@@ -15,13 +15,13 @@ library FeePolicyLibrary {
 
     error InvalidFeePolicy();
 
-    function encode(bool useOutput_, int24 rate_) internal pure returns (FeePolicy feePolicy) {
+    function encode(bool usesQuote_, int24 rate_) internal pure returns (FeePolicy feePolicy) {
         if (rate_ > MAX_FEE_RATE || rate_ < MIN_FEE_RATE) {
             revert InvalidFeePolicy();
         }
 
         assembly {
-            feePolicy := or(shl(21, useOutput_), add(rate_, MAX_FEE_RATE))
+            feePolicy := or(shl(21, usesQuote_), add(rate_, MAX_FEE_RATE))
         }
     }
 
@@ -31,7 +31,7 @@ library FeePolicyLibrary {
         return !(r > MAX_FEE_RATE || r < MIN_FEE_RATE);
     }
 
-    function useOutput(FeePolicy self) internal pure returns (bool f) {
+    function usesQuote(FeePolicy self) internal pure returns (bool f) {
         assembly {
             f := shr(21, self)
         }
