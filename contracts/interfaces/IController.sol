@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 
 interface IController {
     error InvalidAccess();
+    error InvalidLength();
     error Deadline();
     error InvalidMarket();
     error ControllerSlippage();
@@ -21,10 +22,14 @@ interface IController {
         CANCEL
     }
 
-    // Todo rename struct
     struct ERC20PermitParams {
         address token;
         uint256 permitAmount;
+        PermitSignature signature;
+    }
+
+    struct ERC721PermitParams {
+        uint256 tokenId;
         PermitSignature signature;
     }
 
@@ -65,14 +70,12 @@ interface IController {
     struct ClaimOrderParams {
         OrderId id;
         bytes hookData;
-        PermitSignature permitParams;
     }
 
     struct CancelOrderParams {
         OrderId id;
         uint256 leftQuoteAmount;
         bytes hookData;
-        PermitSignature permitParams;
     }
 
     function getDepth(BookId id, Tick tick) external view returns (uint256);
@@ -89,33 +92,42 @@ interface IController {
     function toPrice(Tick tick) external pure returns (uint256);
 
     function execute(
-        Action[] memory actionList,
-        bytes[] memory orderParamsList,
-        ERC20PermitParams[] memory permitParamsList,
+        Action[] calldata actionList,
+        bytes[] calldata paramsDataList,
+        address[] calldata tokensToSettle,
+        ERC20PermitParams[] calldata erc20PermitParamsList,
+        ERC721PermitParams[] calldata erc721PermitParamsList,
         uint64 deadline
     ) external payable returns (OrderId[] memory ids);
 
     function make(
         MakeOrderParams[] calldata orderParamsList,
-        ERC20PermitParams[] memory permitParamsList,
+        address[] calldata tokensToSettle,
+        ERC20PermitParams[] calldata permitParamsList,
         uint64 deadline
     ) external payable returns (OrderId[] memory ids);
 
     function take(
         TakeOrderParams[] calldata orderParamsList,
-        ERC20PermitParams[] memory permitParamsList,
+        address[] calldata tokensToSettle,
+        ERC20PermitParams[] calldata permitParamsList,
         uint64 deadline
     ) external payable;
 
     function spend(
         SpendOrderParams[] calldata orderParamsList,
-        ERC20PermitParams[] memory permitParamsList,
+        address[] calldata tokensToSettle,
+        ERC20PermitParams[] calldata permitParamsList,
         uint64 deadline
     ) external payable;
 
     function claim(ClaimOrderParams[] calldata orderParamsList, uint64 deadline) external;
 
-    function cancel(CancelOrderParams[] calldata orderParamsList, uint64 deadline) external;
+    function cancel(
+        CancelOrderParams[] calldata orderParamsList,
+        ERC721PermitParams[] calldata permitParamsList,
+        uint64 deadline
+    ) external;
 
     //    function makeAfterClaim(
     //        ClaimOrderParams[] calldata claimOrderParamsList,

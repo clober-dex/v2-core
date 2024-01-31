@@ -59,7 +59,8 @@ contract ControllerCancelOrderTest is Test {
 
     function _makeOrder(int24 tick, uint256 quoteAmount, address maker) internal returns (OrderId id) {
         IController.MakeOrderParams[] memory paramsList = new IController.MakeOrderParams[](1);
-        IController.ERC20PermitParams[] memory relatedTokenList;
+        address[] memory tokensToSettle;
+        IController.ERC20PermitParams[] memory permitParamsList;
         paramsList[0] = IController.MakeOrderParams({
             id: key.toId(),
             tick: Tick.wrap(tick),
@@ -69,15 +70,14 @@ contract ControllerCancelOrderTest is Test {
         });
 
         vm.prank(maker);
-        id = controller.make{value: quoteAmount}(paramsList, relatedTokenList, uint64(block.timestamp))[0];
+        id = controller.make{value: quoteAmount}(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp))[0];
     }
 
     function _takeOrder(uint256 quoteAmount, uint256 maxBaseAmount, address taker) internal {
         IController.TakeOrderParams[] memory paramsList = new IController.TakeOrderParams[](1);
-        IController.ERC20PermitParams[] memory relatedTokenList = new IController.ERC20PermitParams[](1);
-        IController.PermitSignature memory signature;
-        relatedTokenList[0] =
-            IController.ERC20PermitParams({token: address(mockErc20), permitAmount: 0, signature: signature});
+        address[] memory tokensToSettle = new address[](1);
+        tokensToSettle[0] = address(mockErc20);
+        IController.ERC20PermitParams[] memory permitParamsList;
         paramsList[0] = IController.TakeOrderParams({
             id: key.toId(),
             limitPrice: type(uint256).max,
@@ -88,20 +88,21 @@ contract ControllerCancelOrderTest is Test {
 
         vm.startPrank(taker);
         mockErc20.approve(address(controller), maxBaseAmount);
-        controller.take(paramsList, relatedTokenList, uint64(block.timestamp));
+        controller.take(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp));
         vm.stopPrank();
     }
 
     function _cancelOrder(OrderId id, uint256 to) internal {
         IController.CancelOrderParams[] memory paramsList = new IController.CancelOrderParams[](1);
         IController.PermitSignature memory signature;
+        IController.ERC721PermitParams[] memory permitParamsList = new IController.ERC721PermitParams[](1);
+        permitParamsList[0] = IController.ERC721PermitParams({tokenId: OrderId.unwrap(id), signature: signature});
 
-        paramsList[0] =
-            IController.CancelOrderParams({id: id, leftQuoteAmount: to, hookData: "", permitParams: signature});
+        paramsList[0] = IController.CancelOrderParams({id: id, leftQuoteAmount: to, hookData: ""});
 
         vm.startPrank(manager.ownerOf(OrderId.unwrap(id)));
         manager.approve(address(controller), OrderId.unwrap(id));
-        controller.cancel(paramsList, uint64(block.timestamp));
+        controller.cancel(paramsList, permitParamsList, uint64(block.timestamp));
         vm.stopPrank();
     }
 
