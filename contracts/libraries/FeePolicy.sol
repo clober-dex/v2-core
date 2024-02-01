@@ -7,7 +7,7 @@ import "./Math.sol";
 type FeePolicy is uint24;
 
 library FeePolicyLibrary {
-    int256 internal constant RATE_PRECISION = 10 ** 6;
+    uint256 internal constant RATE_PRECISION = 10 ** 6;
     int256 internal constant MAX_FEE_RATE = 500000;
     int256 internal constant MIN_FEE_RATE = -500000;
 
@@ -41,5 +41,23 @@ library FeePolicyLibrary {
         assembly {
             r := sub(and(self, RATE_MASK), MAX_FEE_RATE)
         }
+    }
+
+    function calculateFee(FeePolicy self, uint256 quote, uint256 base) internal pure returns (int256, int256) {
+        bool usesQuote_ = usesQuote(self);
+
+        uint256 amount = usesQuote_ ? quote : base;
+        int24 r = rate(self);
+
+        bool positive = r > 0;
+        uint256 absRate;
+        unchecked {
+            absRate = uint256(uint24(positive ? r : -r));
+        }
+        // @dev absFee must be less than type(int256).max
+        uint256 absFee = Math.divide(amount * absRate, RATE_PRECISION, positive);
+        int256 fee = positive ? int256(absFee) : -int256(absFee);
+
+        return usesQuote_ ? (fee, int256(0)) : (int256(0), fee);
     }
 }

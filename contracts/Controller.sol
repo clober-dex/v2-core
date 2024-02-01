@@ -60,10 +60,8 @@ contract Controller is IController, ILocker {
         openAmount = unit * orderInfo.open;
         FeePolicy makerPolicy = key.makerPolicy;
         claimableAmount = tick.quoteToBase(unit * orderInfo.claimable, false);
-        if (!makerPolicy.usesQuote()) {
-            claimableAmount = claimableAmount * uint256(FeePolicyLibrary.RATE_PRECISION - makerPolicy.rate())
-                / uint256(FeePolicyLibrary.RATE_PRECISION);
-        }
+        (, int256 fee) = makerPolicy.calculateFee(0, claimableAmount);
+        claimableAmount = fee > 0 ? claimableAmount - uint256(fee) : claimableAmount + uint256(-fee);
     }
 
     function fromPrice(uint256 price) external pure returns (Tick) {
