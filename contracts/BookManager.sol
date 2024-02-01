@@ -209,7 +209,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
         FeePolicy makerPolicy = key.makerPolicy;
 
-        if (makerPolicy.usesQuote()) canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate());
+        if (makerPolicy.usesQuote()) canceledAmount = _calculateOriginalAmount(canceledAmount, makerPolicy.rate());
 
         reservesOf[key.quote] -= canceledAmount;
         key.quote.transfer(owner, canceledAmount);
@@ -335,14 +335,14 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         currencyDelta[locker][currency] = next;
     }
 
-    function _calculateAmountInReverse(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount) {
+    function _calculateOriginalAmount(uint256 amount, int24 rate) internal pure returns (uint256 originalAmount) {
         bool positive = rate > 0;
         uint256 absRate;
         unchecked {
             absRate = uint256(uint24(positive ? rate : -rate));
         }
         uint256 absFee = Math.divide(amount * absRate, FeePolicyLibrary.RATE_PRECISION, !positive);
-        adjustedAmount = positive ? amount + absFee : amount - absFee;
+        originalAmount = positive ? amount + absFee : amount - absFee;
     }
 
     function load(bytes32 slot) external view returns (bytes32 value) {
