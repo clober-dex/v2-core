@@ -336,10 +336,13 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function _calculateAmountInReverse(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount) {
-        uint256 fee = Math.divide(
-            amount * FeePolicyLibrary.RATE_PRECISION, uint256(int256(FeePolicyLibrary.RATE_PRECISION) - rate), rate < 0
-        );
-        adjustedAmount = rate > 0 ? amount - fee : amount + fee;
+        bool positive = rate > 0;
+        uint256 absRate;
+        unchecked {
+            absRate = uint256(uint24(positive ? rate : -rate));
+        }
+        uint256 absFee = Math.divide(amount * absRate, FeePolicyLibrary.RATE_PRECISION, !positive);
+        adjustedAmount = positive ? amount + absFee : amount - absFee;
     }
 
     function load(bytes32 slot) external view returns (bytes32 value) {
