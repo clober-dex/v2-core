@@ -20,8 +20,9 @@ library FeePolicyLibrary {
             revert InvalidFeePolicy();
         }
 
+        uint256 mask = usesQuote_ ? 1 << 23 : 0;
         assembly {
-            feePolicy := or(shl(23, usesQuote_), add(rate_, MAX_FEE_RATE))
+            feePolicy := or(mask, add(rate_, MAX_FEE_RATE))
         }
     }
 

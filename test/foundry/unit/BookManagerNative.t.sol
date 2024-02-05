@@ -61,7 +61,7 @@ contract BookManagerNativeTest is Test {
             base: CurrencyLibrary.NATIVE,
             unit: 1e12,
             quote: Currency.wrap(address(mockErc20)),
-            makerPolicy: FeePolicyLibrary.encode(false, 0),
+            makerPolicy: FeePolicyLibrary.encode(true, 0),
             takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });
