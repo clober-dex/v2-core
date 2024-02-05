@@ -11,7 +11,7 @@ library FeePolicyLibrary {
     int256 internal constant MAX_FEE_RATE = 500000;
     int256 internal constant MIN_FEE_RATE = -500000;
 
-    uint256 internal constant RATE_MASK = 0x0fffff; // 20 bits
+    uint256 internal constant RATE_MASK = 0x7fffff; // 23 bits
 
     error InvalidFeePolicy();
 
@@ -21,7 +21,7 @@ library FeePolicyLibrary {
         }
 
         assembly {
-            feePolicy := or(shl(21, usesQuote_), add(rate_, MAX_FEE_RATE))
+            feePolicy := or(shl(23, usesQuote_), add(rate_, MAX_FEE_RATE))
         }
     }
 
@@ -33,7 +33,7 @@ library FeePolicyLibrary {
 
     function usesQuote(FeePolicy self) internal pure returns (bool f) {
         assembly {
-            f := shr(21, self)
+            f := shr(23, self)
         }
     }
 
