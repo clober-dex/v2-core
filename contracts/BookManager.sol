@@ -148,13 +148,18 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         uint40 orderIndex = book.make(params.tick, params.amount, params.provider);
         id = OrderIdLibrary.encode(bookId, params.tick, orderIndex);
+        int256 quoteDelta;
         unchecked {
             // @dev uint64 * uint64 < type(uint256).max
             quoteAmount = uint256(params.amount) * params.key.unit;
-        }
-        (int256 quoteFee,) = params.key.makerPolicy.calculateFee(quoteAmount, 0);
+            (int256 quoteFee,) = params.key.makerPolicy.calculateFee(quoteAmount, 0);
 
-        _accountDelta(params.key.quote, quoteAmount.toInt256() + quoteFee);
+            // @dev 0 < uint64 * uint64 + rate * uint64 * uint64 < type(int256).max
+            quoteDelta = int256(quoteAmount) + quoteFee;
+            quoteAmount = uint256(quoteDelta);
+        }
+
+        _accountDelta(params.key.quote, quoteDelta);
 
         _mint(msg.sender, OrderId.unwrap(id));
 
