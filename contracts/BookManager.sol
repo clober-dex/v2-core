@@ -187,8 +187,15 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         {
             (int256 quoteFee, int256 baseFee) = params.key.takerPolicy.calculateFee(quoteAmount, baseAmount);
-            _accountDelta(params.key.quote, -quoteAmount.toInt256() + quoteFee);
-            _accountDelta(params.key.base, baseAmount.toInt256() + baseFee);
+            int256 delta;
+            unchecked {
+                delta = -int256(quoteAmount) + quoteFee;
+                _accountDelta(params.key.quote, delta);
+                quoteAmount = uint256(-delta);
+            }
+            delta = baseAmount.toInt256() + baseFee;
+            _accountDelta(params.key.base, delta);
+            baseAmount = uint256(delta);
         }
 
         params.key.hooks.afterTake(params, tick, takenAmount, hookData);
