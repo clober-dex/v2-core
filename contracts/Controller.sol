@@ -21,11 +21,9 @@ contract Controller is IController, ILocker {
     using FeePolicyLibrary for FeePolicy;
 
     IBookManager private immutable _bookManager;
-    address private immutable _provider;
 
     constructor(address bookManager) {
         _bookManager = IBookManager(bookManager);
-        _provider = _bookManager.defaultProvider();
     }
 
     modifier checkDeadline(uint64 deadline) {
