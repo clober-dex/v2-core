@@ -9,12 +9,29 @@ import "../../../../contracts/libraries/FeePolicy.sol";
 contract FeePolicyTest is Test {
     using FeePolicyLibrary for FeePolicy;
 
-    function testEncode(bool useOutput, int24 rate) public {
+    function testEncode(bool usesQuote, int24 rate) public {
         vm.assume(rate <= FeePolicyLibrary.MAX_FEE_RATE && rate >= FeePolicyLibrary.MIN_FEE_RATE);
-        FeePolicy feePolicy = FeePolicyLibrary.encode(useOutput, rate);
-        console.log(FeePolicy.unwrap(feePolicy));
-        console.logBytes3(bytes3(uint24(FeePolicy.unwrap(feePolicy))));
-        assertEq(feePolicy.useOutput(), useOutput);
+        FeePolicy feePolicy = FeePolicyLibrary.encode(usesQuote, rate);
+        assertEq(feePolicy.usesQuote(), usesQuote);
         assertEq(feePolicy.rate(), rate);
+    }
+
+    function testCalculateFee() public {
+        _testCalculateFee(1000, 1000000, 1000, false);
+        _testCalculateFee(-1000, 1000000, -1000, false);
+        // zero value tests
+        _testCalculateFee(0, 1000000, 0, false);
+        _testCalculateFee(1000, 0, 0, false);
+        // rounding tests
+        _testCalculateFee(1500, 1000, 2, false);
+        _testCalculateFee(-1500, 1000, -1, false);
+        _testCalculateFee(1500, 1000, 1, true);
+        _testCalculateFee(-1500, 1000, -2, true);
+    }
+
+    function _testCalculateFee(int24 rate, uint256 amount, int256 fee, bool reverse) private {
+        FeePolicy feePolicy = FeePolicyLibrary.encode(true, rate);
+        int256 actualFee = feePolicy.calculateFee(amount, reverse);
+        assertEq(actualFee, fee);
     }
 }

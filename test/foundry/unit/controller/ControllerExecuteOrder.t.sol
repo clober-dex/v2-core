@@ -31,7 +31,7 @@ contract ControllerExecuteOrderTest is Test {
             base: Currency.wrap(address(mockErc20)),
             unit: 1e12,
             quote: CurrencyLibrary.NATIVE,
-            makerPolicy: FeePolicyLibrary.encode(true, 0),
+            makerPolicy: FeePolicyLibrary.encode(false, 0),
             takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });

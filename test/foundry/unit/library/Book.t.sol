@@ -24,7 +24,7 @@ contract BookTest is Test {
             base: CurrencyLibrary.NATIVE,
             unit: 1e12,
             quote: Currency.wrap(address(123)),
-            makerPolicy: FeePolicyLibrary.encode(true, 0),
+            makerPolicy: FeePolicyLibrary.encode(false, 0),
             takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });
@@ -43,9 +43,9 @@ contract BookTest is Test {
         assertEq(actualKey.unit, key.unit);
         assertEq(Currency.unwrap(actualKey.quote), Currency.unwrap(key.quote));
         assertEq(actualKey.makerPolicy.rate(), key.makerPolicy.rate());
-        assertEq(actualKey.makerPolicy.useOutput(), key.makerPolicy.useOutput());
+        assertEq(actualKey.makerPolicy.usesQuote(), key.makerPolicy.usesQuote());
         assertEq(actualKey.takerPolicy.rate(), key.takerPolicy.rate());
-        assertEq(actualKey.takerPolicy.useOutput(), key.takerPolicy.useOutput());
+        assertEq(actualKey.takerPolicy.usesQuote(), key.takerPolicy.usesQuote());
         assertEq(address(actualKey.hooks), address(key.hooks));
 
         assertTrue(book.isEmpty());

@@ -60,9 +60,9 @@ contract Controller is IController, ILocker {
         openAmount = unit * orderInfo.open;
         FeePolicy makerPolicy = key.makerPolicy;
         claimableAmount = tick.quoteToBase(unit * orderInfo.claimable, false);
-        if (makerPolicy.useOutput()) {
-            claimableAmount = claimableAmount * uint256(FeePolicyLibrary.RATE_PRECISION - makerPolicy.rate())
-                / uint256(FeePolicyLibrary.RATE_PRECISION);
+        if (!makerPolicy.usesQuote()) {
+            int256 fee = makerPolicy.calculateFee(claimableAmount, false);
+            claimableAmount = fee > 0 ? claimableAmount - uint256(fee) : claimableAmount + uint256(-fee);
         }
     }
 

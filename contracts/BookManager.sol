@@ -23,8 +23,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     using FeePolicyLibrary for FeePolicy;
     using Hooks for IHooks;
 
-    int256 private constant _RATE_PRECISION = 10 ** 6;
-
     string public override baseURI; // slot 10
     string public override contractURI;
     address public override defaultProvider;
@@ -86,7 +84,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             if (key.makerPolicy.rate() + key.takerPolicy.rate() < 0) revert InvalidFeePolicy();
         }
         if (key.makerPolicy.rate() < 0 || key.takerPolicy.rate() < 0) {
-            if (key.makerPolicy.useOutput() == key.takerPolicy.useOutput()) revert InvalidFeePolicy();
+            if (key.makerPolicy.usesQuote() != key.takerPolicy.usesQuote()) revert InvalidFeePolicy();
         }
         if (!key.hooks.isValidHookAddress()) revert Hooks.HookAddressNotValid(address(key.hooks));
 
@@ -150,14 +148,17 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         uint40 orderIndex = book.make(params.tick, params.amount, params.provider);
         id = OrderIdLibrary.encode(bookId, params.tick, orderIndex);
+        int256 quoteDelta;
         unchecked {
             // @dev uint64 * uint64 < type(uint256).max
             quoteAmount = uint256(params.amount) * params.key.unit;
-        }
-        int256 quoteDelta = quoteAmount.toInt256();
 
-        if (!params.key.makerPolicy.useOutput()) {
-            quoteDelta -= _calculateFee(quoteAmount, params.key.makerPolicy.rate());
+            // @dev 0 < uint64 * uint64 + rate * uint64 * uint64 < type(int256).max
+            quoteDelta = int256(quoteAmount);
+            if (params.key.makerPolicy.usesQuote()) {
+                quoteDelta += params.key.makerPolicy.calculateFee(quoteAmount, false);
+            }
+            quoteAmount = uint256(quoteDelta);
         }
 
         _accountDelta(params.key.quote, quoteDelta);
@@ -187,12 +188,14 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         baseAmount = tick.quoteToBase(quoteAmount, true);
 
         {
-            int256 quoteDelta = quoteAmount.toInt256();
+            int256 quoteDelta = int256(quoteAmount);
             int256 baseDelta = baseAmount.toInt256();
-            if (params.key.takerPolicy.useOutput()) {
-                quoteDelta -= _calculateFee(quoteAmount, params.key.takerPolicy.rate());
+            if (params.key.takerPolicy.usesQuote()) {
+                quoteDelta -= params.key.takerPolicy.calculateFee(quoteAmount, false);
+                quoteAmount = uint256(quoteDelta);
             } else {
-                baseDelta -= _calculateFee(baseAmount, params.key.takerPolicy.rate());
+                baseDelta += params.key.takerPolicy.calculateFee(baseAmount, false);
+                baseAmount = uint256(baseDelta);
             }
             _accountDelta(params.key.quote, -quoteDelta);
             _accountDelta(params.key.base, baseDelta);
@@ -218,10 +221,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         uint256 canceledAmount;
         unchecked {
             canceledAmount = uint256(canceled) * key.unit;
+            int256 quoteFee = key.makerPolicy.calculateFee(canceledAmount, true);
+            canceledAmount = uint256(int256(canceledAmount) + quoteFee);
         }
-        FeePolicy makerPolicy = key.makerPolicy;
-
-        if (!makerPolicy.useOutput()) canceledAmount = _calculateAmountInReverse(canceledAmount, makerPolicy.rate());
 
         reservesOf[key.quote] -= canceledAmount;
         key.quote.transfer(owner, canceledAmount);
@@ -261,20 +263,20 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
                 claimedInQuote = uint256(claimed) * key.unit;
             }
             claimableAmount = tick.quoteToBase(claimedInQuote, false);
+
             FeePolicy makerPolicy = key.makerPolicy;
             FeePolicy takerPolicy = key.takerPolicy;
-            if (takerPolicy.useOutput()) {
-                quoteFee = _calculateFee(claimedInQuote, takerPolicy.rate());
+            if (makerPolicy.usesQuote()) {
+                quoteFee = makerPolicy.calculateFee(claimedInQuote, true);
             } else {
-                baseFee = _calculateFee(claimableAmount, takerPolicy.rate());
+                baseFee = makerPolicy.calculateFee(claimableAmount, false);
+                claimableAmount = baseFee > 0 ? claimableAmount - uint256(baseFee) : claimableAmount + uint256(-baseFee);
             }
-            if (makerPolicy.useOutput()) {
-                int256 makerFee = _calculateFee(claimableAmount, makerPolicy.rate());
-                claimableAmount =
-                    makerFee > 0 ? claimableAmount - uint256(makerFee) : claimableAmount + uint256(-makerFee);
-                baseFee += makerFee;
+
+            if (takerPolicy.usesQuote()) {
+                quoteFee += takerPolicy.calculateFee(claimedInQuote, true);
             } else {
-                quoteFee += _calculateFee(claimedInQuote, makerPolicy.rate());
+                baseFee += takerPolicy.calculateFee(claimableAmount, true);
             }
         }
 
@@ -354,20 +356,14 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         currencyDelta[locker][currency] = next;
     }
 
-    function _calculateFee(uint256 amount, int24 rate) internal pure returns (int256) {
+    function _calculateOriginalAmount(uint256 amount, int24 rate) internal pure returns (uint256 originalAmount) {
         bool positive = rate > 0;
         uint256 absRate;
         unchecked {
             absRate = uint256(uint24(positive ? rate : -rate));
         }
-        // @dev absFee must be less than type(int256).max
-        uint256 absFee = Math.divide(amount * absRate, uint256(_RATE_PRECISION), positive);
-        return positive ? int256(absFee) : -int256(absFee);
-    }
-
-    function _calculateAmountInReverse(uint256 amount, int24 rate) internal pure returns (uint256 adjustedAmount) {
-        uint256 fee = Math.divide(amount * uint256(_RATE_PRECISION), uint256(_RATE_PRECISION - rate), rate < 0);
-        adjustedAmount = rate > 0 ? amount - fee : amount + fee;
+        uint256 absFee = Math.divide(amount * absRate, FeePolicyLibrary.RATE_PRECISION, !positive);
+        originalAmount = positive ? amount + absFee : amount - absFee;
     }
 
     function load(bytes32 slot) external view returns (bytes32 value) {
