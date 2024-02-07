@@ -225,10 +225,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             canceledAmount = uint256(int256(canceledAmount) + quoteFee);
         }
 
+        if (pending == 0) _burn(OrderId.unwrap(params.id));
+
         reservesOf[key.quote] -= canceledAmount;
         key.quote.transfer(owner, canceledAmount);
-
-        if (pending == 0) _burn(OrderId.unwrap(params.id));
 
         key.hooks.afterCancel(params, canceled, hookData);
 
