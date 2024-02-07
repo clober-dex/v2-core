@@ -108,6 +108,11 @@ contract BookTest is Test {
         book.make(Tick.wrap(0), 200);
     }
 
+    function testMakeWithZeroAmount() public opened {
+        vm.expectRevert(abi.encodeWithSelector(Book.ZeroAmount.selector));
+        book.make(Tick.wrap(0), 0);
+    }
+
     function testTake() public opened {
         book.make(Tick.wrap(0), 100);
         book.make(Tick.wrap(0), 200);

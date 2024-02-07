@@ -19,6 +19,7 @@ library Book {
     using TickLibrary for *;
     using OrderIdLibrary for OrderId;
 
+    error ZeroAmount();
     error BookAlreadyOpened();
     error BookNotOpened();
     error OrdersOutOfRange();
@@ -85,6 +86,7 @@ library Book {
         internal
         returns (uint40 orderIndex)
     {
+        if (amount == 0) revert ZeroAmount();
         uint24 tickIndex = tick.toUint24();
         if (!self.heap.has(tickIndex)) self.heap.push(tickIndex);
 
