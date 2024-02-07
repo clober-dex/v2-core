@@ -300,6 +300,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         uint256 amount = tokenOwed[provider][currency];
         if (amount > 0) {
             tokenOwed[provider][currency] = 0;
+            reservesOf[currency] -= amount;
             currency.transfer(provider, amount);
             emit Collect(provider, currency, amount);
         }
