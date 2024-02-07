@@ -17,28 +17,21 @@ contract FeePolicyTest is Test {
     }
 
     function testCalculateFee() public {
-        _testCalculateFee(true, 1000, 1000000, 1000000, 1000, 0);
-        _testCalculateFee(false, 1000, 1000000, 1000000, 0, 1000);
-        _testCalculateFee(true, -1000, 1000000, 1000000, -1000, 0);
-        _testCalculateFee(false, -1000, 1000000, 1000000, 0, -1000);
+        _testCalculateFee(1000, 1000000, 1000, false);
+        _testCalculateFee(-1000, 1000000, -1000, false);
         // zero value tests
-        _testCalculateFee(true, 0, 1000000, 1000000, 0, 0);
-        _testCalculateFee(false, 0, 1000000, 1000000, 0, 0);
-        _testCalculateFee(true, 1000, 0, 0, 0, 0);
-        _testCalculateFee(false, 1000, 0, 0, 0, 0);
+        _testCalculateFee(0, 1000000, 0, false);
+        _testCalculateFee(1000, 0, 0, false);
         // rounding tests
-        _testCalculateFee(true, 1500, 1000, 1000, 2, 0);
-        _testCalculateFee(false, 1500, 1000, 1000, 0, 2);
-        _testCalculateFee(true, -1500, 1000, 1000, -1, 0);
-        _testCalculateFee(false, -1500, 1000, 1000, 0, -1);
+        _testCalculateFee(1500, 1000, 2, false);
+        _testCalculateFee(-1500, 1000, -1, false);
+        _testCalculateFee(1500, 1000, 1, true);
+        _testCalculateFee(-1500, 1000, -2, true);
     }
 
-    function _testCalculateFee(bool useQuote, int24 rate, uint256 quote, uint256 base, int256 quoteFee, int256 baseFee)
-        private
-    {
-        FeePolicy feePolicy = FeePolicyLibrary.encode(useQuote, rate);
-        (int256 actualQuoteFee, int256 actualBaseFee) = feePolicy.calculateFee(quote, base);
-        assertEq(actualQuoteFee, quoteFee);
-        assertEq(actualBaseFee, baseFee);
+    function _testCalculateFee(int24 rate, uint256 amount, int256 fee, bool reverse) private {
+        FeePolicy feePolicy = FeePolicyLibrary.encode(true, rate);
+        int256 actualFee = feePolicy.calculateFee(amount, reverse);
+        assertEq(actualFee, fee);
     }
 }

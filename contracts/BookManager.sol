@@ -152,10 +152,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         unchecked {
             // @dev uint64 * uint64 < type(uint256).max
             quoteAmount = uint256(params.amount) * params.key.unit;
-            (int256 quoteFee,) = params.key.makerPolicy.calculateFee(quoteAmount, 0);
 
             // @dev 0 < uint64 * uint64 + rate * uint64 * uint64 < type(int256).max
-            quoteDelta = int256(quoteAmount) + quoteFee;
+            quoteDelta = int256(quoteAmount);
+            if (params.key.makerPolicy.usesQuote()) {
+                quoteDelta += params.key.makerPolicy.calculateFee(quoteAmount, false);
+            }
             quoteAmount = uint256(quoteDelta);
         }
 
@@ -186,16 +188,17 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         baseAmount = tick.quoteToBase(quoteAmount, true);
 
         {
-            (int256 quoteFee, int256 baseFee) = params.key.takerPolicy.calculateFee(quoteAmount, baseAmount);
-            int256 delta;
-            unchecked {
-                delta = -int256(quoteAmount) + quoteFee;
-                _accountDelta(params.key.quote, delta);
-                quoteAmount = uint256(-delta);
+            int256 quoteDelta = int256(quoteAmount);
+            int256 baseDelta = baseAmount.toInt256();
+            if (params.key.takerPolicy.usesQuote()) {
+                quoteDelta -= params.key.takerPolicy.calculateFee(quoteAmount, false);
+                quoteAmount = uint256(quoteDelta);
+            } else {
+                baseDelta += params.key.takerPolicy.calculateFee(baseAmount, false);
+                baseAmount = uint256(baseDelta);
             }
-            delta = baseAmount.toInt256() + baseFee;
-            _accountDelta(params.key.base, delta);
-            baseAmount = uint256(delta);
+            _accountDelta(params.key.quote, -quoteDelta);
+            _accountDelta(params.key.base, baseDelta);
         }
 
         params.key.hooks.afterTake(params, tick, takenAmount, hookData);
@@ -218,10 +221,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         uint256 canceledAmount;
         unchecked {
             canceledAmount = uint256(canceled) * key.unit;
+            int256 quoteFee = key.makerPolicy.calculateFee(canceledAmount, true);
+            canceledAmount = uint256(int256(canceledAmount) + quoteFee);
         }
-        FeePolicy makerPolicy = key.makerPolicy;
-
-        if (makerPolicy.usesQuote()) canceledAmount = _calculateOriginalAmount(canceledAmount, makerPolicy.rate());
 
         reservesOf[key.quote] -= canceledAmount;
         key.quote.transfer(owner, canceledAmount);
@@ -261,14 +263,21 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
                 claimedInQuote = uint256(claimed) * key.unit;
             }
             claimableAmount = tick.quoteToBase(claimedInQuote, false);
-            (quoteFee, baseFee) = key.makerPolicy.calculateFee(claimedInQuote, claimableAmount);
-            claimableAmount = baseFee > 0 ? claimableAmount - uint256(baseFee) : claimableAmount + uint256(-baseFee);
 
-            int256 quoteFee_;
-            int256 baseFee_;
-            (quoteFee_, baseFee_) = key.takerPolicy.calculateFee(claimedInQuote, claimableAmount);
-            quoteFee += quoteFee_;
-            baseFee += baseFee_;
+            FeePolicy makerPolicy = key.makerPolicy;
+            FeePolicy takerPolicy = key.takerPolicy;
+            if (makerPolicy.usesQuote()) {
+                quoteFee = makerPolicy.calculateFee(claimedInQuote, true);
+            } else {
+                baseFee = makerPolicy.calculateFee(claimableAmount, false);
+                claimableAmount = baseFee > 0 ? claimableAmount - uint256(baseFee) : claimableAmount + uint256(-baseFee);
+            }
+
+            if (takerPolicy.usesQuote()) {
+                quoteFee += takerPolicy.calculateFee(claimedInQuote, true);
+            } else {
+                baseFee += takerPolicy.calculateFee(claimableAmount, true);
+            }
         }
 
         Book.Order memory order = book.getOrder(tick, orderIndex);
