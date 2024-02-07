@@ -43,8 +43,9 @@ contract BountyPlatform is BaseHook, Ownable2Step, IBountyPlatform {
             Bounty memory bounty = abi.decode(hookData, (Bounty));
             uint256 amount = _getAmount(bounty);
             if (amount > 0) {
-                if (bounty.currency.balanceOfSelf() < amount) revert NotEnoughBalance();
-                balance[bounty.currency] += amount;
+                uint256 currentBalance = balance[bounty.currency];
+                if (bounty.currency.balanceOfSelf() - currentBalance < amount) revert NotEnoughBalance();
+                balance[bounty.currency] = currentBalance + amount;
                 _bountyMap[id] = bounty;
                 emit BountyOffered(id, bounty.currency, amount);
             }
