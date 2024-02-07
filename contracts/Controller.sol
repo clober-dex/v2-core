@@ -246,7 +246,6 @@ contract Controller is IController, ILocker {
         while (leftQuoteAmount > quoteAmount) {
             unchecked {
                 leftQuoteAmount -= quoteAmount;
-                spendBaseAmount += baseAmount;
             }
             if (_bookManager.getRoot(params.id).toPrice() > params.limitPrice) break;
             (quoteAmount, baseAmount) = _bookManager.take(
@@ -254,6 +253,7 @@ contract Controller is IController, ILocker {
                 params.hookData
             );
             if (quoteAmount == 0) break;
+            spendBaseAmount += baseAmount;
         }
         if (params.maxBaseAmount < spendBaseAmount) revert ControllerSlippage();
     }
