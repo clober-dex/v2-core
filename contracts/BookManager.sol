@@ -252,31 +252,32 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (!key.hooks.beforeClaim(id, hookData)) return;
 
-        uint64 claimed = book.claim(tick, orderIndex);
+        uint64 claimedRaw = book.claim(tick, orderIndex);
 
-        uint256 claimableAmount;
+        uint256 claimedAmount;
         int256 quoteFee;
         int256 baseFee;
         {
             uint256 claimedInQuote;
             unchecked {
-                claimedInQuote = uint256(claimed) * key.unit;
+                claimedInQuote = uint256(claimedRaw) * key.unit;
             }
-            claimableAmount = tick.quoteToBase(claimedInQuote, false);
+            claimedAmount = tick.quoteToBase(claimedInQuote, false);
 
             FeePolicy makerPolicy = key.makerPolicy;
             FeePolicy takerPolicy = key.takerPolicy;
-            if (makerPolicy.usesQuote()) {
-                quoteFee = makerPolicy.calculateFee(claimedInQuote, true);
+            if (takerPolicy.usesQuote()) {
+                quoteFee = takerPolicy.calculateFee(claimedInQuote, true);
             } else {
-                baseFee = makerPolicy.calculateFee(claimableAmount, false);
-                claimableAmount = baseFee > 0 ? claimableAmount - uint256(baseFee) : claimableAmount + uint256(-baseFee);
+                baseFee = takerPolicy.calculateFee(claimedAmount, true);
             }
 
-            if (takerPolicy.usesQuote()) {
-                quoteFee += takerPolicy.calculateFee(claimedInQuote, true);
+            if (makerPolicy.usesQuote()) {
+                quoteFee += makerPolicy.calculateFee(claimedInQuote, true);
             } else {
-                baseFee += takerPolicy.calculateFee(claimableAmount, true);
+                int256 makeFee = makerPolicy.calculateFee(claimedAmount, false);
+                baseFee += makeFee;
+                claimedAmount = makeFee > 0 ? claimedAmount - uint256(makeFee) : claimedAmount + uint256(-makeFee);
             }
         }
 
@@ -288,12 +289,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (order.pending == 0) _burn(OrderId.unwrap(id));
 
-        reservesOf[key.base] -= claimableAmount;
-        key.base.transfer(owner, claimableAmount);
+        reservesOf[key.base] -= claimedAmount;
+        key.base.transfer(owner, claimedAmount);
 
-        key.hooks.afterClaim(id, claimed, hookData);
+        key.hooks.afterClaim(id, claimedRaw, hookData);
 
-        emit Claim(msg.sender, id, claimed);
+        emit Claim(msg.sender, id, claimedRaw);
     }
 
     function collect(address provider, Currency currency) external {
