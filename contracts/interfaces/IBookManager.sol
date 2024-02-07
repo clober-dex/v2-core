@@ -121,9 +121,9 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint64 to;
     }
 
-    function cancel(CancelParams calldata params, bytes calldata hookData) external;
+    function cancel(CancelParams calldata params, bytes calldata hookData) external returns (uint256 canceledAmount);
 
-    function claim(OrderId id, bytes calldata hookData) external;
+    function claim(OrderId id, bytes calldata hookData) external returns (uint256 claimableAmount);
 
     function collect(address provider, Currency currency) external;
 
