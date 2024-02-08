@@ -195,15 +195,20 @@ contract BookTest is Test {
         book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0), 71);
     }
 
-    function testCancelAndCleanHeap() public opened {
+    function testCancelAndRemove() public opened {
         book.make(Tick.wrap(0), 100);
         book.make(Tick.wrap(123), 100);
+        book.make(Tick.wrap(1234), 100);
 
         assertEq(Tick.unwrap(book.getRoot()), 0);
 
         book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0), 0);
 
         assertEq(Tick.unwrap(book.getRoot()), 123);
+
+        book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(1234), 0), 0);
+
+        assertFalse(book.heapHas(Tick.wrap(1234)));
     }
 
     function testClaim() public opened {

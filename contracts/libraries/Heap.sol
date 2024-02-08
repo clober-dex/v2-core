@@ -65,6 +65,10 @@ library Heap {
         if (isEmpty(heap)) revert EmptyError();
 
         (uint256 b0b1, uint256 b2) = _root(heap);
+        _remove(heap, b0b1, b2);
+    }
+
+    function _remove(mapping(uint256 => uint256) storage heap, uint256 b0b1, uint256 b2) private {
         uint256 mask = 1 << b2;
         uint256 b2Bitmap = heap[b0b1];
 
@@ -80,6 +84,11 @@ library Heap {
                 heap[B0_BITMAP_KEY] = heap[B0_BITMAP_KEY] & (~mask);
             }
         }
+    }
+
+    function remove(mapping(uint256 => uint256) storage heap, uint24 value) internal {
+        (uint256 b0b1, uint256 b2) = _split(value);
+        _remove(heap, b0b1, b2);
     }
 
     function minGreaterThan(mapping(uint256 => uint256) storage heap, uint24 value) internal view returns (uint24) {

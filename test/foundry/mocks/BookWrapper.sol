@@ -7,6 +7,8 @@ import "../../../contracts/libraries/Book.sol";
 contract BookWrapper {
     using OrderIdLibrary for OrderId;
     using Book for Book.State;
+    using TickLibrary for *;
+    using Heap for mapping(uint256 => uint256);
 
     BookId public immutable BOOK_ID;
 
@@ -80,5 +82,9 @@ contract BookWrapper {
         assembly {
             sstore(orders.slot, index)
         }
+    }
+
+    function heapHas(Tick tick) external view returns (bool) {
+        return _book.heap.has(tick.toUint24());
     }
 }
