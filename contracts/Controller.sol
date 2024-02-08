@@ -242,7 +242,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
 
         uint256 quoteAmount;
         uint256 baseAmount;
-        while (leftQuoteAmount > quoteAmount) {
+        while (leftQuoteAmount > quoteAmount && !_bookManager.isEmpty(params.id)) {
             unchecked {
                 leftQuoteAmount -= quoteAmount;
             }
