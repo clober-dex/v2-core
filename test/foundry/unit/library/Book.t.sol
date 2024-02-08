@@ -258,4 +258,10 @@ contract BookTest is Test {
         assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)), 200);
         assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2)), 300);
     }
+
+    function testCalculateClaimableRawAmountNotOverflow() public opened {
+        book.make(Tick.wrap(0), type(uint64).max - 1);
+        book.take(type(uint64).max - 1);
+        book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0));
+    }
 }
