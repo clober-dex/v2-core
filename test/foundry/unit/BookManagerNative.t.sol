@@ -10,6 +10,9 @@ import "../../../contracts/BookManager.sol";
 import "../mocks/MockERC20.sol";
 import "../routers/MakeRouter.sol";
 import "../routers/TakeRouter.sol";
+import "../routers/OpenRouter.sol";
+import "../routers/ClaimRouter.sol";
+import "../routers/CancelRouter.sol";
 
 // @dev Test without fee.
 contract BookManagerNativeTest is Test {
@@ -29,8 +32,11 @@ contract BookManagerNativeTest is Test {
     IBookManager.BookKey public unopenedKey;
 
     MockERC20 public mockErc20;
+    OpenRouter public openRouter;
     MakeRouter public makeRouter;
     TakeRouter public takeRouter;
+    ClaimRouter public claimRouter;
+    CancelRouter public cancelRouter;
 
     receive() external payable {}
 
@@ -66,11 +72,15 @@ contract BookManagerNativeTest is Test {
             hooks: IHooks(address(0))
         });
 
-        bookManager.open(nativeQuoteKey, "");
-        bookManager.open(nativeBaseKey, "");
-
+        openRouter = new OpenRouter(bookManager);
         makeRouter = new MakeRouter(bookManager);
         takeRouter = new TakeRouter(bookManager);
+        claimRouter = new ClaimRouter(bookManager);
+        cancelRouter = new CancelRouter(bookManager);
+
+        openRouter.open(nativeQuoteKey, "");
+        openRouter.open(nativeBaseKey, "");
+
         vm.deal(address(this), 100 ether);
         mockErc20.mint(address(this), 100 ether);
         mockErc20.approve(address(makeRouter), type(uint256).max);
@@ -89,7 +99,7 @@ contract BookManagerNativeTest is Test {
             unopenedKey.takerPolicy,
             unopenedKey.hooks
         );
-        bookManager.open(unopenedKey, "");
+        openRouter.open(unopenedKey, "");
 
         IBookManager.BookKey memory remoteBookKey = bookManager.getBookKey(bookId);
 
@@ -107,7 +117,7 @@ contract BookManagerNativeTest is Test {
         unopenedKey.unit = 0;
 
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidUnit.selector));
-        bookManager.open(unopenedKey, "");
+        openRouter.open(unopenedKey, "");
     }
 
     function testOpenWithInvalidFeePolicyBoundary() public {
@@ -116,28 +126,28 @@ contract BookManagerNativeTest is Test {
             FeePolicy.unwrap(FeePolicyLibrary.encode(copiedKey.makerPolicy.usesQuote(), _MIN_FEE_RATE)) - 1
         );
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
-        bookManager.open(copiedKey, "");
+        openRouter.open(copiedKey, "");
 
         copiedKey = unopenedKey;
         copiedKey.makerPolicy = FeePolicy.wrap(
             FeePolicy.unwrap(FeePolicyLibrary.encode(copiedKey.makerPolicy.usesQuote(), _MAX_FEE_RATE)) + 1
         );
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
-        bookManager.open(copiedKey, "");
+        openRouter.open(copiedKey, "");
 
         copiedKey = unopenedKey;
         copiedKey.takerPolicy = FeePolicy.wrap(
             FeePolicy.unwrap(FeePolicyLibrary.encode(copiedKey.takerPolicy.usesQuote(), _MIN_FEE_RATE)) - 1
         );
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
-        bookManager.open(copiedKey, "");
+        openRouter.open(copiedKey, "");
 
         copiedKey = unopenedKey;
         copiedKey.takerPolicy = FeePolicy.wrap(
             FeePolicy.unwrap(FeePolicyLibrary.encode(copiedKey.takerPolicy.usesQuote(), _MAX_FEE_RATE)) + 1
         );
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
-        bookManager.open(copiedKey, "");
+        openRouter.open(copiedKey, "");
     }
 
     function testOpenWithInvalidFeePolicyTotalNegative(int24 makerRate, int24 takerRate) public {
@@ -150,7 +160,7 @@ contract BookManagerNativeTest is Test {
         copiedKey.makerPolicy = FeePolicyLibrary.encode(copiedKey.makerPolicy.usesQuote(), makerRate);
         copiedKey.takerPolicy = FeePolicyLibrary.encode(copiedKey.takerPolicy.usesQuote(), takerRate);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
-        bookManager.open(copiedKey, "");
+        openRouter.open(copiedKey, "");
     }
 
     function testOpenWithInvalidFeePolicyUnmatchedUseOutputWithNegativeRate() public {
@@ -158,30 +168,30 @@ contract BookManagerNativeTest is Test {
         copiedKey.makerPolicy = FeePolicyLibrary.encode(false, -1);
         copiedKey.takerPolicy = FeePolicyLibrary.encode(true, 2);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
-        bookManager.open(copiedKey, "");
+        openRouter.open(copiedKey, "");
 
         copiedKey = unopenedKey;
         copiedKey.makerPolicy = FeePolicyLibrary.encode(true, -1);
         copiedKey.takerPolicy = FeePolicyLibrary.encode(false, 2);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
-        bookManager.open(copiedKey, "");
+        openRouter.open(copiedKey, "");
 
         copiedKey = unopenedKey;
         copiedKey.makerPolicy = FeePolicyLibrary.encode(false, 2);
         copiedKey.takerPolicy = FeePolicyLibrary.encode(true, -1);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
-        bookManager.open(copiedKey, "");
+        openRouter.open(copiedKey, "");
 
         copiedKey = unopenedKey;
         copiedKey.makerPolicy = FeePolicyLibrary.encode(true, 2);
         copiedKey.takerPolicy = FeePolicyLibrary.encode(false, -1);
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidFeePolicy.selector));
-        bookManager.open(copiedKey, "");
+        openRouter.open(copiedKey, "");
     }
 
     function testOpenWithDuplicatedKey() public {
         vm.expectRevert(abi.encodeWithSelector(Book.BookAlreadyOpened.selector));
-        bookManager.open(nativeQuoteKey, "");
+        openRouter.open(nativeQuoteKey, "");
     }
 
     function testMakeERC20Quote() public {
@@ -379,9 +389,10 @@ contract BookManagerNativeTest is Test {
         uint256 beforeQuoteAmount = mockErc20.balanceOf(address(this));
         uint256 beforeBaseAmount = address(this).balance;
 
+        bookManager.approve(address(cancelRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
         emit IBookManager.Cancel(id, cancelAmount);
-        bookManager.cancel(IBookManager.CancelParams({id: id, to: makeAmount - cancelAmount}), "");
+        cancelRouter.cancel(IBookManager.CancelParams({id: id, to: makeAmount - cancelAmount}), "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -417,9 +428,10 @@ contract BookManagerNativeTest is Test {
         uint256 beforeQuoteAmount = address(this).balance;
         uint256 beforeBaseAmount = mockErc20.balanceOf(address(this));
 
+        bookManager.approve(address(cancelRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
         emit IBookManager.Cancel(id, cancelAmount);
-        bookManager.cancel(IBookManager.CancelParams({id: id, to: makeAmount - cancelAmount}), "");
+        cancelRouter.cancel(IBookManager.CancelParams({id: id, to: makeAmount - cancelAmount}), "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -457,9 +469,10 @@ contract BookManagerNativeTest is Test {
         uint256 beforeQuoteReserve = bookManager.reservesOf(nativeQuoteKey.quote);
         uint256 beforeBaseReserve = bookManager.reservesOf(nativeQuoteKey.base);
 
+        bookManager.approve(address(cancelRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
         emit IBookManager.Cancel(id, makeAmount - takeAmount);
-        bookManager.cancel(IBookManager.CancelParams({id: id, to: 0}), "");
+        cancelRouter.cancel(IBookManager.CancelParams({id: id, to: 0}), "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -497,9 +510,10 @@ contract BookManagerNativeTest is Test {
         uint256 beforeQuoteReserve = bookManager.reservesOf(nativeQuoteKey.quote);
         uint256 beforeBaseReserve = bookManager.reservesOf(nativeQuoteKey.base);
 
+        bookManager.approve(address(cancelRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
         emit IBookManager.Cancel(id, makeAmount);
-        bookManager.cancel(IBookManager.CancelParams({id: id, to: 0}), "");
+        cancelRouter.cancel(IBookManager.CancelParams({id: id, to: 0}), "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -525,7 +539,7 @@ contract BookManagerNativeTest is Test {
 
     function testCancelNonexistentOrder() public {
         vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721NonexistentToken.selector, (123)));
-        bookManager.cancel(IBookManager.CancelParams({id: OrderId.wrap(123), to: 0}), "");
+        cancelRouter.cancel(IBookManager.CancelParams({id: OrderId.wrap(123), to: 0}), "");
     }
 
     function testCancelAuth() public {
@@ -538,11 +552,10 @@ contract BookManagerNativeTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                IERC721Errors.ERC721InsufficientApproval.selector, address(0x12323), OrderId.unwrap(id)
+                IERC721Errors.ERC721InsufficientApproval.selector, address(cancelRouter), OrderId.unwrap(id)
             )
         );
-        vm.prank(address(0x12323));
-        bookManager.cancel(IBookManager.CancelParams({id: id, to: 0}), "");
+        cancelRouter.cancel(IBookManager.CancelParams({id: id, to: 0}), "");
     }
 
     function testClaimERC20Base() public {
@@ -562,10 +575,10 @@ contract BookManagerNativeTest is Test {
         uint256 beforeBaseReserve = bookManager.reservesOf(nativeQuoteKey.base);
         IBookManager.OrderInfo memory beforeOrderInfo = bookManager.getOrder(id);
 
+        bookManager.approve(address(claimRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Claim(address(0x12312), id, takeAmount);
-        vm.prank(address(0x12312));
-        bookManager.claim(id, "");
+        emit IBookManager.Claim(id, takeAmount);
+        claimRouter.claim(id, "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -607,10 +620,10 @@ contract BookManagerNativeTest is Test {
         uint256 beforeBaseReserve = bookManager.reservesOf(nativeBaseKey.base);
         IBookManager.OrderInfo memory beforeOrderInfo = bookManager.getOrder(id);
 
+        bookManager.approve(address(claimRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Claim(address(0x12312), id, takeAmount);
-        vm.prank(address(0x12312));
-        bookManager.claim(id, "");
+        emit IBookManager.Claim(id, takeAmount);
+        claimRouter.claim(id, "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -650,10 +663,10 @@ contract BookManagerNativeTest is Test {
         uint256 beforeQuoteReserve = bookManager.reservesOf(nativeQuoteKey.quote);
         uint256 beforeBaseReserve = bookManager.reservesOf(nativeQuoteKey.base);
 
+        bookManager.approve(address(claimRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Claim(address(0x12312), id, makeAmount);
-        vm.prank(address(0x12312));
-        bookManager.claim(id, "");
+        emit IBookManager.Claim(id, makeAmount);
+        claimRouter.claim(id, "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -682,6 +695,6 @@ contract BookManagerNativeTest is Test {
 
     function testClaimNonexistentOrder() public {
         vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721NonexistentToken.selector, (123)));
-        bookManager.claim(OrderId.wrap(123), "");
+        claimRouter.claim(OrderId.wrap(123), "");
     }
 }
