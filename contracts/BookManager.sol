@@ -139,7 +139,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         returns (OrderId id, uint256 quoteAmount)
     {
         if (params.provider != address(0) && !isWhitelisted[params.provider]) revert InvalidProvider(params.provider);
-        params.tick.validate();
+        params.tick.validateTick();
         BookId bookId = params.key.toId();
         Book.State storage book = _books[bookId];
         book.checkOpened();
@@ -228,9 +228,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             canceledAmount = uint256(int256(canceledAmount) + quoteFee);
         }
 
-        _accountDelta(key.quote, -int256(canceledAmount));
-
         if (pending == 0) _burn(OrderId.unwrap(params.id));
+
+        _accountDelta(key.quote, -int256(canceledAmount));
 
         key.hooks.afterCancel(params, canceled, hookData);
 

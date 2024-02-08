@@ -40,7 +40,7 @@ library TickLibrary {
     uint256 private constant _R17 = 0x2216e584f5fa1ea926041bedfe97;
     uint256 private constant _R18 = 0x48a170391f7dc42444e8fa2;
 
-    function validate(Tick tick) internal pure {
+    function validateTick(Tick tick) internal pure {
         if (Tick.unwrap(tick) > MAX_TICK || Tick.unwrap(tick) < MIN_TICK) revert InvalidTick();
     }
 
@@ -76,6 +76,7 @@ library TickLibrary {
     }
 
     function toPrice(Tick tick) internal pure returns (uint256 price) {
+        validateTick(tick);
         int24 tickValue = Tick.unwrap(tick);
         uint256 absTick = uint24(tickValue < 0 ? -tickValue : tickValue);
 
