@@ -5,13 +5,14 @@ import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC2
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "./interfaces/IController.sol";
 import "./interfaces/ILocker.sol";
 import "./interfaces/IBookManager.sol";
 import "./libraries/OrderId.sol";
 
-contract Controller is IController, ILocker {
+contract Controller is IController, ILocker, ReentrancyGuard {
     using TickLibrary for *;
     using OrderIdLibrary for OrderId;
     using SafeERC20 for IERC20;
@@ -72,7 +73,7 @@ contract Controller is IController, ILocker {
         return tick.toPrice();
     }
 
-    function lockAcquired(address sender, bytes memory data) external returns (bytes memory returnData) {
+    function lockAcquired(address sender, bytes memory data) external nonReentrant returns (bytes memory returnData) {
         if (msg.sender != address(_bookManager) || sender != address(this)) revert InvalidAccess();
         (address user, Action[] memory actionList, bytes[] memory orderParamsList, address[] memory tokensToSettle) =
             abi.decode(data, (address, Action[], bytes[], address[]));
