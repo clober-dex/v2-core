@@ -120,7 +120,9 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         _permitERC721(erc721PermitParamsList);
 
         for (uint256 i = 0; i < erc721PermitParamsList.length; ++i) {
-            _bookManager.transferFrom(msg.sender, address(this), erc721PermitParamsList[i].tokenId);
+            uint256 tokenId = erc721PermitParamsList[i].tokenId;
+            _bookManager.checkAuthorized(_bookManager.ownerOf(tokenId), msg.sender, tokenId);
+            _bookManager.transferFrom(msg.sender, address(this), tokenId);
         }
 
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
