@@ -242,16 +242,16 @@ contract Controller is IController, ILocker, ReentrancyGuard {
 
         uint256 quoteAmount;
         uint256 baseAmount;
-        while (leftQuoteAmount > quoteAmount) {
+        while (leftQuoteAmount > quoteAmount && !_bookManager.isEmpty(params.id)) {
             unchecked {
                 leftQuoteAmount -= quoteAmount;
             }
-            if (_bookManager.getRoot(params.id).toPrice() > params.limitPrice) revert ControllerSlippage();
+            if (_bookManager.getRoot(params.id).toPrice() > params.limitPrice) break;
             (quoteAmount, baseAmount) = _bookManager.take(
                 IBookManager.TakeParams({key: key, maxAmount: leftQuoteAmount.divide(key.unit, true).toUint64()}),
                 params.hookData
             );
-            if (quoteAmount == 0) revert ControllerSlippage();
+            if (quoteAmount == 0) break;
             spendBaseAmount += baseAmount;
         }
         if (params.maxBaseAmount < spendBaseAmount) revert ControllerSlippage();
