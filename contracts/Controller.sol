@@ -211,10 +211,15 @@ contract Controller is IController, ILocker, ReentrancyGuard {
 
     function claim(ClaimOrderParams[] calldata orderParamsList, uint64 deadline) external checkDeadline(deadline) {
         uint256 length = orderParamsList.length;
+        Action[] memory actionList = new Action[](length);
+        bytes[] memory paramsDataList = new bytes[](length);
         for (uint256 i = 0; i < length; ++i) {
-            ClaimOrderParams memory params = orderParamsList[i];
-            _bookManager.claim(params.id, params.hookData);
+            actionList[i] = Action.CLAIM;
+            paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
+        address[] memory tokensToSettle;
+        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
+        _bookManager.lock(address(this), lockData);
     }
 
     function cancel(
@@ -224,18 +229,22 @@ contract Controller is IController, ILocker, ReentrancyGuard {
     ) external checkDeadline(deadline) {
         _permitERC721(permitParamsList);
         uint256 length = orderParamsList.length;
+        Action[] memory actionList = new Action[](length);
+        bytes[] memory paramsDataList = new bytes[](length);
+        address[] memory tokensToSettle;
         for (uint256 i = 0; i < length; ++i) {
-            CancelOrderParams memory params = orderParamsList[i];
-            (BookId bookId,,) = params.id.decode();
-            IBookManager.BookKey memory key = _bookManager.getBookKey(bookId);
-            try _bookManager.cancel(
-                IBookManager.CancelParams({id: params.id, to: (params.leftQuoteAmount / key.unit).toUint64()}),
-                params.hookData
-            ) {} catch {}
+            actionList[i] = Action.CANCEL;
+            paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
+        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
+        _bookManager.lock(address(this), lockData);
     }
 
-    function _make(address maker, MakeOrderParams memory params) internal returns (OrderId id) {
+    function _open(OpenBookParams memory params) internal {
+        _bookManager.open(params.key, params.hookData);
+    }
+
+    function _make(MakeOrderParams memory params) internal returns (OrderId id) {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
         uint256 quoteAmount;
         (id, quoteAmount) = _bookManager.make(
@@ -247,7 +256,6 @@ contract Controller is IController, ILocker, ReentrancyGuard {
             }),
             params.hookData
         );
-        _bookManager.transferFrom(address(this), maker, OrderId.unwrap(id));
         return id;
     }
 
