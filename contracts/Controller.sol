@@ -84,8 +84,12 @@ contract Controller is IController, ILocker, ReentrancyGuard {
 
         for (uint256 i = 0; i < length; ++i) {
             Action action = actionList[i];
-            if (action == Action.MAKE) {
-                ids[orderIdIndex++] = _make(user, abi.decode(orderParamsList[i], (MakeOrderParams)));
+            if (action == Action.OPEN) {
+                _open(abi.decode(orderParamsList[i], (OpenBookParams)));
+            } else if (action == Action.MAKE) {
+                OrderId id = _make(abi.decode(orderParamsList[i], (MakeOrderParams)));
+                _bookManager.transferFrom(address(this), user, OrderId.unwrap(id));
+                ids[orderIdIndex++] = id;
             } else if (action == Action.TAKE) {
                 _take(abi.decode(orderParamsList[i], (TakeOrderParams)));
             } else if (action == Action.SPEND) {
@@ -138,6 +142,19 @@ contract Controller is IController, ILocker, ReentrancyGuard {
             (ids) = abi.decode(result, (OrderId[]));
         }
         return ids;
+    }
+
+    function open(OpenBookParams[] calldata openBookParamsList, uint64 deadline) external checkDeadline(deadline) {
+        uint256 length = openBookParamsList.length;
+        Action[] memory actionList = new Action[](length);
+        bytes[] memory paramsDataList = new bytes[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            actionList[i] = Action.OPEN;
+            paramsDataList[i] = abi.encode(openBookParamsList[i]);
+        }
+        address[] memory tokensToSettle;
+        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
+        _bookManager.lock(address(this), lockData);
     }
 
     function make(
