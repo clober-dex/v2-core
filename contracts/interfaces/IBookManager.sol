@@ -58,6 +58,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function isWhitelisted(address provider) external view returns (bool);
 
+    function checkAuthorized(address owner, address spender, uint256 tokenId) external view;
+
     function tokenOwed(address provider, Currency currency) external view returns (uint256);
 
     function getBookKey(BookId id) external view returns (BookKey memory);
