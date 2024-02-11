@@ -52,6 +52,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         _;
     }
 
+    function checkAuthorized(address owner, address spender, uint256 tokenId) external view {
+        _checkAuthorized(owner, spender, tokenId);
+    }
+
     function _checkLocker(address caller) internal view {
         address locker = Lockers.getCurrentLocker();
         IHooks hook = Lockers.getCurrentHook();
