@@ -78,7 +78,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
     }
 
-    function open(BookKey calldata key, bytes calldata hookData) external {
+    function open(BookKey calldata key, bytes calldata hookData) external onlyByLocker {
         // @dev Also, the book opener should set unit at least circulatingTotalSupply / type(uint64).max to avoid overflow.
         //      But it is not checked here because it is not possible to check it without knowing circulatingTotalSupply.
         if (key.unit == 0) revert InvalidUnit();
@@ -210,7 +210,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         emit Take(bookId, msg.sender, tick, takenAmount);
     }
 
-    function cancel(CancelParams calldata params, bytes calldata hookData) external {
+    function cancel(CancelParams calldata params, bytes calldata hookData)
+        external
+        onlyByLocker
+        returns (uint256 canceledAmount)
+    {
         address owner = _requireOwned(OrderId.unwrap(params.id));
         _checkAuthorized(owner, msg.sender, OrderId.unwrap(params.id));
 
@@ -218,11 +222,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         Book.State storage book = _books[bookId];
         BookKey memory key = book.key;
 
-        if (!key.hooks.beforeCancel(params, hookData)) return;
+        if (!key.hooks.beforeCancel(params, hookData)) return 0;
 
         (uint64 canceled, uint64 pending) = book.cancel(params.id, params.to);
 
-        uint256 canceledAmount;
         unchecked {
             canceledAmount = uint256(canceled) * key.unit;
             int256 quoteFee = key.makerPolicy.calculateFee(canceledAmount, true);
@@ -231,18 +234,16 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (pending == 0) _burn(OrderId.unwrap(params.id));
 
-        reservesOf[key.quote] -= canceledAmount;
-        key.quote.transfer(owner, canceledAmount);
+        _accountDelta(key.quote, -int256(canceledAmount));
 
         key.hooks.afterCancel(params, canceled, hookData);
 
         emit Cancel(params.id, canceled);
     }
 
-    function claim(OrderId id, bytes calldata hookData) external {
-        // @dev Load owner with nonexistent token check.
-        //      We don't need to check the authorization because claiming another user's order is allowed.
+    function claim(OrderId id, bytes calldata hookData) external onlyByLocker returns (uint256 claimedAmount) {
         address owner = _requireOwned(OrderId.unwrap(id));
+        _checkAuthorized(owner, msg.sender, OrderId.unwrap(id));
 
         Tick tick;
         uint40 orderIndex;
@@ -254,11 +255,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         }
         IBookManager.BookKey memory key = book.key;
 
-        if (!key.hooks.beforeClaim(id, hookData)) return;
+        if (!key.hooks.beforeClaim(id, hookData)) return 0;
 
         uint64 claimedRaw = book.claim(tick, orderIndex);
 
-        uint256 claimedAmount;
         int256 quoteFee;
         int256 baseFee;
         {
@@ -293,12 +293,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (order.pending == 0) _burn(OrderId.unwrap(id));
 
-        reservesOf[key.base] -= claimedAmount;
-        key.base.transfer(owner, claimedAmount);
+        _accountDelta(key.base, -claimedAmount.toInt256());
 
         key.hooks.afterClaim(id, claimedRaw, hookData);
 
-        emit Claim(msg.sender, id, claimedRaw);
+        emit Claim(id, claimedRaw);
     }
 
     function collect(address provider, Currency currency) external {

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
+
 import "../libraries/OrderId.sol";
 import "../libraries/Currency.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
+import "./IBookManager.sol";
 
 interface IController {
     error InvalidAccess();
@@ -15,6 +17,7 @@ interface IController {
     error InvalidAction();
 
     enum Action {
+        OPEN,
         MAKE,
         TAKE,
         SPEND,
@@ -40,7 +43,11 @@ interface IController {
         bytes32 s;
     }
 
-    // Todo Consider maker
+    struct OpenBookParams {
+        IBookManager.BookKey key;
+        bytes hookData;
+    }
+
     struct MakeOrderParams {
         BookId id;
         Tick tick;
@@ -49,7 +56,6 @@ interface IController {
         bytes hookData;
     }
 
-    // Todo Consider recipient
     struct TakeOrderParams {
         BookId id;
         uint256 limitPrice;
@@ -58,7 +64,6 @@ interface IController {
         bytes hookData;
     }
 
-    // Todo Consider recipient
     struct SpendOrderParams {
         BookId id;
         uint256 limitPrice;
@@ -77,6 +82,8 @@ interface IController {
         uint256 leftQuoteAmount;
         bytes hookData;
     }
+
+    function open(OpenBookParams[] calldata openBookParamsList, uint64 deadline) external;
 
     function getDepth(BookId id, Tick tick) external view returns (uint256);
 
@@ -121,10 +128,16 @@ interface IController {
         uint64 deadline
     ) external payable;
 
-    function claim(ClaimOrderParams[] calldata orderParamsList, uint64 deadline) external;
+    function claim(
+        ClaimOrderParams[] calldata orderParamsList,
+        address[] calldata tokensToSettle,
+        ERC721PermitParams[] calldata permitParamsList,
+        uint64 deadline
+    ) external;
 
     function cancel(
         CancelOrderParams[] calldata orderParamsList,
+        address[] calldata tokensToSettle,
         ERC721PermitParams[] calldata permitParamsList,
         uint64 deadline
     ) external;

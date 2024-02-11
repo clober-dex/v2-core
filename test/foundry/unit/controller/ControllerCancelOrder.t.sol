@@ -40,9 +40,10 @@ contract ControllerCancelOrderTest is Test {
         unopenedKey.unit = 1e11;
 
         manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "baseUrl", "contractUrl", "name", "symbol");
-        manager.open(key, "");
-
         controller = new Controller(address(manager));
+        IController.OpenBookParams[] memory openBookParamsList = new IController.OpenBookParams[](1);
+        openBookParamsList[0] = IController.OpenBookParams({key: key, hookData: ""});
+        controller.open(openBookParamsList, uint64(block.timestamp));
 
         vm.deal(Constants.MAKER1, 1000 * 10 ** 18);
         vm.deal(Constants.MAKER2, 1000 * 10 ** 18);
@@ -97,12 +98,14 @@ contract ControllerCancelOrderTest is Test {
         IController.PermitSignature memory signature;
         IController.ERC721PermitParams[] memory permitParamsList = new IController.ERC721PermitParams[](1);
         permitParamsList[0] = IController.ERC721PermitParams({tokenId: OrderId.unwrap(id), signature: signature});
+        address[] memory tokensToSettle = new address[](1);
+        tokensToSettle[0] = address(mockErc20);
 
         paramsList[0] = IController.CancelOrderParams({id: id, leftQuoteAmount: to, hookData: ""});
 
         vm.startPrank(manager.ownerOf(OrderId.unwrap(id)));
         manager.approve(address(controller), OrderId.unwrap(id));
-        controller.cancel(paramsList, permitParamsList, uint64(block.timestamp));
+        controller.cancel(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp));
         vm.stopPrank();
     }
 

@@ -12,6 +12,9 @@ import "../../mocks/MockERC20.sol";
 import "../../Constants.sol";
 import "../../routers/MakeRouter.sol";
 import "../../routers/TakeRouter.sol";
+import "../../routers/OpenRouter.sol";
+import "../../routers/ClaimRouter.sol";
+import "../../routers/CancelRouter.sol";
 
 contract HooksTest is Test {
     using BookIdLibrary for IBookManager.BookKey;
@@ -24,8 +27,11 @@ contract HooksTest is Test {
     IBookManager.BookKey public key;
     IBookManager.BookKey public unopenedKey;
     IBookManager public manager;
+    OpenRouter public openRouter;
     MakeRouter public makeRouter;
     TakeRouter public takeRouter;
+    CancelRouter public cancelRouter;
+    ClaimRouter public claimRouter;
 
     // Update this value when you add a new hook flag. And then update all appropriate asserts.
     uint256 public hookPermissionCount = 12;
@@ -52,14 +58,18 @@ contract HooksTest is Test {
         unopenedKey.unit = 1e11;
 
         manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "url", "url", "name", "symbol");
-        manager.open(key, "");
 
+        openRouter = new OpenRouter(manager);
         makeRouter = new MakeRouter(manager);
         takeRouter = new TakeRouter(manager);
+        cancelRouter = new CancelRouter(manager);
+        claimRouter = new ClaimRouter(manager);
+
+        openRouter.open(key, "");
     }
 
     function testOpenSucceedsWithHook() public {
-        manager.open(unopenedKey, new bytes(123));
+        openRouter.open(unopenedKey, new bytes(123));
 
         assertEq(mockHooks.beforeOpenData(), new bytes(123));
         assertEq(mockHooks.afterOpenData(), new bytes(123));
@@ -68,13 +78,13 @@ contract HooksTest is Test {
     function testBeforeOpenInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeOpen.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.open(unopenedKey, "");
+        openRouter.open(unopenedKey, "");
     }
 
     function testAfterOpenInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterOpen.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.open(unopenedKey, "");
+        openRouter.open(unopenedKey, "");
     }
 
     function testMakeSucceedsWithHook() public {
@@ -141,7 +151,8 @@ contract HooksTest is Test {
 
     function testCancelSucceedsWithHook() public {
         OrderId id = _make();
-        manager.cancel(IBookManager.CancelParams(id, 0), new bytes(222));
+        manager.approve(address(cancelRouter), OrderId.unwrap(id));
+        cancelRouter.cancel(IBookManager.CancelParams(id, 0), new bytes(222));
 
         assertEq(mockHooks.beforeCancelData(), new bytes(222));
         assertEq(mockHooks.afterCancelData(), new bytes(222));
@@ -150,21 +161,24 @@ contract HooksTest is Test {
     function testBeforeCancelInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeCancel.selector, bytes4(0xdeadbeef));
         OrderId id = _make();
+        manager.approve(address(cancelRouter), OrderId.unwrap(id));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.cancel(IBookManager.CancelParams(id, 0), new bytes(222));
+        cancelRouter.cancel(IBookManager.CancelParams(id, 0), new bytes(222));
     }
 
     function testAfterCancelInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterCancel.selector, bytes4(0xdeadbeef));
         OrderId id = _make();
+        manager.approve(address(cancelRouter), OrderId.unwrap(id));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.cancel(IBookManager.CancelParams(id, 0), new bytes(222));
+        cancelRouter.cancel(IBookManager.CancelParams(id, 0), new bytes(222));
     }
 
     function testClaimSucceedsWithHook() public {
         OrderId id = _make();
         _take();
-        manager.claim(id, new bytes(222));
+        manager.approve(address(claimRouter), OrderId.unwrap(id));
+        claimRouter.claim(id, new bytes(222));
 
         assertEq(mockHooks.beforeClaimData(), new bytes(222));
         assertEq(mockHooks.afterClaimData(), new bytes(222));
@@ -173,17 +187,19 @@ contract HooksTest is Test {
     function testBeforeClaimInvalidReturn() public {
         OrderId id = _make();
         _take();
+        manager.approve(address(claimRouter), OrderId.unwrap(id));
         mockHooks.setReturnValue(mockHooks.beforeClaim.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.claim(id, new bytes(222));
+        claimRouter.claim(id, new bytes(222));
     }
 
     function testAfterClaimInvalidReturn() public {
         OrderId id = _make();
         _take();
+        manager.approve(address(claimRouter), OrderId.unwrap(id));
         mockHooks.setReturnValue(mockHooks.afterClaim.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.claim(id, new bytes(222));
+        claimRouter.claim(id, new bytes(222));
     }
 
     // hook validation

@@ -8,6 +8,8 @@ import "../../../contracts/BookManager.sol";
 import "../mocks/MockERC20.sol";
 import "../routers/MakeRouter.sol";
 import "../routers/TakeRouter.sol";
+import "../routers/OpenRouter.sol";
+import "../routers/ClaimRouter.sol";
 
 contract BookManagerFee is Test {
     using BookIdLibrary for IBookManager.BookKey;
@@ -23,8 +25,10 @@ contract BookManagerFee is Test {
 
     MockERC20 public quote;
     MockERC20 public base;
+    OpenRouter public openRouter;
     MakeRouter public makeRouter;
     TakeRouter public takeRouter;
+    ClaimRouter public claimRouter;
 
     receive() external payable {}
 
@@ -34,8 +38,10 @@ contract BookManagerFee is Test {
         quote = new MockERC20("Mock", "MOCK", 6);
         base = new MockERC20("Mock", "MOCK", 18);
 
+        openRouter = new OpenRouter(bookManager);
         makeRouter = new MakeRouter(bookManager);
         takeRouter = new TakeRouter(bookManager);
+        claimRouter = new ClaimRouter(bookManager);
         quote.mint(address(this), 100 * 1e6);
         quote.approve(address(makeRouter), type(uint256).max);
         quote.approve(address(takeRouter), type(uint256).max);
@@ -54,7 +60,7 @@ contract BookManagerFee is Test {
             hooks: IHooks(address(0))
         });
 
-        bookManager.open(key, "");
+        openRouter.open(key, "");
     }
 
     function testMakeFeeUsePositiveQuoteRate() public {
@@ -166,7 +172,8 @@ contract BookManagerFee is Test {
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
 
-        bookManager.claim(id, "");
+        bookManager.approve(address(claimRouter), OrderId.unwrap(id));
+        claimRouter.claim(id, "");
 
         assertEq(quote.balanceOf(address(this)), beforeQuote, "QUOTE_BALANCE");
         assertEq(base.balanceOf(address(this)), beforeBase + 997, "BASE_BALANCE");
@@ -183,7 +190,8 @@ contract BookManagerFee is Test {
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
 
-        bookManager.claim(id, "");
+        bookManager.approve(address(claimRouter), OrderId.unwrap(id));
+        claimRouter.claim(id, "");
 
         assertEq(quote.balanceOf(address(this)), beforeQuote, "QUOTE_BALANCE");
         assertEq(base.balanceOf(address(this)), beforeBase + 1003, "BASE_BALANCE");

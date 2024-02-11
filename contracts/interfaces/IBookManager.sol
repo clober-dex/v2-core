@@ -31,7 +31,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     event Make(BookId indexed bookId, address indexed user, Tick tick, uint256 orderIndex, uint64 amount);
     event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 amount);
     event Cancel(OrderId indexed orderId, uint64 canceledAmount);
-    event Claim(address indexed claimer, OrderId indexed orderId, uint64 rawAmount);
+    event Claim(OrderId indexed orderId, uint64 rawAmount);
     event Whitelist(address indexed provider);
     event Delist(address indexed provider);
     event Collect(address indexed provider, Currency indexed currency, uint256 amount);
@@ -123,9 +123,9 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         uint64 to;
     }
 
-    function cancel(CancelParams calldata params, bytes calldata hookData) external;
+    function cancel(CancelParams calldata params, bytes calldata hookData) external returns (uint256 canceledAmount);
 
-    function claim(OrderId id, bytes calldata hookData) external;
+    function claim(OrderId id, bytes calldata hookData) external returns (uint256 claimedAmount);
 
     function collect(address provider, Currency currency) external;
 
