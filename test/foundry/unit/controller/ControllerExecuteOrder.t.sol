@@ -57,10 +57,10 @@ contract ControllerExecuteOrderTest is Test {
         paramsList[0] = _makeOrder(Constants.PRICE_TICK, Constants.QUOTE_AMOUNT3);
 
         vm.prank(Constants.MAKER1);
-        manager.setApprovalForAll(address (controller), true);
+        manager.setApprovalForAll(address(controller), true);
 
         vm.prank(Constants.TAKER1);
-        manager.setApprovalForAll(address (controller), true);
+        manager.setApprovalForAll(address(controller), true);
 
         vm.prank(Constants.MAKER1);
         orderId1 = controller.make{value: Constants.QUOTE_AMOUNT3}(
@@ -193,7 +193,7 @@ contract ControllerExecuteOrderTest is Test {
 
         erc721PermitParamsList = new IController.ERC721PermitParams[](1);
         erc721PermitParamsList[0] =
-                            IController.ERC721PermitParams({tokenId: OrderId.unwrap(orderId2), signature: signature});
+            IController.ERC721PermitParams({tokenId: OrderId.unwrap(orderId2), signature: signature});
 
         vm.startPrank(Constants.TAKER1);
         manager.approve(address(controller), OrderId.unwrap(orderId2));

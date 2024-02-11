@@ -57,10 +57,10 @@ contract ControllerClaimOrderTest is Test {
         orderId2 = _makeOrder(Constants.PRICE_TICK + 1, Constants.QUOTE_AMOUNT1, Constants.MAKER2);
 
         vm.prank(Constants.MAKER1);
-        manager.setApprovalForAll(address (controller), true);
+        manager.setApprovalForAll(address(controller), true);
 
         vm.prank(Constants.MAKER2);
-        manager.setApprovalForAll(address (controller), true);
+        manager.setApprovalForAll(address(controller), true);
 
         _takeOrder(Constants.QUOTE_AMOUNT1, type(uint256).max, Constants.TAKER1);
     }
