@@ -55,6 +55,13 @@ contract ControllerClaimOrderTest is Test {
 
         orderId1 = _makeOrder(Constants.PRICE_TICK, Constants.QUOTE_AMOUNT2, Constants.MAKER1);
         orderId2 = _makeOrder(Constants.PRICE_TICK + 1, Constants.QUOTE_AMOUNT1, Constants.MAKER2);
+
+        vm.prank(Constants.MAKER1);
+        manager.setApprovalForAll(address (controller), true);
+
+        vm.prank(Constants.MAKER2);
+        manager.setApprovalForAll(address (controller), true);
+
         _takeOrder(Constants.QUOTE_AMOUNT1, type(uint256).max, Constants.TAKER1);
     }
 
@@ -96,8 +103,13 @@ contract ControllerClaimOrderTest is Test {
     function _claimOrder(OrderId id) internal {
         IController.ClaimOrderParams[] memory paramsList = new IController.ClaimOrderParams[](1);
         paramsList[0] = IController.ClaimOrderParams({id: id, hookData: ""});
+        address[] memory tokensToSettle = new address[](1);
+        tokensToSettle[0] = address(mockErc20);
 
-        controller.claim(paramsList, uint64(block.timestamp));
+        IController.ERC721PermitParams[] memory permitParamsList;
+
+        vm.prank(manager.ownerOf(OrderId.unwrap(id)));
+        controller.claim(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp));
     }
 
     function testClaimAllOrder() public {

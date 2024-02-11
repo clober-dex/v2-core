@@ -57,6 +57,12 @@ contract ControllerExecuteOrderTest is Test {
         paramsList[0] = _makeOrder(Constants.PRICE_TICK, Constants.QUOTE_AMOUNT3);
 
         vm.prank(Constants.MAKER1);
+        manager.setApprovalForAll(address (controller), true);
+
+        vm.prank(Constants.TAKER1);
+        manager.setApprovalForAll(address (controller), true);
+
+        vm.prank(Constants.MAKER1);
         orderId1 = controller.make{value: Constants.QUOTE_AMOUNT3}(
             paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp)
         )[0];
@@ -155,21 +161,39 @@ contract ControllerExecuteOrderTest is Test {
 
         assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), takeAmount);
 
-        actionList = new IController.Action[](2);
+        actionList = new IController.Action[](1);
         actionList[0] = IController.Action.CLAIM;
-        actionList[1] = IController.Action.CANCEL;
 
-        paramsDataList = new bytes[](2);
+        paramsDataList = new bytes[](1);
         paramsDataList[0] = abi.encode(_claimOrder(orderId1));
-        paramsDataList[1] = abi.encode(_cancelOrder(orderId2));
 
-        beforeBalance = Constants.TAKER1.balance;
         beforeTokenBalance = mockErc20.balanceOf(Constants.MAKER1);
 
         IController.PermitSignature memory signature;
+        erc721PermitParamsList = new IController.ERC721PermitParams[](0);
+
+        vm.startPrank(Constants.MAKER1);
+        controller.execute(
+            actionList,
+            paramsDataList,
+            tokensToSettle,
+            erc20PermitParamsList,
+            erc721PermitParamsList,
+            uint64(block.timestamp)
+        );
+        vm.stopPrank();
+
+        assertEq(mockErc20.balanceOf(Constants.MAKER1) - beforeTokenBalance, 70704485945479345753);
+
+        actionList[0] = IController.Action.CANCEL;
+
+        paramsDataList[0] = abi.encode(_cancelOrder(orderId2));
+
+        beforeBalance = Constants.TAKER1.balance;
+
         erc721PermitParamsList = new IController.ERC721PermitParams[](1);
         erc721PermitParamsList[0] =
-            IController.ERC721PermitParams({tokenId: OrderId.unwrap(orderId2), signature: signature});
+                            IController.ERC721PermitParams({tokenId: OrderId.unwrap(orderId2), signature: signature});
 
         vm.startPrank(Constants.TAKER1);
         manager.approve(address(controller), OrderId.unwrap(orderId2));
@@ -184,6 +208,5 @@ contract ControllerExecuteOrderTest is Test {
         vm.stopPrank();
 
         assertEq(Constants.TAKER1.balance - beforeBalance, 78043083000000000000);
-        assertEq(mockErc20.balanceOf(Constants.MAKER1) - beforeTokenBalance, 70704485945479345753);
     }
 }

@@ -209,21 +209,9 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         _bookManager.lock(address(this), lockData);
     }
 
-    function claim(ClaimOrderParams[] calldata orderParamsList, uint64 deadline) external checkDeadline(deadline) {
-        uint256 length = orderParamsList.length;
-        Action[] memory actionList = new Action[](length);
-        bytes[] memory paramsDataList = new bytes[](length);
-        for (uint256 i = 0; i < length; ++i) {
-            actionList[i] = Action.CLAIM;
-            paramsDataList[i] = abi.encode(orderParamsList[i]);
-        }
-        address[] memory tokensToSettle;
-        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
-        _bookManager.lock(address(this), lockData);
-    }
-
-    function cancel(
-        CancelOrderParams[] calldata orderParamsList,
+    function claim(
+        ClaimOrderParams[] calldata orderParamsList,
+        address[] calldata tokensToSettle,
         ERC721PermitParams[] calldata permitParamsList,
         uint64 deadline
     ) external checkDeadline(deadline) {
@@ -231,7 +219,24 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         uint256 length = orderParamsList.length;
         Action[] memory actionList = new Action[](length);
         bytes[] memory paramsDataList = new bytes[](length);
-        address[] memory tokensToSettle;
+        for (uint256 i = 0; i < length; ++i) {
+            actionList[i] = Action.CLAIM;
+            paramsDataList[i] = abi.encode(orderParamsList[i]);
+        }
+        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
+        _bookManager.lock(address(this), lockData);
+    }
+
+    function cancel(
+        CancelOrderParams[] calldata orderParamsList,
+        address[] calldata tokensToSettle,
+        ERC721PermitParams[] calldata permitParamsList,
+        uint64 deadline
+    ) external checkDeadline(deadline) {
+        _permitERC721(permitParamsList);
+        uint256 length = orderParamsList.length;
+        Action[] memory actionList = new Action[](length);
+        bytes[] memory paramsDataList = new bytes[](length);
         for (uint256 i = 0; i < length; ++i) {
             actionList[i] = Action.CANCEL;
             paramsDataList[i] = abi.encode(orderParamsList[i]);

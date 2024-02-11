@@ -98,12 +98,14 @@ contract ControllerCancelOrderTest is Test {
         IController.PermitSignature memory signature;
         IController.ERC721PermitParams[] memory permitParamsList = new IController.ERC721PermitParams[](1);
         permitParamsList[0] = IController.ERC721PermitParams({tokenId: OrderId.unwrap(id), signature: signature});
+        address[] memory tokensToSettle = new address[](1);
+        tokensToSettle[0] = address(mockErc20);
 
         paramsList[0] = IController.CancelOrderParams({id: id, leftQuoteAmount: to, hookData: ""});
 
         vm.startPrank(manager.ownerOf(OrderId.unwrap(id)));
         manager.approve(address(controller), OrderId.unwrap(id));
-        controller.cancel(paramsList, permitParamsList, uint64(block.timestamp));
+        controller.cancel(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp));
         vm.stopPrank();
     }
 
