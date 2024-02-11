@@ -152,7 +152,11 @@ library Book {
         }
         queue.orders[orderIndex].pending = afterPending;
 
-        self.cleanHeap();
+        if (depth(self, tick) == 0) {
+            // remove() won't revert so we can cancel with to=0 even if the depth() is already zero
+            // works even if heap is empty
+            self.heap.remove(tick.toUint24());
+        }
     }
 
     function cleanHeap(State storage self) internal {
