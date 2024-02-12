@@ -223,6 +223,8 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         bytes[] memory paramsDataList = new bytes[](length);
         for (uint256 i = 0; i < length; ++i) {
             actionList[i] = Action.CLAIM;
+            uint256 orderId = OrderId.unwrap(orderParamsList[i].id);
+            _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), msg.sender, orderId);
             paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
@@ -241,6 +243,8 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         bytes[] memory paramsDataList = new bytes[](length);
         for (uint256 i = 0; i < length; ++i) {
             actionList[i] = Action.CANCEL;
+            uint256 orderId = OrderId.unwrap(orderParamsList[i].id);
+            _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), msg.sender, orderId);
             paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
