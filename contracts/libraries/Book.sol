@@ -130,7 +130,7 @@ library Book {
 
         self.totalClaimableOf.add(tick, takenAmount);
 
-        if (takenAmount == currentDepth) self.heap.pop();
+        if (takenAmount == currentDepth) self.heap.remove(tick.toUint24());
     }
 
     function cancel(State storage self, OrderId orderId, uint64 to)
