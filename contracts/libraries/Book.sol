@@ -130,7 +130,7 @@ library Book {
 
         self.totalClaimableOf.add(tick, takenAmount);
 
-        self.cleanHeap();
+        if (takenAmount == currentDepth) self.heap.pop();
     }
 
     function cancel(State storage self, OrderId orderId, uint64 to)
@@ -156,13 +156,6 @@ library Book {
             // remove() won't revert so we can cancel with to=0 even if the depth() is already zero
             // works even if heap is empty
             self.heap.remove(tick.toUint24());
-        }
-    }
-
-    function cleanHeap(State storage self) internal {
-        while (!self.heap.isEmpty()) {
-            if (depth(self, self.heap.root().toTick()) == 0) self.heap.pop();
-            else break;
         }
     }
 
