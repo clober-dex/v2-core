@@ -126,11 +126,14 @@ library Book {
     function take(State storage self, uint64 maxTakeAmount) internal returns (Tick tick, uint64 takenAmount) {
         tick = self.heap.root().toTick();
         uint64 currentDepth = depth(self, tick);
-        takenAmount = currentDepth < maxTakeAmount ? currentDepth : maxTakeAmount;
+        if (currentDepth < maxTakeAmount) {
+            takenAmount = currentDepth;
+            self.heap.remove(tick.toUint24());
+        } else {
+            takenAmount = maxTakeAmount;
+        }
 
         self.totalClaimableOf.add(tick, takenAmount);
-
-        if (takenAmount == currentDepth) self.heap.remove(tick.toUint24());
     }
 
     function cancel(State storage self, OrderId orderId, uint64 to)
