@@ -82,7 +82,6 @@ contract ControllerTakeOrderTest is Test {
             id: key.toId(),
             limitPrice: type(uint256).max,
             quoteAmount: quoteAmount,
-            maxBaseAmount: maxBaseAmount,
             hookData: ""
         });
 
