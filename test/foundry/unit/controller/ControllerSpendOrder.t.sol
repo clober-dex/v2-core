@@ -83,7 +83,6 @@ contract ControllerSpendOrderTest is Test {
             id: key.toId(),
             limitPrice: type(uint256).max,
             baseAmount: baseAmount,
-            minQuoteAmount: minQuoteAmount,
             hookData: ""
         });
 

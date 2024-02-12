@@ -270,34 +270,29 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
 
         uint256 leftQuoteAmount = params.quoteAmount;
-        uint256 spendBaseAmount;
 
         uint256 quoteAmount;
-        uint256 baseAmount;
         while (leftQuoteAmount > quoteAmount && !_bookManager.isEmpty(params.id)) {
+            if (params.limitPrice < _bookManager.getRoot(params.id).toPrice()) break;
             unchecked {
                 leftQuoteAmount -= quoteAmount;
             }
-            if (_bookManager.getRoot(params.id).toPrice() > params.limitPrice) break;
-            (quoteAmount, baseAmount) = _bookManager.take(
+            (quoteAmount,) = _bookManager.take(
                 IBookManager.TakeParams({key: key, maxAmount: leftQuoteAmount.divide(key.unit, true).toUint64()}),
                 params.hookData
             );
             if (quoteAmount == 0) break;
-            spendBaseAmount += baseAmount;
         }
-        if (params.maxBaseAmount < spendBaseAmount) revert ControllerSlippage();
     }
 
     function _spend(SpendOrderParams memory params) internal {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
 
-        uint256 takenQuoteAmount;
         uint256 leftBaseAmount = params.baseAmount;
 
         while (leftBaseAmount > 0 && !_bookManager.isEmpty(params.id)) {
             Tick tick = _bookManager.getRoot(params.id);
-            if (tick.toPrice() > params.limitPrice) break;
+            if (params.limitPrice < tick.toPrice()) break;
             (uint256 quoteAmount, uint256 baseAmount) = _bookManager.take(
                 IBookManager.TakeParams({
                     key: key,
@@ -309,10 +304,8 @@ contract Controller is IController, ILocker, ReentrancyGuard {
 
             unchecked {
                 leftBaseAmount -= baseAmount;
-                takenQuoteAmount += quoteAmount;
             }
         }
-        if (takenQuoteAmount < params.minQuoteAmount) revert ControllerSlippage();
     }
 
     function _claim(ClaimOrderParams memory params) internal {

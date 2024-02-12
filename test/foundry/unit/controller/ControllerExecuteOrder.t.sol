@@ -93,7 +93,6 @@ contract ControllerExecuteOrderTest is Test {
             id: key.toId(),
             limitPrice: type(uint256).max,
             quoteAmount: quoteAmount,
-            maxBaseAmount: maxBaseAmount,
             hookData: ""
         });
 
@@ -109,7 +108,6 @@ contract ControllerExecuteOrderTest is Test {
             id: key.toId(),
             limitPrice: type(uint256).max,
             baseAmount: baseAmount,
-            minQuoteAmount: minQuoteAmount,
             hookData: ""
         });
     }
