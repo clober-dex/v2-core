@@ -46,10 +46,6 @@ contract BookWrapper {
         return _book.cancel(orderId, to);
     }
 
-    function cleanHeap() external {
-        _book.cleanHeap();
-    }
-
     function claim(OrderId orderId) external returns (uint64) {
         (, Tick tick, uint40 index) = orderId.decode();
         return _book.claim(tick, index);

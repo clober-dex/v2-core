@@ -74,7 +74,7 @@ contract ControllerSpendOrderTest is Test {
         id = controller.make{value: quoteAmount}(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp))[0];
     }
 
-    function _spendOrder(uint256 baseAmount, uint256 minQuoteAmount, address taker) internal {
+    function _spendOrder(uint256 baseAmount, address taker) internal {
         IController.SpendOrderParams[] memory paramsList = new IController.SpendOrderParams[](1);
         address[] memory tokensToSettle = new address[](1);
         tokensToSettle[0] = address(mockErc20);
@@ -98,7 +98,7 @@ contract ControllerSpendOrderTest is Test {
 
         uint256 beforeBalance = Constants.TAKER1.balance;
         uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
-        _spendOrder(Constants.BASE_AMOUNT1, 0, Constants.TAKER1);
+        _spendOrder(Constants.BASE_AMOUNT1, Constants.TAKER1);
         assertEq(Constants.TAKER1.balance - beforeBalance, takeAmount);
         assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), baseAmount);
     }

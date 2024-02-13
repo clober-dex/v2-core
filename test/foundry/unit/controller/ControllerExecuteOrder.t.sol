@@ -84,11 +84,7 @@ contract ControllerExecuteOrderTest is Test {
         return params;
     }
 
-    function _takeOrder(uint256 quoteAmount, uint256 maxBaseAmount)
-        internal
-        view
-        returns (IController.TakeOrderParams memory params)
-    {
+    function _takeOrder(uint256 quoteAmount) internal view returns (IController.TakeOrderParams memory params) {
         params = IController.TakeOrderParams({
             id: key.toId(),
             limitPrice: type(uint256).max,
@@ -99,11 +95,7 @@ contract ControllerExecuteOrderTest is Test {
         return params;
     }
 
-    function _spendOrder(uint256 baseAmount, uint256 minQuoteAmount)
-        internal
-        view
-        returns (IController.SpendOrderParams memory params)
-    {
+    function _spendOrder(uint256 baseAmount) internal view returns (IController.SpendOrderParams memory params) {
         params = IController.SpendOrderParams({
             id: key.toId(),
             limitPrice: type(uint256).max,
@@ -128,8 +120,8 @@ contract ControllerExecuteOrderTest is Test {
 
         bytes[] memory paramsDataList = new bytes[](3);
         paramsDataList[0] = abi.encode(_makeOrder(Constants.PRICE_TICK + 2, Constants.QUOTE_AMOUNT2));
-        paramsDataList[1] = abi.encode(_takeOrder(Constants.QUOTE_AMOUNT2, type(uint256).max));
-        paramsDataList[2] = abi.encode(_spendOrder(Constants.BASE_AMOUNT1, 0));
+        paramsDataList[1] = abi.encode(_takeOrder(Constants.QUOTE_AMOUNT2));
+        paramsDataList[2] = abi.encode(_spendOrder(Constants.BASE_AMOUNT1));
 
         address[] memory tokensToSettle = new address[](1);
         tokensToSettle[0] = address(mockErc20);
