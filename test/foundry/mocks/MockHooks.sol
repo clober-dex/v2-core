@@ -55,7 +55,7 @@ contract MockHooks is IHooks {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterTake(address, IBookManager.TakeParams calldata, Tick, uint64, bytes calldata hookData)
+    function afterTake(address, IBookManager.TakeParams calldata, uint64, bytes calldata hookData)
         external
         returns (bytes4)
     {

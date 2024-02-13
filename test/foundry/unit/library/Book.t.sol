@@ -98,7 +98,7 @@ contract BookTest is Test {
 
         book.setQueueIndex(Tick.wrap(0), Book.MAX_ORDER);
 
-        book.take(150);
+        book.take(Tick.wrap(0), 150);
 
         index = book.make(Tick.wrap(0), 1000);
         assertEq(index, Book.MAX_ORDER);
@@ -120,32 +120,29 @@ contract BookTest is Test {
         book.make(Tick.wrap(0), 400);
         book.make(Tick.wrap(0), 500);
 
-        (Tick tick, uint64 amount) = book.take(150);
-        assertEq(Tick.unwrap(tick), 0);
+        uint64 amount = book.take(Tick.wrap(0), 150);
         assertEq(amount, 150);
         assertEq(book.depth(Tick.wrap(0)), 1350);
 
-        (tick, amount) = book.take(1000);
-        assertEq(Tick.unwrap(tick), 0);
+        amount = book.take(Tick.wrap(0), 1000);
         assertEq(amount, 1000);
         assertEq(book.depth(Tick.wrap(0)), 350);
 
-        (tick, amount) = book.take(1000);
-        assertEq(Tick.unwrap(tick), 0);
+        amount = book.take(Tick.wrap(0), 1000);
         assertEq(amount, 350);
         assertEq(book.depth(Tick.wrap(0)), 0);
     }
 
     function testTakeEmptyBook() public opened {
         vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
-        book.take(100);
+        book.take(Tick.wrap(0), 100);
     }
 
     function testTakeAndCleanHeap() public opened {
         book.make(Tick.wrap(0), 100);
         book.make(Tick.wrap(4), 200);
 
-        book.take(200);
+        book.take(Tick.wrap(0), 200);
 
         assertEq(Tick.unwrap(book.getRoot()), 4);
     }
@@ -159,7 +156,7 @@ contract BookTest is Test {
         assertEq(index, 1);
         assertEq(book.depth(Tick.wrap(0)), 300);
 
-        book.take(30);
+        book.take(Tick.wrap(0), 30);
         assertEq(book.depth(Tick.wrap(0)), 270);
 
         (uint64 canceledAmount, uint64 pending) = book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0), 40);
@@ -187,7 +184,7 @@ contract BookTest is Test {
         assertEq(index, 1);
         assertEq(book.depth(Tick.wrap(0)), 300);
 
-        book.take(30);
+        book.take(Tick.wrap(0), 30);
         assertEq(book.depth(Tick.wrap(0)), 270);
 
         assertEq(book.getOrder(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)).pending, 100);
@@ -216,7 +213,7 @@ contract BookTest is Test {
         book.make(Tick.wrap(0), 200);
         book.make(Tick.wrap(0), 300);
 
-        book.take(150);
+        book.take(Tick.wrap(0), 150);
 
         assertEq(book.getOrder(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)).pending, 100);
         assertEq(book.getOrder(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)).pending, 200);
@@ -242,7 +239,7 @@ contract BookTest is Test {
         book.make(Tick.wrap(0), 200); // index 1
         book.make(Tick.wrap(0), 300); // index 2
 
-        book.take(150);
+        book.take(Tick.wrap(0), 150);
 
         assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)), 100);
         assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)), 50);
@@ -254,7 +251,7 @@ contract BookTest is Test {
         book.make(Tick.wrap(0), 200); // index 1
         book.make(Tick.wrap(0), 300); // index 2
 
-        book.take(150);
+        book.take(Tick.wrap(0), 150);
 
         book.setQueueIndex(Tick.wrap(0), Book.MAX_ORDER + 4);
 
@@ -266,7 +263,7 @@ contract BookTest is Test {
 
     function testCalculateClaimableRawAmountNotOverflow() public opened {
         book.make(Tick.wrap(0), type(uint64).max - 1);
-        book.take(type(uint64).max - 1);
+        book.take(Tick.wrap(0), type(uint64).max - 1);
         book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0));
     }
 }
