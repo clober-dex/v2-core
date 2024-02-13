@@ -215,8 +215,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         onlyByLocker
         returns (uint256 canceledAmount)
     {
-        address owner = _requireOwned(OrderId.unwrap(params.id));
-        _checkAuthorized(owner, msg.sender, OrderId.unwrap(params.id));
+        _checkAuthorized(_ownerOf(OrderId.unwrap(params.id)), msg.sender, OrderId.unwrap(params.id));
 
         (BookId bookId,,) = params.id.decode();
         Book.State storage book = _books[bookId];
@@ -242,8 +241,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function claim(OrderId id, bytes calldata hookData) external onlyByLocker returns (uint256 claimedAmount) {
-        address owner = _requireOwned(OrderId.unwrap(id));
-        _checkAuthorized(owner, msg.sender, OrderId.unwrap(id));
+        _checkAuthorized(_ownerOf(OrderId.unwrap(id)), msg.sender, OrderId.unwrap(id));
 
         Tick tick;
         uint40 orderIndex;
