@@ -487,7 +487,7 @@ contract BookManagerNativeTest is Test {
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), beforeBaseReserve, "RESERVES_BASE");
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), 0, "DEPTH");
-        vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
+        vm.expectRevert(abi.encodeWithSelector(TickBitmap.EmptyError.selector));
         bookManager.getRoot(nativeQuoteKey.toId());
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), true, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
@@ -526,7 +526,7 @@ contract BookManagerNativeTest is Test {
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), beforeBaseReserve, "RESERVES_BASE");
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), 0, "DEPTH");
-        vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
+        vm.expectRevert(abi.encodeWithSelector(TickBitmap.EmptyError.selector));
         bookManager.getRoot(nativeQuoteKey.toId());
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), true, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
@@ -683,7 +683,7 @@ contract BookManagerNativeTest is Test {
             "RESERVES_BASE"
         );
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), 0, "DEPTH");
-        vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
+        vm.expectRevert(abi.encodeWithSelector(TickBitmap.EmptyError.selector));
         bookManager.getRoot(nativeQuoteKey.toId());
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), true, "IS_EMPTY");
         assertEq(orderInfo.open, 0, "ORDER_OPEN");

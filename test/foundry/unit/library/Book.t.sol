@@ -50,7 +50,7 @@ contract BookTest is Test {
 
         assertTrue(book.isEmpty());
 
-        vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
+        vm.expectRevert(abi.encodeWithSelector(TickBitmap.EmptyError.selector));
         book.getRoot();
     }
 
@@ -137,11 +137,11 @@ contract BookTest is Test {
     }
 
     function testTakeEmptyBook() public opened {
-        vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
+        vm.expectRevert(abi.encodeWithSelector(TickBitmap.EmptyError.selector));
         book.take(100);
     }
 
-    function testTakeAndCleanHeap() public opened {
+    function testTakeAndCleanTickBitmap() public opened {
         book.make(Tick.wrap(0), 100);
         book.make(Tick.wrap(4), 200);
 
@@ -208,7 +208,7 @@ contract BookTest is Test {
 
         book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(1234), 0), 0);
 
-        assertFalse(book.heapHas(Tick.wrap(1234)));
+        assertFalse(book.tickBitmapHas(Tick.wrap(1234)));
     }
 
     function testClaim() public opened {

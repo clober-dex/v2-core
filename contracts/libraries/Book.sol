@@ -9,11 +9,11 @@ import "../interfaces/IBookManager.sol";
 import "./Tick.sol";
 import "./OrderId.sol";
 import "./TotalClaimableMap.sol";
-import "./Heap.sol";
+import "./TickBitmap.sol";
 
 library Book {
     using Book for State;
-    using Heap for mapping(uint256 => uint256);
+    using TickBitmap for mapping(uint256 => uint256);
     using SegmentedSegmentTree for SegmentedSegmentTree.Core;
     using TotalClaimableMap for mapping(uint24 => uint256);
     using TickLibrary for *;
@@ -44,7 +44,7 @@ library Book {
     struct State {
         IBookManager.BookKey key;
         mapping(Tick tick => Queue) queues;
-        mapping(uint256 => uint256) heap;
+        mapping(uint256 => uint256) tickBitmap;
         // @dev Four values of totalClaimable are stored in one uint256
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
     }
@@ -67,11 +67,11 @@ library Book {
     }
 
     function root(State storage self) internal view returns (Tick) {
-        return self.heap.root().toTick();
+        return self.tickBitmap.root().toTick();
     }
 
     function isEmpty(State storage self) internal view returns (bool) {
-        return self.heap.isEmpty();
+        return self.tickBitmap.isEmpty();
     }
 
     function _getOrder(State storage self, Tick tick, uint40 index) private view returns (Order storage) {
@@ -88,7 +88,7 @@ library Book {
     {
         if (amount == 0) revert ZeroAmount();
         uint24 tickIndex = tick.toUint24();
-        if (!self.heap.has(tickIndex)) self.heap.push(tickIndex);
+        if (!self.tickBitmap.has(tickIndex)) self.tickBitmap.push(tickIndex);
 
         Queue storage queue = self.queues[tick];
         // @dev Assume that orders.length cannot reach to type(uint40).max + 1.
@@ -124,13 +124,13 @@ library Book {
      * @return takenAmount The actual amount to take
      */
     function take(State storage self, uint64 maxTakeAmount) internal returns (Tick tick, uint64 takenAmount) {
-        tick = self.heap.root().toTick();
+        tick = self.tickBitmap.root().toTick();
         uint64 currentDepth = depth(self, tick);
         if (currentDepth > maxTakeAmount) {
             takenAmount = maxTakeAmount;
         } else {
             takenAmount = currentDepth;
-            self.heap.remove(tick.toUint24());
+            self.tickBitmap.remove(tick.toUint24());
         }
 
         self.totalClaimableOf.add(tick, takenAmount);
@@ -157,8 +157,8 @@ library Book {
 
         if (depth(self, tick) == 0) {
             // remove() won't revert so we can cancel with to=0 even if the depth() is already zero
-            // works even if heap is empty
-            self.heap.remove(tick.toUint24());
+            // works even if bitmap is empty
+            self.tickBitmap.remove(tick.toUint24());
         }
     }
 

@@ -8,7 +8,7 @@ contract BookWrapper {
     using OrderIdLibrary for OrderId;
     using Book for Book.State;
     using TickLibrary for *;
-    using Heap for mapping(uint256 => uint256);
+    using TickBitmap for mapping(uint256 => uint256);
 
     BookId public immutable BOOK_ID;
 
@@ -80,7 +80,7 @@ contract BookWrapper {
         }
     }
 
-    function heapHas(Tick tick) external view returns (bool) {
-        return _book.heap.has(tick.toUint24());
+    function tickBitmapHas(Tick tick) external view returns (bool) {
+        return _book.tickBitmap.has(tick.toUint24());
     }
 }
