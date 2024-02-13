@@ -66,8 +66,8 @@ library Book {
         return self.queues[tick].tree.total() - self.totalClaimableOf.get(tick);
     }
 
-    function root(State storage self) internal view returns (Tick) {
-        return self.tickBitmap.root().toTick();
+    function lowest(State storage self) internal view returns (Tick) {
+        return self.tickBitmap.lowest().toTick();
     }
 
     function isEmpty(State storage self) internal view returns (bool) {
@@ -124,7 +124,7 @@ library Book {
      * @return takenAmount The actual amount to take
      */
     function take(State storage self, uint64 maxTakeAmount) internal returns (Tick tick, uint64 takenAmount) {
-        tick = self.tickBitmap.root().toTick();
+        tick = self.tickBitmap.lowest().toTick();
         uint64 currentDepth = depth(self, tick);
         if (currentDepth > maxTakeAmount) {
             takenAmount = maxTakeAmount;

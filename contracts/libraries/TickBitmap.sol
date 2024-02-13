@@ -31,7 +31,7 @@ library TickBitmap {
         }
     }
 
-    function root(mapping(uint256 => uint256) storage self) internal view returns (uint24) {
+    function lowest(mapping(uint256 => uint256) storage self) internal view returns (uint24) {
         if (isEmpty(self)) revert EmptyError();
 
         uint256 b0 = self[B0_BITMAP_KEY].leastSignificantBit();

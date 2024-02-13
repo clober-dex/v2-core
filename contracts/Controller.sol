@@ -42,7 +42,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
     }
 
     function getLowestPrice(BookId id) external view returns (uint256) {
-        return _bookManager.getRoot(id).toPrice();
+        return _bookManager.getLowest(id).toPrice();
     }
 
     function getOrder(OrderId orderId)
@@ -277,7 +277,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
 
         uint256 quoteAmount;
         while (leftQuoteAmount > quoteAmount && !_bookManager.isEmpty(params.id)) {
-            if (params.limitPrice < _bookManager.getRoot(params.id).toPrice()) break;
+            if (params.limitPrice < _bookManager.getLowest(params.id).toPrice()) break;
             unchecked {
                 leftQuoteAmount -= quoteAmount;
             }
@@ -295,7 +295,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         uint256 leftBaseAmount = params.baseAmount;
 
         while (leftBaseAmount > 0 && !_bookManager.isEmpty(params.id)) {
-            Tick tick = _bookManager.getRoot(params.id);
+            Tick tick = _bookManager.getLowest(params.id);
             if (params.limitPrice < tick.toPrice()) break;
             (, uint256 baseAmount) = _bookManager.take(
                 IBookManager.TakeParams({

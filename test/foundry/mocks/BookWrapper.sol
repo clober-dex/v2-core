@@ -65,8 +65,8 @@ contract BookWrapper {
         return _book.getOrder(tick, index);
     }
 
-    function getRoot() external view returns (Tick) {
-        return _book.root();
+    function getLowest() external view returns (Tick) {
+        return _book.lowest();
     }
 
     function isEmpty() external view returns (bool) {
