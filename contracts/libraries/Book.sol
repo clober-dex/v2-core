@@ -88,7 +88,7 @@ library Book {
     {
         if (amount == 0) revert ZeroAmount();
         uint24 tickIndex = tick.toUint24();
-        if (!self.tickBitmap.has(tickIndex)) self.tickBitmap.push(tickIndex);
+        if (!self.tickBitmap.has(tickIndex)) self.tickBitmap.set(tickIndex);
 
         Queue storage queue = self.queues[tick];
         // @dev Assume that orders.length cannot reach to type(uint40).max + 1.
@@ -130,7 +130,7 @@ library Book {
             takenAmount = maxTakeAmount;
         } else {
             takenAmount = currentDepth;
-            self.tickBitmap.remove(tick.toUint24());
+            self.tickBitmap.clear(tick.toUint24());
         }
 
         self.totalClaimableOf.add(tick, takenAmount);
@@ -158,7 +158,7 @@ library Book {
         if (depth(self, tick) == 0) {
             // remove() won't revert so we can cancel with to=0 even if the depth() is already zero
             // works even if bitmap is empty
-            self.tickBitmap.remove(tick.toUint24());
+            self.tickBitmap.clear(tick.toUint24());
         }
     }
 

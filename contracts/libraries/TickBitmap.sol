@@ -40,7 +40,7 @@ library TickBitmap {
         return uint24((b0b1 << 8) | b2);
     }
 
-    function push(mapping(uint256 => uint256) storage self, uint24 value) internal {
+    function set(mapping(uint256 => uint256) storage self, uint24 value) internal {
         (uint256 b0b1, uint256 b2) = _split(value);
         uint256 mask = 1 << b2;
         uint256 b2Bitmap = self[b0b1];
@@ -57,7 +57,7 @@ library TickBitmap {
         }
     }
 
-    function remove(mapping(uint256 => uint256) storage self, uint24 value) internal {
+    function clear(mapping(uint256 => uint256) storage self, uint24 value) internal {
         (uint256 b0b1, uint256 b2) = _split(value);
         uint256 mask = 1 << b2;
         uint256 b2Bitmap = self[b0b1];
