@@ -185,29 +185,27 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (!params.key.hooks.beforeTake(params, hookData)) return (0, 0);
 
-        (Tick tick, uint64 takenAmount) = book.take(params.maxAmount);
+        uint64 takenAmount = book.take(params.tick, params.maxAmount);
         unchecked {
             quoteAmount = uint256(takenAmount) * params.key.unit;
         }
-        baseAmount = tick.quoteToBase(quoteAmount, true);
+        baseAmount = params.tick.quoteToBase(quoteAmount, true);
 
-        {
-            int256 quoteDelta = int256(quoteAmount);
-            int256 baseDelta = baseAmount.toInt256();
-            if (params.key.takerPolicy.usesQuote()) {
-                quoteDelta -= params.key.takerPolicy.calculateFee(quoteAmount, false);
-                quoteAmount = uint256(quoteDelta);
-            } else {
-                baseDelta += params.key.takerPolicy.calculateFee(baseAmount, false);
-                baseAmount = uint256(baseDelta);
-            }
-            _accountDelta(params.key.quote, -quoteDelta);
-            _accountDelta(params.key.base, baseDelta);
+        int256 quoteDelta = int256(quoteAmount);
+        int256 baseDelta = baseAmount.toInt256();
+        if (params.key.takerPolicy.usesQuote()) {
+            quoteDelta -= params.key.takerPolicy.calculateFee(quoteAmount, false);
+            quoteAmount = uint256(quoteDelta);
+        } else {
+            baseDelta += params.key.takerPolicy.calculateFee(baseAmount, false);
+            baseAmount = uint256(baseDelta);
         }
+        _accountDelta(params.key.quote, -quoteDelta);
+        _accountDelta(params.key.base, baseDelta);
 
-        params.key.hooks.afterTake(params, tick, takenAmount, hookData);
+        params.key.hooks.afterTake(params, takenAmount, hookData);
 
-        emit Take(bookId, msg.sender, tick, takenAmount);
+        emit Take(bookId, msg.sender, params.tick, takenAmount);
     }
 
     function cancel(CancelParams calldata params, bytes calldata hookData)
