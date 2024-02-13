@@ -31,16 +31,12 @@ library TickBitmap {
         }
     }
 
-    function _root(mapping(uint256 => uint256) storage self) private view returns (uint256 b0b1, uint256 b2) {
-        uint256 b0 = self[B0_BITMAP_KEY].leastSignificantBit();
-        b0b1 = (b0 << 8) | (self[~b0].leastSignificantBit());
-        b2 = self[b0b1].leastSignificantBit();
-    }
-
     function root(mapping(uint256 => uint256) storage self) internal view returns (uint24) {
         if (isEmpty(self)) revert EmptyError();
 
-        (uint256 b0b1, uint256 b2) = _root(self);
+        uint256 b0 = self[B0_BITMAP_KEY].leastSignificantBit();
+        uint256 b0b1 = (b0 << 8) | (self[~b0].leastSignificantBit());
+        uint256 b2 = self[b0b1].leastSignificantBit();
         return uint24((b0b1 << 8) | b2);
     }
 
@@ -61,14 +57,8 @@ library TickBitmap {
         }
     }
 
-    function pop(mapping(uint256 => uint256) storage self) internal {
-        if (isEmpty(self)) revert EmptyError();
-
-        (uint256 b0b1, uint256 b2) = _root(self);
-        _remove(self, b0b1, b2);
-    }
-
-    function _remove(mapping(uint256 => uint256) storage self, uint256 b0b1, uint256 b2) private {
+    function remove(mapping(uint256 => uint256) storage self, uint24 value) internal {
+        (uint256 b0b1, uint256 b2) = _split(value);
         uint256 mask = 1 << b2;
         uint256 b2Bitmap = self[b0b1];
 
@@ -84,11 +74,6 @@ library TickBitmap {
                 self[B0_BITMAP_KEY] = self[B0_BITMAP_KEY] & (~mask);
             }
         }
-    }
-
-    function remove(mapping(uint256 => uint256) storage self, uint24 value) internal {
-        (uint256 b0b1, uint256 b2) = _split(value);
-        _remove(self, b0b1, b2);
     }
 
     function minGreaterThan(mapping(uint256 => uint256) storage self, uint24 value) internal view returns (uint24) {
