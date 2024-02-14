@@ -120,11 +120,9 @@ library Book {
      * @notice Take orders from the book
      * @param self The book state
      * @param maxTakeAmount The maximum amount to take
-     * @return tick The tick of the order
      * @return takenAmount The actual amount to take
      */
-    function take(State storage self, uint64 maxTakeAmount) internal returns (Tick tick, uint64 takenAmount) {
-        tick = self.tickBitmap.lowest().toTick();
+    function take(State storage self, Tick tick, uint64 maxTakeAmount) internal returns (uint64 takenAmount) {
         uint64 currentDepth = depth(self, tick);
         if (currentDepth > maxTakeAmount) {
             takenAmount = maxTakeAmount;

@@ -101,8 +101,9 @@ contract BookManagerFee is Test {
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
 
-        (uint256 quoteAmount, uint256 baseAmount) =
-            takeRouter.take(IBookManager.TakeParams({key: key, maxAmount: 1000}), "");
+        (uint256 quoteAmount, uint256 baseAmount) = takeRouter.take(
+            IBookManager.TakeParams({key: key, tick: bookManager.getRoot(key.toId()), maxAmount: 1000}), ""
+        );
 
         assertEq(quote.balanceOf(address(this)), beforeQuote + 997, "QUOTE_BALANCE");
         assertEq(base.balanceOf(address(this)), beforeBase - 1000, "BASE_BALANCE");
@@ -118,8 +119,9 @@ contract BookManagerFee is Test {
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
 
-        (uint256 quoteAmount, uint256 baseAmount) =
-            takeRouter.take(IBookManager.TakeParams({key: key, maxAmount: 1000}), "");
+        (uint256 quoteAmount, uint256 baseAmount) = takeRouter.take(
+            IBookManager.TakeParams({key: key, tick: bookManager.getRoot(key.toId()), maxAmount: 1000}), ""
+        );
 
         assertEq(quote.balanceOf(address(this)), beforeQuote + 1003, "QUOTE_BALANCE");
         assertEq(base.balanceOf(address(this)), beforeBase - 1000, "BASE_BALANCE");
@@ -135,8 +137,9 @@ contract BookManagerFee is Test {
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
 
-        (uint256 quoteAmount, uint256 baseAmount) =
-            takeRouter.take(IBookManager.TakeParams({key: key, maxAmount: 1000}), "");
+        (uint256 quoteAmount, uint256 baseAmount) = takeRouter.take(
+            IBookManager.TakeParams({key: key, tick: bookManager.getRoot(key.toId()), maxAmount: 1000}), ""
+        );
 
         assertEq(quote.balanceOf(address(this)), beforeQuote + 1000, "QUOTE_BALANCE");
         assertEq(base.balanceOf(address(this)), beforeBase - 1003, "BASE_BALANCE");
@@ -152,8 +155,9 @@ contract BookManagerFee is Test {
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
 
-        (uint256 quoteAmount, uint256 baseAmount) =
-            takeRouter.take(IBookManager.TakeParams({key: key, maxAmount: 1000}), "");
+        (uint256 quoteAmount, uint256 baseAmount) = takeRouter.take(
+            IBookManager.TakeParams({key: key, tick: bookManager.getRoot(key.toId()), maxAmount: 1000}), ""
+        );
 
         assertEq(quote.balanceOf(address(this)), beforeQuote + 1000, "QUOTE_BALANCE");
         assertEq(base.balanceOf(address(this)), beforeBase - 997, "BASE_BALANCE");
@@ -167,7 +171,7 @@ contract BookManagerFee is Test {
         (OrderId id,) = makeRouter.make(
             IBookManager.MakeParams({key: key, tick: Tick.wrap(0), amount: 2000, provider: address(0)}), ""
         );
-        takeRouter.take(IBookManager.TakeParams({key: key, maxAmount: 1000}), "");
+        takeRouter.take(IBookManager.TakeParams({key: key, tick: bookManager.getRoot(key.toId()), maxAmount: 1000}), "");
 
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
@@ -185,7 +189,7 @@ contract BookManagerFee is Test {
         (OrderId id,) = makeRouter.make(
             IBookManager.MakeParams({key: key, tick: Tick.wrap(0), amount: 2000, provider: address(0)}), ""
         );
-        takeRouter.take(IBookManager.TakeParams({key: key, maxAmount: 1000}), "");
+        takeRouter.take(IBookManager.TakeParams({key: key, tick: bookManager.getRoot(key.toId()), maxAmount: 1000}), "");
 
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));

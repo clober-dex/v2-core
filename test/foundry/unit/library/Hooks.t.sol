@@ -120,7 +120,9 @@ contract HooksTest is Test {
     function testTakeSucceedsWithHook() public {
         _make();
         vm.deal(address(this), 1 ether);
-        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, 1 ether), new bytes(222));
+        takeRouter.take{value: 1 ether}(
+            IBookManager.TakeParams(key, manager.getRoot(key.toId()), 1 ether), new bytes(222)
+        );
 
         assertEq(mockHooks.beforeTakeData(), new bytes(222));
         assertEq(mockHooks.afterTakeData(), new bytes(222));
@@ -130,23 +132,25 @@ contract HooksTest is Test {
         _make();
         vm.deal(address(this), 1 ether);
 
+        Tick tick = manager.getRoot(key.toId());
         mockHooks.setReturnValue(mockHooks.beforeTake.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, 1 ether), "");
+        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, tick, 1 ether), "");
     }
 
     function testAfterTakeInvalidReturn() public {
         _make();
         vm.deal(address(this), 1 ether);
 
+        Tick tick = manager.getRoot(key.toId());
         mockHooks.setReturnValue(mockHooks.afterTake.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, 1 ether), "");
+        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, tick, 1 ether), "");
     }
 
     function _take() internal {
         vm.deal(address(this), 1 ether);
-        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, 1 ether), "");
+        takeRouter.take{value: 1 ether}(IBookManager.TakeParams(key, manager.getRoot(key.toId()), 1 ether), "");
     }
 
     function testCancelSucceedsWithHook() public {

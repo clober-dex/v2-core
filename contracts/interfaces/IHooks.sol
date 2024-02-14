@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 
 import "./IBookManager.sol";
 import "../libraries/OrderId.sol";
+import "../libraries/Tick.sol";
 
 interface IHooks {
     function beforeOpen(address sender, IBookManager.BookKey calldata key, bytes calldata hookData)
@@ -32,7 +33,6 @@ interface IHooks {
     function afterTake(
         address sender,
         IBookManager.TakeParams calldata params,
-        Tick tick,
         uint64 takenAmount,
         bytes calldata hookData
     ) external returns (bytes4);

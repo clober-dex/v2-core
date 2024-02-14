@@ -307,8 +307,14 @@ contract BookManagerNativeTest is Test {
 
         vm.expectEmit(address(bookManager));
         emit IBookManager.Take(nativeQuoteKey.toId(), address(takeRouter), tick, takeAmount);
-        (uint256 actualQuoteAmount, uint256 actualBaseAmount) =
-            takeRouter.take(IBookManager.TakeParams({key: nativeQuoteKey, maxAmount: takeAmount}), "");
+        (uint256 actualQuoteAmount, uint256 actualBaseAmount) = takeRouter.take(
+            IBookManager.TakeParams({
+                key: nativeQuoteKey,
+                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                maxAmount: takeAmount
+            }),
+            ""
+        );
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -347,8 +353,9 @@ contract BookManagerNativeTest is Test {
 
         vm.expectEmit(address(bookManager));
         emit IBookManager.Take(nativeBaseKey.toId(), address(takeRouter), tick, takeAmount);
-        (uint256 actualQuoteAmount, uint256 actualBaseAmount) =
-            takeRouter.take{value: 10 ether}(IBookManager.TakeParams({key: nativeBaseKey, maxAmount: takeAmount}), "");
+        (uint256 actualQuoteAmount, uint256 actualBaseAmount) = takeRouter.take{value: 10 ether}(
+            IBookManager.TakeParams({key: nativeBaseKey, tick: tick, maxAmount: takeAmount}), ""
+        );
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -374,7 +381,7 @@ contract BookManagerNativeTest is Test {
 
     function testTakeWithInvalidBookKey() public {
         vm.expectRevert(abi.encodeWithSelector(Book.BookNotOpened.selector));
-        takeRouter.take(IBookManager.TakeParams({key: unopenedKey, maxAmount: 1000}), "");
+        takeRouter.take(IBookManager.TakeParams({key: unopenedKey, tick: Tick.wrap(0), maxAmount: 1000}), "");
     }
 
     function testCancelERC20Quote() public {
@@ -462,7 +469,14 @@ contract BookManagerNativeTest is Test {
         );
 
         uint64 takeAmount = 1000;
-        takeRouter.take{value: 10 ether}(IBookManager.TakeParams({key: nativeQuoteKey, maxAmount: takeAmount}), "");
+        takeRouter.take{value: 10 ether}(
+            IBookManager.TakeParams({
+                key: nativeQuoteKey,
+                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                maxAmount: takeAmount
+            }),
+            ""
+        );
 
         uint256 beforeQuoteAmount = address(this).balance;
         uint256 beforeBaseAmount = mockErc20.balanceOf(address(this));
@@ -567,7 +581,14 @@ contract BookManagerNativeTest is Test {
         );
 
         uint64 takeAmount = 1000;
-        takeRouter.take(IBookManager.TakeParams({key: nativeQuoteKey, maxAmount: takeAmount}), "");
+        takeRouter.take(
+            IBookManager.TakeParams({
+                key: nativeQuoteKey,
+                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                maxAmount: takeAmount
+            }),
+            ""
+        );
 
         uint256 beforeQuoteAmount = address(this).balance;
         uint256 beforeBaseAmount = mockErc20.balanceOf(address(this));
@@ -612,7 +633,9 @@ contract BookManagerNativeTest is Test {
         );
 
         uint64 takeAmount = 1000;
-        takeRouter.take{value: 10 ether}(IBookManager.TakeParams({key: nativeBaseKey, maxAmount: takeAmount}), "");
+        takeRouter.take{value: 10 ether}(
+            IBookManager.TakeParams({key: nativeBaseKey, tick: tick, maxAmount: takeAmount}), ""
+        );
 
         uint256 beforeQuoteAmount = mockErc20.balanceOf(address(this));
         uint256 beforeBaseAmount = address(this).balance;
@@ -656,7 +679,14 @@ contract BookManagerNativeTest is Test {
             IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
         );
 
-        takeRouter.take(IBookManager.TakeParams({key: nativeQuoteKey, maxAmount: makeAmount}), "");
+        takeRouter.take(
+            IBookManager.TakeParams({
+                key: nativeQuoteKey,
+                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                maxAmount: makeAmount
+            }),
+            ""
+        );
 
         uint256 beforeQuoteAmount = address(this).balance;
         uint256 beforeBaseAmount = mockErc20.balanceOf(address(this));
