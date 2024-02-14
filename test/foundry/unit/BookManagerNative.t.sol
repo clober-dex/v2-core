@@ -356,7 +356,7 @@ contract BookManagerNativeTest is Test {
         (uint256 actualQuoteAmount, uint256 actualBaseAmount) = takeRouter.take{value: 10 ether}(
             IBookManager.TakeParams({
                 key: nativeBaseKey,
-                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                tick: tick,
                 maxAmount: takeAmount
             }),
             ""
@@ -387,7 +387,7 @@ contract BookManagerNativeTest is Test {
     function testTakeWithInvalidBookKey() public {
         vm.expectRevert(abi.encodeWithSelector(Book.BookNotOpened.selector));
         takeRouter.take(
-            IBookManager.TakeParams({key: unopenedKey, tick: bookManager.getRoot(unopenedKey.toId()), maxAmount: 1000}),
+            IBookManager.TakeParams({key: unopenedKey, tick: Tick.wrap(0), maxAmount: 1000}),
             ""
         );
     }
@@ -644,7 +644,7 @@ contract BookManagerNativeTest is Test {
         takeRouter.take{value: 10 ether}(
             IBookManager.TakeParams({
                 key: nativeBaseKey,
-                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                tick: tick,
                 maxAmount: takeAmount
             }),
             ""
