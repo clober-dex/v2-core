@@ -214,7 +214,7 @@ contract BookManagerNativeTest is Test {
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
         assertEq(bookManager.reservesOf(nativeBaseKey.quote), actualQuoteAmount, "RESERVES");
         assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeAmount, "DEPTH");
-        assertEq(Tick.unwrap(bookManager.getRoot(nativeBaseKey.toId())), Tick.unwrap(tick), "ROOT");
+        assertEq(Tick.unwrap(bookManager.getLowest(nativeBaseKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeBaseKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
         assertEq(orderInfo.open, makeAmount, "ORDER_OPEN");
@@ -241,7 +241,7 @@ contract BookManagerNativeTest is Test {
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
         assertEq(bookManager.reservesOf(nativeQuoteKey.quote), actualQuoteAmount, "RESERVES");
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeAmount, "DEPTH");
-        assertEq(Tick.unwrap(bookManager.getRoot(nativeQuoteKey.toId())), Tick.unwrap(tick), "ROOT");
+        assertEq(Tick.unwrap(bookManager.getLowest(nativeQuoteKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
         assertEq(orderInfo.open, makeAmount, "ORDER_OPEN");
@@ -310,7 +310,7 @@ contract BookManagerNativeTest is Test {
         (uint256 actualQuoteAmount, uint256 actualBaseAmount) = takeRouter.take(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
-                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                tick: bookManager.getLowest(nativeQuoteKey.toId()),
                 maxAmount: takeAmount
             }),
             ""
@@ -331,7 +331,7 @@ contract BookManagerNativeTest is Test {
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), actualBaseAmount, "RESERVES_BASE");
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeAmount - takeAmount, "DEPTH");
-        assertEq(Tick.unwrap(bookManager.getRoot(nativeQuoteKey.toId())), Tick.unwrap(tick), "ROOT");
+        assertEq(Tick.unwrap(bookManager.getLowest(nativeQuoteKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
         assertEq(orderInfo.open, makeAmount - takeAmount, "ORDER_OPEN");
@@ -372,7 +372,7 @@ contract BookManagerNativeTest is Test {
         );
         assertEq(bookManager.reservesOf(nativeBaseKey.base), actualBaseAmount, "RESERVES_BASE");
         assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeAmount - takeAmount, "DEPTH");
-        assertEq(Tick.unwrap(bookManager.getRoot(nativeBaseKey.toId())), Tick.unwrap(tick), "ROOT");
+        assertEq(Tick.unwrap(bookManager.getLowest(nativeBaseKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeBaseKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
         assertEq(orderInfo.open, makeAmount - takeAmount, "ORDER_OPEN");
@@ -414,7 +414,7 @@ contract BookManagerNativeTest is Test {
         );
         assertEq(bookManager.reservesOf(nativeBaseKey.base), 0, "RESERVES_BASE");
         assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeAmount - cancelAmount, "DEPTH");
-        assertEq(Tick.unwrap(bookManager.getRoot(nativeBaseKey.toId())), Tick.unwrap(tick), "ROOT");
+        assertEq(Tick.unwrap(bookManager.getLowest(nativeBaseKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeBaseKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
         assertEq(orderInfo.open, makeAmount - cancelAmount, "ORDER_OPEN");
@@ -451,7 +451,7 @@ contract BookManagerNativeTest is Test {
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), 0, "RESERVES_BASE");
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeAmount - cancelAmount, "DEPTH");
-        assertEq(Tick.unwrap(bookManager.getRoot(nativeQuoteKey.toId())), Tick.unwrap(tick), "ROOT");
+        assertEq(Tick.unwrap(bookManager.getLowest(nativeQuoteKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
         assertEq(orderInfo.open, makeAmount - cancelAmount, "ORDER_OPEN");
@@ -472,7 +472,7 @@ contract BookManagerNativeTest is Test {
         takeRouter.take{value: 10 ether}(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
-                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                tick: bookManager.getLowest(nativeQuoteKey.toId()),
                 maxAmount: takeAmount
             }),
             ""
@@ -501,8 +501,8 @@ contract BookManagerNativeTest is Test {
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), beforeBaseReserve, "RESERVES_BASE");
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), 0, "DEPTH");
-        vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
-        bookManager.getRoot(nativeQuoteKey.toId());
+        vm.expectRevert(abi.encodeWithSelector(TickBitmap.EmptyError.selector));
+        bookManager.getLowest(nativeQuoteKey.toId());
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), true, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
         assertEq(orderInfo.open, 0, "ORDER_OPEN");
@@ -540,8 +540,8 @@ contract BookManagerNativeTest is Test {
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), beforeBaseReserve, "RESERVES_BASE");
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), 0, "DEPTH");
-        vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
-        bookManager.getRoot(nativeQuoteKey.toId());
+        vm.expectRevert(abi.encodeWithSelector(TickBitmap.EmptyError.selector));
+        bookManager.getLowest(nativeQuoteKey.toId());
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), true, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
         assertEq(orderInfo.open, 0, "ORDER_OPEN");
@@ -584,7 +584,7 @@ contract BookManagerNativeTest is Test {
         takeRouter.take(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
-                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                tick: bookManager.getLowest(nativeQuoteKey.toId()),
                 maxAmount: takeAmount
             }),
             ""
@@ -616,7 +616,7 @@ contract BookManagerNativeTest is Test {
             "RESERVES_BASE"
         );
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeAmount - takeAmount, "DEPTH");
-        assertEq(Tick.unwrap(bookManager.getRoot(nativeQuoteKey.toId())), Tick.unwrap(tick), "ROOT");
+        assertEq(Tick.unwrap(bookManager.getLowest(nativeQuoteKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.open, beforeOrderInfo.open, "ORDER_OPEN");
         assertEq(orderInfo.claimable, beforeOrderInfo.claimable - takeAmount, "ORDER_CLAIMABLE");
@@ -663,7 +663,7 @@ contract BookManagerNativeTest is Test {
             "RESERVES_BASE"
         );
         assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeAmount - takeAmount, "DEPTH");
-        assertEq(Tick.unwrap(bookManager.getRoot(nativeBaseKey.toId())), Tick.unwrap(tick), "ROOT");
+        assertEq(Tick.unwrap(bookManager.getLowest(nativeBaseKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeBaseKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.open, beforeOrderInfo.open, "ORDER_OPEN");
         assertEq(orderInfo.claimable, beforeOrderInfo.claimable - takeAmount, "ORDER_CLAIMABLE");
@@ -682,7 +682,7 @@ contract BookManagerNativeTest is Test {
         takeRouter.take(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
-                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                tick: bookManager.getLowest(nativeQuoteKey.toId()),
                 maxAmount: makeAmount
             }),
             ""
@@ -713,8 +713,8 @@ contract BookManagerNativeTest is Test {
             "RESERVES_BASE"
         );
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), 0, "DEPTH");
-        vm.expectRevert(abi.encodeWithSelector(Heap.EmptyError.selector));
-        bookManager.getRoot(nativeQuoteKey.toId());
+        vm.expectRevert(abi.encodeWithSelector(TickBitmap.EmptyError.selector));
+        bookManager.getLowest(nativeQuoteKey.toId());
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), true, "IS_EMPTY");
         assertEq(orderInfo.open, 0, "ORDER_OPEN");
         assertEq(orderInfo.claimable, 0, "ORDER_CLAIMABLE");
