@@ -178,17 +178,11 @@ library Hooks {
     }
 
     /// @notice calls afterTake hook if permissioned and validates return value
-    function afterTake(
-        IHooks self,
-        IBookManager.TakeParams memory params,
-        Tick tick,
-        uint64 takenAmount,
-        bytes calldata hookData
-    ) internal {
+    function afterTake(IHooks self, IBookManager.TakeParams memory params, uint64 takenAmount, bytes calldata hookData)
+        internal
+    {
         if (self.hasPermission(AFTER_TAKE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.afterTake.selector, msg.sender, params, tick, takenAmount, hookData)
-            );
+            self.callHook(abi.encodeWithSelector(IHooks.afterTake.selector, msg.sender, params, takenAmount, hookData));
         }
     }
 

@@ -57,7 +57,7 @@ abstract contract BaseHook is IHooks {
         revert HookNotImplemented();
     }
 
-    function afterTake(address, IBookManager.TakeParams calldata, Tick, uint64, bytes calldata)
+    function afterTake(address, IBookManager.TakeParams calldata, uint64, bytes calldata)
         external
         virtual
         returns (bytes4)

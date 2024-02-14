@@ -38,8 +38,8 @@ contract BookWrapper {
         orderIndex = _book.make(tick, amount, address(0));
     }
 
-    function take(uint64 maxAmount) external returns (Tick, uint64) {
-        return _book.take(maxAmount);
+    function take(Tick tick, uint64 maxAmount) external returns (uint64) {
+        return _book.take(tick, maxAmount);
     }
 
     function cancel(OrderId orderId, uint64 to) external returns (uint64, uint64) {
