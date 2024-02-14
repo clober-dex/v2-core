@@ -310,7 +310,7 @@ contract BookManagerNativeTest is Test {
         (uint256 actualQuoteAmount, uint256 actualBaseAmount) = takeRouter.take(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
-                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                tick: bookManager.getLowest(nativeQuoteKey.toId()),
                 maxAmount: takeAmount
             }),
             ""
@@ -472,7 +472,7 @@ contract BookManagerNativeTest is Test {
         takeRouter.take{value: 10 ether}(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
-                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                tick: bookManager.getLowest(nativeQuoteKey.toId()),
                 maxAmount: takeAmount
             }),
             ""
@@ -584,7 +584,7 @@ contract BookManagerNativeTest is Test {
         takeRouter.take(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
-                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                tick: bookManager.getLowest(nativeQuoteKey.toId()),
                 maxAmount: takeAmount
             }),
             ""
@@ -682,7 +682,7 @@ contract BookManagerNativeTest is Test {
         takeRouter.take(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
-                tick: bookManager.getRoot(nativeQuoteKey.toId()),
+                tick: bookManager.getLowest(nativeQuoteKey.toId()),
                 maxAmount: makeAmount
             }),
             ""
