@@ -179,6 +179,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         onlyByLocker
         returns (uint256 quoteAmount, uint256 baseAmount)
     {
+        params.tick.validateTick();
         BookId bookId = params.key.toId();
         Book.State storage book = _books[bookId];
         book.checkOpened();
