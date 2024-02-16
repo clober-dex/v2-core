@@ -25,7 +25,7 @@ library TickBitmap {
 
     function _split(uint24 value) private pure returns (uint256 b0b1, uint256 mask) {
         assembly {
-            mask := shl(and(value, 0xFF),1)
+            mask := shl(and(value, 0xFF), 1)
             b0b1 := shr(8, value)
         }
     }
