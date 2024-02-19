@@ -385,7 +385,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
             PermitSignature memory signature = permitParamsList[i].signature;
             if (signature.deadline > 0) {
                 try IERC721Permit(address(_bookManager)).permit(
-                    msg.sender, permitParamsList[i].tokenId, signature.deadline, signature.v, signature.r, signature.s
+                    address(this), permitParamsList[i].tokenId, signature.deadline, signature.v, signature.r, signature.s
                 ) {} catch {}
             }
         }
