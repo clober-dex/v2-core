@@ -154,7 +154,7 @@ library Book {
         queue.orders[orderIndex].pending = afterPending;
 
         if (depth(self, tick) == 0) {
-            // remove() won't revert so we can cancel with to=0 even if the depth() is already zero
+            // clear() won't revert so we can cancel with to=0 even if the depth() is already zero
             // works even if bitmap is empty
             self.tickBitmap.clear(tick.toUint24());
         }
