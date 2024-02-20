@@ -95,9 +95,15 @@ contract Controller is IController, ILocker, ReentrancyGuard {
             } else if (action == Action.SPEND) {
                 _spend(abi.decode(orderParamsList[i], (SpendOrderParams)));
             } else if (action == Action.CLAIM) {
-                _claim(abi.decode(orderParamsList[i], (ClaimOrderParams)));
+                ClaimOrderParams memory claimOrderParams = abi.decode(orderParamsList[i], (ClaimOrderParams));
+                uint256 orderId = OrderId.unwrap(claimOrderParams.id);
+                _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), user, orderId);
+                _claim(claimOrderParams);
             } else if (action == Action.CANCEL) {
-                _cancel(abi.decode(orderParamsList[i], (CancelOrderParams)));
+                CancelOrderParams memory cancelOrderParams = abi.decode(orderParamsList[i], (CancelOrderParams));
+                uint256 orderId = OrderId.unwrap(cancelOrderParams.id);
+                _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), user, orderId);
+                _cancel(cancelOrderParams);
             } else {
                 revert InvalidAction();
             }
@@ -124,9 +130,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         _permitERC721(erc721PermitParamsList);
 
         for (uint256 i = 0; i < erc721PermitParamsList.length; ++i) {
-            uint256 orderId = erc721PermitParamsList[i].tokenId;
-            _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), msg.sender, orderId);
-            _bookManager.transferFrom(msg.sender, address(this), orderId);
+            _bookManager.transferFrom(msg.sender, address(this), erc721PermitParamsList[i].tokenId);
         }
 
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
@@ -223,8 +227,6 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         bytes[] memory paramsDataList = new bytes[](length);
         for (uint256 i = 0; i < length; ++i) {
             actionList[i] = Action.CLAIM;
-            uint256 orderId = OrderId.unwrap(orderParamsList[i].id);
-            _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), msg.sender, orderId);
             paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
@@ -243,8 +245,6 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         bytes[] memory paramsDataList = new bytes[](length);
         for (uint256 i = 0; i < length; ++i) {
             actionList[i] = Action.CANCEL;
-            uint256 orderId = OrderId.unwrap(orderParamsList[i].id);
-            _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), msg.sender, orderId);
             paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
