@@ -129,20 +129,8 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         _permitERC20(erc20PermitParamsList);
         _permitERC721(erc721PermitParamsList);
 
-        for (uint256 i = 0; i < erc721PermitParamsList.length; ++i) {
-            _bookManager.transferFrom(msg.sender, address(this), erc721PermitParamsList[i].tokenId);
-        }
-
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
         bytes memory result = _bookManager.lock(address(this), lockData);
-
-        for (uint256 i = 0; i < erc721PermitParamsList.length; ++i) {
-            uint256 orderId = erc721PermitParamsList[i].tokenId;
-            IBookManager.OrderInfo memory orderInfo = _bookManager.getOrder(OrderId.wrap(orderId));
-            if (orderInfo.claimable > 0 || orderInfo.open > 0) {
-                _bookManager.transferFrom(address(this), msg.sender, orderId);
-            }
-        }
 
         if (result.length != 0) {
             (ids) = abi.decode(result, (OrderId[]));
