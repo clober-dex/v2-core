@@ -257,12 +257,16 @@ contract Controller is IController, ILocker, ReentrancyGuard {
 
     function _make(MakeOrderParams memory params) internal returns (OrderId id) {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
-        uint256 quoteAmount;
-        (id, quoteAmount) = _bookManager.make(
+
+        int256 quoteAmount = params.quoteAmount.toInt256();
+        if (key.makerPolicy.usesQuote()) {
+            quoteAmount -= key.makerPolicy.calculateFee(params.quoteAmount, true);
+        }
+        (id,) = _bookManager.make(
             IBookManager.MakeParams({
                 key: key,
                 tick: params.tick,
-                amount: (params.quoteAmount / key.unit).toUint64(),
+                amount: (uint256(quoteAmount) / key.unit).toUint64(),
                 provider: address(0)
             }),
             params.hookData
