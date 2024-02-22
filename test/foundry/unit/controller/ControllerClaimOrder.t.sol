@@ -69,12 +69,8 @@ contract ControllerClaimOrderTest is Test {
         IController.MakeOrderParams[] memory paramsList = new IController.MakeOrderParams[](1);
         address[] memory tokensToSettle;
         IController.ERC20PermitParams[] memory permitParamsList;
-        paramsList[0] = IController.MakeOrderParams({
-            id: key.toId(),
-            tick: Tick.wrap(tick),
-            quoteAmount: quoteAmount,
-            hookData: ""
-        });
+        paramsList[0] =
+            IController.MakeOrderParams({id: key.toId(), tick: Tick.wrap(tick), quoteAmount: quoteAmount, hookData: ""});
 
         vm.prank(maker);
         id = controller.make{value: quoteAmount}(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp))[0];
