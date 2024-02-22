@@ -52,7 +52,6 @@ interface IController {
         BookId id;
         Tick tick;
         uint256 quoteAmount;
-        uint256 claimBounty;
         bytes hookData;
     }
 

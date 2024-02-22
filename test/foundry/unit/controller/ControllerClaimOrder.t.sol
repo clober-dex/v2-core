@@ -73,7 +73,6 @@ contract ControllerClaimOrderTest is Test {
             id: key.toId(),
             tick: Tick.wrap(tick),
             quoteAmount: quoteAmount,
-            claimBounty: 0,
             hookData: ""
         });
 
