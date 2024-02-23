@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 
+import "./ControllerTest.sol";
 import "../../Constants.sol";
 import "../../../../contracts/libraries/BookId.sol";
 import "../../../../contracts/libraries/Hooks.sol";
@@ -10,17 +11,12 @@ import "../../../../contracts/Controller.sol";
 import "../../../../contracts/BookManager.sol";
 import "../../mocks/MockERC20.sol";
 
-contract ControllerMakeOrderTest is Test {
+contract ControllerMakeOrderTest is ControllerTest {
+    using FeePolicyLibrary for FeePolicy;
     using OrderIdLibrary for OrderId;
-    using BookIdLibrary for IBookManager.BookKey;
     using Hooks for IHooks;
 
-    MockERC20 public mockErc20;
-
-    IBookManager.BookKey public key;
     IBookManager.BookKey public unopenedKey;
-    IBookManager public manager;
-    Controller public controller;
     OrderId public orderId;
 
     function setUp() public {
@@ -30,8 +26,8 @@ contract ControllerMakeOrderTest is Test {
             base: Currency.wrap(address(mockErc20)),
             unit: 1e12,
             quote: CurrencyLibrary.NATIVE,
-            makerPolicy: FeePolicyLibrary.encode(false, 0),
-            takerPolicy: FeePolicyLibrary.encode(true, 0),
+            makerPolicy: FeePolicyLibrary.encode(true, -100),
+            takerPolicy: FeePolicyLibrary.encode(true, 100),
             hooks: IHooks(address(0))
         });
         unopenedKey = key;
@@ -48,17 +44,6 @@ contract ControllerMakeOrderTest is Test {
         vm.deal(Constants.MAKER3, 1000 * 10 ** 18);
     }
 
-    function _makeOrder(int24 tick, uint256 quoteAmount, address maker) internal returns (OrderId id) {
-        IController.MakeOrderParams[] memory paramsList = new IController.MakeOrderParams[](1);
-        address[] memory tokensToSettle;
-        IController.ERC20PermitParams[] memory permitParamsList;
-        paramsList[0] =
-            IController.MakeOrderParams({id: key.toId(), tick: Tick.wrap(tick), quoteAmount: quoteAmount, hookData: ""});
-
-        vm.prank(maker);
-        id = controller.make{value: quoteAmount}(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp))[0];
-    }
-
     function testMakeOrder() public {
         uint256 beforeBalance = Constants.MAKER1.balance;
         OrderId id = _makeOrder(Constants.PRICE_TICK, Constants.QUOTE_AMOUNT1, Constants.MAKER1);
@@ -66,7 +51,10 @@ contract ControllerMakeOrderTest is Test {
         assertEq(manager.ownerOf(OrderId.unwrap(id)), Constants.MAKER1);
         (address provider, uint256 price, uint256 openQuoteAmount, uint256 claimableQuoteAmount) =
             controller.getOrder(id);
-        assertEq(openQuoteAmount, beforeBalance - Constants.MAKER1.balance);
+        assertEq(
+            openQuoteAmount - uint256(-key.makerPolicy.calculateFee(openQuoteAmount, true)),
+            beforeBalance - Constants.MAKER1.balance
+        );
         assertEq(controller.toPrice(Tick.wrap(Constants.PRICE_TICK)), price);
         assertEq(claimableQuoteAmount, 0);
         assertEq(provider, address(0));

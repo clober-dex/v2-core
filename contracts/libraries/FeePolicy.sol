@@ -57,15 +57,17 @@ library FeePolicyLibrary {
         fee = positive ? int256(absFee) : -int256(absFee);
     }
 
-    function calculateOriginalAmount(FeePolicy self, uint256 amount, bool reverse) internal pure returns (uint256 originalAmount) {
+    function calculateOriginalAmount(FeePolicy self, uint256 amount, bool reverse)
+        internal
+        pure
+        returns (uint256 originalAmount)
+    {
         int24 r = rate(self);
 
         bool positive = r > 0;
         uint256 rate;
         assembly {
-            if reverse {
-                r := sub(0, r)
-            }
+            if reverse { r := sub(0, r) }
             rate := add(RATE_PRECISION, r)
         }
         originalAmount = Math.divide(amount * RATE_PRECISION, rate, positive);
