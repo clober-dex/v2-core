@@ -15,6 +15,7 @@ import "./libraries/OrderId.sol";
 contract Controller is IController, ILocker, ReentrancyGuard {
     using TickLibrary for *;
     using OrderIdLibrary for OrderId;
+    using BookIdLibrary for IBookManager.BookKey;
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using Math for uint256;
@@ -260,7 +261,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
 
         uint256 quoteAmount = params.quoteAmount;
         if (key.makerPolicy.usesQuote()) {
-            quoteAmount = key.makerPolicy.calculateOriginalAmount(quoteAmount);
+            quoteAmount = key.makerPolicy.calculateOriginalAmount(quoteAmount, false);
         }
         (id,) = _bookManager.make(
             IBookManager.MakeParams({
@@ -283,16 +284,19 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         while (leftQuoteAmount > quoteAmount && !_bookManager.isEmpty(params.id)) {
             Tick tick = _bookManager.getLowest(params.id);
             if (params.limitPrice < tick.toPrice()) break;
+            uint256 maxAmount;
             unchecked {
                 leftQuoteAmount -= quoteAmount;
+                if (key.takerPolicy.usesQuote()) {
+                    maxAmount = key.takerPolicy.calculateOriginalAmount(leftQuoteAmount, true);
+                } else {
+                    maxAmount = leftQuoteAmount;
+                }
+                maxAmount = maxAmount.divide(key.unit, true);
             }
+
             (quoteAmount,) = _bookManager.take(
-                IBookManager.TakeParams({
-                    key: key,
-                    tick: tick,
-                    maxAmount: leftQuoteAmount.divide(key.unit, true).toUint64()
-                }),
-                params.hookData
+                IBookManager.TakeParams({key: key, tick: tick, maxAmount: maxAmount.toUint64()}), params.hookData
             );
             if (quoteAmount == 0) break;
         }
@@ -306,11 +310,19 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         while (leftBaseAmount > 0 && !_bookManager.isEmpty(params.id)) {
             Tick tick = _bookManager.getLowest(params.id);
             if (params.limitPrice < tick.toPrice()) break;
+            uint256 maxAmount;
+            if (key.takerPolicy.usesQuote()) {
+                maxAmount = leftBaseAmount;
+            } else {
+                maxAmount = key.takerPolicy.calculateOriginalAmount(leftBaseAmount, false);
+            }
+            maxAmount = tick.baseToQuote(maxAmount, false) / key.unit;
+
             (, uint256 baseAmount) = _bookManager.take(
                 IBookManager.TakeParams({
                     key: key,
                     tick: tick,
-                    maxAmount: (tick.baseToQuote(leftBaseAmount, false) / key.unit).toUint64()
+                    maxAmount: maxAmount.toUint64()
                 }),
                 params.hookData
             );
