@@ -56,4 +56,15 @@ library FeePolicyLibrary {
         uint256 absFee = Math.divide(amount * absRate, RATE_PRECISION, reverse ? !positive : positive);
         fee = positive ? int256(absFee) : -int256(absFee);
     }
+
+    function calculateOriginalAmount(FeePolicy self, uint256 amount) internal view returns (uint256 originalAmount) {
+        int24 r = rate(self);
+
+        bool positive = r > 0;
+        uint256 rate;
+        assembly {
+            rate := add(RATE_PRECISION, r)
+        }
+        originalAmount = Math.divide(amount * RATE_PRECISION, rate, positive);
+    }
 }
