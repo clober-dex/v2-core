@@ -95,9 +95,15 @@ contract Controller is IController, ILocker, ReentrancyGuard {
             } else if (action == Action.SPEND) {
                 _spend(abi.decode(orderParamsList[i], (SpendOrderParams)));
             } else if (action == Action.CLAIM) {
-                _claim(abi.decode(orderParamsList[i], (ClaimOrderParams)));
+                ClaimOrderParams memory claimOrderParams = abi.decode(orderParamsList[i], (ClaimOrderParams));
+                uint256 orderId = OrderId.unwrap(claimOrderParams.id);
+                _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), user, orderId);
+                _claim(claimOrderParams);
             } else if (action == Action.CANCEL) {
-                _cancel(abi.decode(orderParamsList[i], (CancelOrderParams)));
+                CancelOrderParams memory cancelOrderParams = abi.decode(orderParamsList[i], (CancelOrderParams));
+                uint256 orderId = OrderId.unwrap(cancelOrderParams.id);
+                _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), user, orderId);
+                _cancel(cancelOrderParams);
             } else {
                 revert InvalidAction();
             }
@@ -123,22 +129,8 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         _permitERC20(erc20PermitParamsList);
         _permitERC721(erc721PermitParamsList);
 
-        for (uint256 i = 0; i < erc721PermitParamsList.length; ++i) {
-            uint256 orderId = erc721PermitParamsList[i].tokenId;
-            _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), msg.sender, orderId);
-            _bookManager.transferFrom(msg.sender, address(this), orderId);
-        }
-
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
         bytes memory result = _bookManager.lock(address(this), lockData);
-
-        for (uint256 i = 0; i < erc721PermitParamsList.length; ++i) {
-            uint256 orderId = erc721PermitParamsList[i].tokenId;
-            IBookManager.OrderInfo memory orderInfo = _bookManager.getOrder(OrderId.wrap(orderId));
-            if (orderInfo.claimable > 0 || orderInfo.open > 0) {
-                _bookManager.transferFrom(address(this), msg.sender, orderId);
-            }
-        }
 
         if (result.length != 0) {
             (ids) = abi.decode(result, (OrderId[]));
@@ -223,8 +215,6 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         bytes[] memory paramsDataList = new bytes[](length);
         for (uint256 i = 0; i < length; ++i) {
             actionList[i] = Action.CLAIM;
-            uint256 orderId = OrderId.unwrap(orderParamsList[i].id);
-            _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), msg.sender, orderId);
             paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
@@ -243,8 +233,6 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         bytes[] memory paramsDataList = new bytes[](length);
         for (uint256 i = 0; i < length; ++i) {
             actionList[i] = Action.CANCEL;
-            uint256 orderId = OrderId.unwrap(orderParamsList[i].id);
-            _bookManager.checkAuthorized(_bookManager.ownerOf(orderId), msg.sender, orderId);
             paramsDataList[i] = abi.encode(orderParamsList[i]);
         }
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
@@ -385,7 +373,12 @@ contract Controller is IController, ILocker, ReentrancyGuard {
             PermitSignature memory signature = permitParamsList[i].signature;
             if (signature.deadline > 0) {
                 try IERC721Permit(address(_bookManager)).permit(
-                    msg.sender, permitParamsList[i].tokenId, signature.deadline, signature.v, signature.r, signature.s
+                    address(this),
+                    permitParamsList[i].tokenId,
+                    signature.deadline,
+                    signature.v,
+                    signature.r,
+                    signature.s
                 ) {} catch {}
             }
         }

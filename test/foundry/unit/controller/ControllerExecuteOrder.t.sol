@@ -73,13 +73,8 @@ contract ControllerExecuteOrderTest is Test {
         view
         returns (IController.MakeOrderParams memory params)
     {
-        params = IController.MakeOrderParams({
-            id: key.toId(),
-            tick: Tick.wrap(tick),
-            quoteAmount: quoteAmount,
-            claimBounty: 0,
-            hookData: ""
-        });
+        params =
+            IController.MakeOrderParams({id: key.toId(), tick: Tick.wrap(tick), quoteAmount: quoteAmount, hookData: ""});
 
         return params;
     }
