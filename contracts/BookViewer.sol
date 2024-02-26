@@ -4,10 +4,14 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/IBookViewer.sol";
 import "./libraries/Lockers.sol";
+import "./interfaces/IController.sol";
 
 contract BookViewer is IBookViewer {
+    using SafeCast for *;
     using TickLibrary for *;
+    using Math for uint256;
     using SignificantBit for uint256;
+    using FeePolicyLibrary for FeePolicy;
 
     IBookManager public immutable override bookManager;
 
@@ -39,7 +43,7 @@ contract BookViewer is IBookViewer {
         return uint256(bookManager.load(keccak256(abi.encode(currency, bytes32(uint256(14))))));
     }
 
-    function getBookKey(BookId id) external view returns (IBookManager.BookKey memory) {
+    function getBookKey(BookId id) public view returns (IBookManager.BookKey memory) {
         bytes memory data = bookManager.load(keccak256(abi.encode(id, bytes32(uint256(15)))), 3);
         Currency base;
         uint64 unit;
@@ -105,6 +109,89 @@ contract BookViewer is IBookViewer {
             Tick tick = tickValue.toTick();
             liquidity[i] = Liquidity({tick: tick, depth: bookManager.getDepth(id, tick)});
         }
+    }
+
+    function getExpectedInput(IController.TakeOrderParams memory params) external view returns (uint256, uint256) {
+        IBookManager.BookKey memory key = getBookKey(params.id);
+
+        if (bookManager.isEmpty(params.id)) return (0, 0); // Todo consider revert
+
+        uint256 spendBaseAmount;
+        uint256 takenQuoteAmount;
+
+        Tick tick = bookManager.getLowest(params.id);
+
+        while (params.quoteAmount > takenQuoteAmount) {
+            unchecked {
+                if (params.limitPrice < tick.toPrice()) break;
+                uint256 maxAmount;
+                if (key.takerPolicy.usesQuote()) {
+                    maxAmount = params.quoteAmount - takenQuoteAmount; // key.takerPolicy.calculateOriginalAmount(leftQuoteAmount, true);
+                } else {
+                    maxAmount = params.quoteAmount - takenQuoteAmount;
+                }
+                maxAmount = maxAmount.divide(key.unit, true);
+                uint256 currentDepth = bookManager.getDepth(params.id, tick);
+
+                uint256 quoteAmount = (currentDepth > maxAmount ? maxAmount : currentDepth) * key.unit;
+                uint256 baseAmount = tick.quoteToBase(quoteAmount, true);
+
+                if (key.takerPolicy.usesQuote()) {
+                    quoteAmount = uint256(int256(quoteAmount) - key.takerPolicy.calculateFee(quoteAmount, false));
+                } else {
+                    baseAmount = uint256(baseAmount.toInt256() + key.takerPolicy.calculateFee(baseAmount, false));
+                }
+
+                if (quoteAmount == 0) break;
+                takenQuoteAmount += quoteAmount;
+                spendBaseAmount += baseAmount;
+                tick = _minGreaterThan(params.id, tick.toUint24()).toTick();
+            }
+        }
+        return (takenQuoteAmount, spendBaseAmount);
+    }
+
+    function getExpectedOutput(IController.SpendOrderParams memory params) external view returns (uint256, uint256) {
+        IBookManager.BookKey memory key = getBookKey(params.id);
+
+        if (bookManager.isEmpty(params.id)) return (0, 0); // Todo consider revert
+
+        uint256 leftBaseAmount = params.baseAmount;
+        uint256 takenQuoteAmount;
+
+        Tick tick = bookManager.getLowest(params.id);
+
+        while (leftBaseAmount > 0) {
+            unchecked {
+                if (params.limitPrice < tick.toPrice()) break;
+                uint256 maxAmount;
+                if (key.takerPolicy.usesQuote()) {
+                    maxAmount = leftBaseAmount;
+                } else {
+                    maxAmount = leftBaseAmount; //key.takerPolicy.calculateOriginalAmount(leftBaseAmount, false);
+                }
+                maxAmount = tick.baseToQuote(maxAmount, false) / key.unit;
+
+                maxAmount = maxAmount.divide(key.unit, true);
+                uint256 currentDepth = bookManager.getDepth(params.id, tick);
+
+                uint256 quoteAmount = (currentDepth > maxAmount ? maxAmount : currentDepth) * key.unit;
+                uint256 baseAmount = tick.quoteToBase(quoteAmount, true);
+
+                if (key.takerPolicy.usesQuote()) {
+                    quoteAmount = uint256(int256(quoteAmount) - key.takerPolicy.calculateFee(quoteAmount, false));
+                } else {
+                    baseAmount = uint256(baseAmount.toInt256() + key.takerPolicy.calculateFee(baseAmount, false));
+                }
+
+                if (baseAmount == 0) break;
+
+                leftBaseAmount -= baseAmount;
+                takenQuoteAmount += quoteAmount;
+                tick = _minGreaterThan(params.id, tick.toUint24()).toTick();
+            }
+        }
+        return (takenQuoteAmount, params.baseAmount - leftBaseAmount);
     }
 
     function _minGreaterThan(BookId id, uint24 from) internal view returns (uint24) {
