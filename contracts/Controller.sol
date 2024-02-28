@@ -306,26 +306,26 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
 
         uint256 leftBaseAmount = params.baseAmount;
+        uint256 baseAmount;
 
-        while (leftBaseAmount > 0 && !_bookManager.isEmpty(params.id)) {
+        while (leftBaseAmount > baseAmount && !_bookManager.isEmpty(params.id)) {
             Tick tick = _bookManager.getLowest(params.id);
             if (params.limitPrice < tick.toPrice()) break;
             uint256 maxAmount;
-            if (key.takerPolicy.usesQuote()) {
-                maxAmount = leftBaseAmount;
-            } else {
-                maxAmount = key.takerPolicy.calculateOriginalAmount(leftBaseAmount, false);
+            unchecked {
+                leftBaseAmount -= baseAmount;
+                if (key.takerPolicy.usesQuote()) {
+                    maxAmount = leftBaseAmount;
+                } else {
+                    maxAmount = key.takerPolicy.calculateOriginalAmount(leftBaseAmount, false);
+                }
+                maxAmount = tick.baseToQuote(maxAmount, false) / key.unit;
             }
-            maxAmount = tick.baseToQuote(maxAmount, false) / key.unit;
 
-            (, uint256 baseAmount) = _bookManager.take(
+            (, baseAmount) = _bookManager.take(
                 IBookManager.TakeParams({key: key, tick: tick, maxAmount: maxAmount.toUint64()}), params.hookData
             );
             if (baseAmount == 0) break;
-
-            unchecked {
-                leftBaseAmount -= baseAmount;
-            }
         }
     }
 
