@@ -226,7 +226,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         unchecked {
             canceledAmount = uint256(canceled) * key.unit;
-            if (params.key.makerPolicy.usesQuote()) {
+            if (key.makerPolicy.usesQuote()) {
                 int256 quoteFee = key.makerPolicy.calculateFee(canceledAmount, true);
                 canceledAmount = uint256(int256(canceledAmount) + quoteFee);
             }
