@@ -49,7 +49,7 @@ library Book {
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
     }
 
-    function open(State storage self, IBookManager.BookKey calldata key) internal {
+    function open(State storage self, IBookManager.BookKey calldata key) external {
         if (self.isOpened()) revert BookAlreadyOpened();
         self.key = key;
     }
@@ -83,7 +83,7 @@ library Book {
     }
 
     function make(State storage self, Tick tick, uint64 amount, address provider)
-        internal
+        external
         returns (uint40 orderIndex)
     {
         if (amount == 0) revert ZeroAmount();
@@ -100,7 +100,7 @@ library Book {
                 uint64 stalePendingAmount = queue.orders[staleOrderIndex].pending;
                 if (stalePendingAmount > 0) {
                     // If the order is not settled completely, we cannot replace it
-                    uint64 claimable = self.calculateClaimableRawAmount(tick, staleOrderIndex);
+                    uint64 claimable = calculateClaimableRawAmount(self, tick, staleOrderIndex);
                     if (claimable != stalePendingAmount) revert QueueReplaceFailed();
                 }
             }
@@ -122,7 +122,7 @@ library Book {
      * @param maxTakeAmount The maximum amount to take
      * @return takenAmount The actual amount to take
      */
-    function take(State storage self, Tick tick, uint64 maxTakeAmount) internal returns (uint64 takenAmount) {
+    function take(State storage self, Tick tick, uint64 maxTakeAmount) external returns (uint64 takenAmount) {
         uint64 currentDepth = depth(self, tick);
         if (currentDepth > maxTakeAmount) {
             takenAmount = maxTakeAmount;
@@ -135,13 +135,13 @@ library Book {
     }
 
     function cancel(State storage self, OrderId orderId, uint64 to)
-        internal
+        external
         returns (uint64 canceled, uint64 afterPending)
     {
         (, Tick tick, uint40 orderIndex) = orderId.decode();
         Queue storage queue = self.queues[tick];
         uint64 pending = queue.orders[orderIndex].pending;
-        uint64 claimableRaw = self.calculateClaimableRawAmount(tick, orderIndex);
+        uint64 claimableRaw = calculateClaimableRawAmount(self, tick, orderIndex);
         afterPending = to + claimableRaw;
         unchecked {
             if (pending < afterPending) revert CancelFailed(pending - claimableRaw);
@@ -160,16 +160,16 @@ library Book {
         }
     }
 
-    function claim(State storage self, Tick tick, uint40 index) internal returns (uint64 claimedRaw) {
+    function claim(State storage self, Tick tick, uint40 index) external returns (uint64 claimedRaw) {
         Order storage order = _getOrder(self, tick, index);
 
-        claimedRaw = self.calculateClaimableRawAmount(tick, index);
+        claimedRaw = calculateClaimableRawAmount(self, tick, index);
         unchecked {
             order.pending -= claimedRaw;
         }
     }
 
-    function calculateClaimableRawAmount(State storage self, Tick tick, uint40 index) internal view returns (uint64) {
+    function calculateClaimableRawAmount(State storage self, Tick tick, uint40 index) public view returns (uint64) {
         uint64 orderAmount = self.getOrder(tick, index).pending;
 
         Queue storage queue = self.queues[tick];

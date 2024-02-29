@@ -161,8 +161,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             quoteDelta = int256(quoteAmount);
             if (params.key.makerPolicy.usesQuote()) {
                 quoteDelta += params.key.makerPolicy.calculateFee(quoteAmount, false);
+                quoteAmount = uint256(quoteDelta);
             }
-            quoteAmount = uint256(quoteDelta);
         }
 
         _accountDelta(params.key.quote, quoteDelta);
@@ -226,8 +226,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         unchecked {
             canceledAmount = uint256(canceled) * key.unit;
-            int256 quoteFee = key.makerPolicy.calculateFee(canceledAmount, true);
-            canceledAmount = uint256(int256(canceledAmount) + quoteFee);
+            if (key.makerPolicy.usesQuote()) {
+                int256 quoteFee = key.makerPolicy.calculateFee(canceledAmount, true);
+                canceledAmount = uint256(int256(canceledAmount) + quoteFee);
+            }
         }
 
         if (pending == 0) _burn(OrderId.unwrap(params.id));
@@ -285,8 +287,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         Book.Order memory order = book.getOrder(tick, orderIndex);
         address provider = order.provider;
         if (provider == address(0)) provider = defaultProvider;
-        tokenOwed[provider][key.quote] += quoteFee.toUint256();
-        tokenOwed[provider][key.base] += baseFee.toUint256();
+        if (quoteFee > 0) tokenOwed[provider][key.quote] += quoteFee.toUint256();
+        if (baseFee > 0) tokenOwed[provider][key.base] += baseFee.toUint256();
 
         if (order.pending == 0) _burn(OrderId.unwrap(id));
 
