@@ -32,7 +32,7 @@ contract BookViewer is IBookViewer {
     function getExpectedInput(IController.TakeOrderParams memory params) external view returns (uint256, uint256) {
         IBookManager.BookKey memory key = bookManager.getBookKey(params.id);
 
-        if (bookManager.isEmpty(params.id)) return (0, 0); // Todo consider revert
+        if (bookManager.isEmpty(params.id)) return (0, 0);
 
         uint256 spendBaseAmount;
         uint256 takenQuoteAmount;
@@ -73,7 +73,7 @@ contract BookViewer is IBookViewer {
     function getExpectedOutput(IController.SpendOrderParams memory params) external view returns (uint256, uint256) {
         IBookManager.BookKey memory key = bookManager.getBookKey(params.id);
 
-        if (bookManager.isEmpty(params.id)) return (0, 0); // Todo consider revert
+        if (bookManager.isEmpty(params.id)) return (0, 0);
 
         uint256 leftBaseAmount = params.baseAmount;
         uint256 takenQuoteAmount;
