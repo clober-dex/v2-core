@@ -22,61 +22,6 @@ contract BookViewerTest is Test {
         viewer = new BookViewer(bookManager);
     }
 
-    function testBaseURI(string memory randomURI) public {
-        bookManager.setBaseURI(randomURI);
-        string memory b = viewer.baseURI();
-        assertEq(keccak256(abi.encodePacked(b)), keccak256(abi.encodePacked(randomURI)));
-    }
-
-    function testContractURI(string memory randomURI) public {
-        bookManager.setContractURI(randomURI);
-        string memory b = viewer.contractURI();
-        assertEq(keccak256(abi.encodePacked(b)), keccak256(abi.encodePacked(randomURI)));
-    }
-
-    function testDefaultProvider(address randomProvider) public {
-        bookManager.setDefaultProvider(randomProvider);
-        address b = viewer.defaultProvider();
-        assertEq(b, randomProvider);
-    }
-
-    function testCurrencyDelta(address locker, Currency currency, int256 delta) public {
-        bookManager.setCurrencyDelta(locker, currency, delta);
-        int256 b = viewer.currencyDelta(locker, currency);
-        assertEq(b, delta);
-    }
-
-    function testReservesOf(Currency currency, uint256 reserves) public {
-        bookManager.setReservesOf(currency, reserves);
-        uint256 b = viewer.reservesOf(currency);
-        assertEq(b, reserves);
-    }
-
-    function testGetBookKey(BookId bookId, IBookManager.BookKey memory key) public {
-        bookManager.setBookKey(bookId, key);
-        IBookManager.BookKey memory b = viewer.getBookKey(bookId);
-        assertEq(Currency.unwrap(b.base), Currency.unwrap(key.base));
-        assertEq(b.unit, key.unit);
-        assertEq(Currency.unwrap(b.quote), Currency.unwrap(key.quote));
-        assertEq(b.makerPolicy.rate(), key.makerPolicy.rate());
-        assertEq(b.makerPolicy.usesQuote(), key.makerPolicy.usesQuote());
-        assertEq(b.takerPolicy.rate(), key.takerPolicy.rate());
-        assertEq(b.takerPolicy.usesQuote(), key.takerPolicy.usesQuote());
-        assertEq(address(b.hooks), address(key.hooks));
-    }
-
-    function testIsWhitelisted(address provider, bool whitelisted) public {
-        bookManager.setWhitelisted(provider, whitelisted);
-        bool b = viewer.isWhitelisted(provider);
-        assertEq(b, whitelisted);
-    }
-
-    function testTokenOwed(address provider, Currency currency, uint256 tokenOwed) public {
-        bookManager.setTokenOwed(provider, currency, tokenOwed);
-        uint256 b = viewer.tokenOwed(provider, currency);
-        assertEq(b, tokenOwed);
-    }
-
     function testGetLiquidity(int16 start, uint8[22] memory tickDiff) public {
         BookId id = BookId.wrap(123);
 

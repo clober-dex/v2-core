@@ -36,6 +36,7 @@ contract ControllerClaimOrderTest is ControllerTest {
 
         manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "baseUrl", "contractUrl", "name", "symbol");
         controller = new Controller(address(manager));
+        bookViewer = new BookViewer(manager);
         IController.OpenBookParams[] memory openBookParamsList = new IController.OpenBookParams[](1);
         openBookParamsList[0] = IController.OpenBookParams({key: key, hookData: ""});
         controller.open(openBookParamsList, uint64(block.timestamp));
