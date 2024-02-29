@@ -39,7 +39,7 @@ contract BookViewer is IBookViewer {
 
         Tick tick = bookManager.getLowest(params.id);
 
-        while (Tick.unwrap(tick) > 0) {
+        while (Tick.unwrap(tick) > type(int24).min) {
             unchecked {
                 if (params.limitPrice < tick.toPrice()) break;
                 uint256 maxAmount;
@@ -81,7 +81,7 @@ contract BookViewer is IBookViewer {
         Tick tick = bookManager.getLowest(params.id);
 
         unchecked {
-            while (Tick.unwrap(tick) > 0) {
+            while (Tick.unwrap(tick) > type(int24).min) {
                 if (params.limitPrice < tick.toPrice()) break;
                 uint256 maxAmount;
                 if (key.takerPolicy.usesQuote()) {
