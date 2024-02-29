@@ -25,9 +25,6 @@ contract BookViewer is IBookViewer {
         for (uint256 i = 0; i < n; ++i) {
             if (Tick.unwrap(tick) == type(int24).min) break;
             liquidity[i] = Liquidity({tick: tick, depth: bookManager.getDepth(id, tick)});
-            unchecked {
-                if (i == n - 1) break;
-            }
             tick = bookManager.minGreaterThan(id, tick);
         }
     }
