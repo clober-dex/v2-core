@@ -44,7 +44,7 @@ library FeePolicyLibrary {
         }
     }
 
-    function calculateFee(FeePolicy self, uint256 amount, bool reverse) internal pure returns (int256 fee) {
+    function calculateFee(FeePolicy self, uint256 amount, bool reverseRounding) internal pure returns (int256 fee) {
         int24 r = rate(self);
 
         bool positive = r > 0;
@@ -53,7 +53,23 @@ library FeePolicyLibrary {
             absRate = uint256(uint24(positive ? r : -r));
         }
         // @dev absFee must be less than type(int256).max
-        uint256 absFee = Math.divide(amount * absRate, RATE_PRECISION, reverse ? !positive : positive);
+        uint256 absFee = Math.divide(amount * absRate, RATE_PRECISION, reverseRounding ? !positive : positive);
         fee = positive ? int256(absFee) : -int256(absFee);
+    }
+
+    function calculateOriginalAmount(FeePolicy self, uint256 amount, bool reverseFee)
+        internal
+        pure
+        returns (uint256 originalAmount)
+    {
+        int24 r = rate(self);
+
+        bool positive = r > 0;
+        uint256 rate;
+        assembly {
+            if reverseFee { r := sub(0, r) }
+            rate := add(RATE_PRECISION, r)
+        }
+        originalAmount = Math.divide(amount * RATE_PRECISION, rate, positive);
     }
 }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 
+import "./ControllerTest.sol";
 import "../../Constants.sol";
 import "../../../../contracts/libraries/BookId.sol";
 import "../../../../contracts/libraries/Hooks.sol";
@@ -10,18 +11,12 @@ import "../../../../contracts/Controller.sol";
 import "../../../../contracts/BookManager.sol";
 import "../../mocks/MockERC20.sol";
 
-contract ControllerClaimOrderTest is Test {
+contract ControllerClaimOrderTest is ControllerTest {
     using TickLibrary for Tick;
     using OrderIdLibrary for OrderId;
-    using BookIdLibrary for IBookManager.BookKey;
     using Hooks for IHooks;
 
-    MockERC20 public mockErc20;
-
-    IBookManager.BookKey public key;
     IBookManager.BookKey public unopenedKey;
-    IBookManager public manager;
-    Controller public controller;
     OrderId public orderId1;
     OrderId public orderId2;
 
@@ -63,47 +58,6 @@ contract ControllerClaimOrderTest is Test {
         manager.setApprovalForAll(address(controller), true);
 
         _takeOrder(Constants.QUOTE_AMOUNT1, type(uint256).max, Constants.TAKER1);
-    }
-
-    function _makeOrder(int24 tick, uint256 quoteAmount, address maker) internal returns (OrderId id) {
-        IController.MakeOrderParams[] memory paramsList = new IController.MakeOrderParams[](1);
-        address[] memory tokensToSettle;
-        IController.ERC20PermitParams[] memory permitParamsList;
-        paramsList[0] =
-            IController.MakeOrderParams({id: key.toId(), tick: Tick.wrap(tick), quoteAmount: quoteAmount, hookData: ""});
-
-        vm.prank(maker);
-        id = controller.make{value: quoteAmount}(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp))[0];
-    }
-
-    function _takeOrder(uint256 quoteAmount, uint256 maxBaseAmount, address taker) internal {
-        IController.TakeOrderParams[] memory paramsList = new IController.TakeOrderParams[](1);
-        address[] memory tokensToSettle = new address[](1);
-        tokensToSettle[0] = address(mockErc20);
-        IController.ERC20PermitParams[] memory permitParamsList;
-        paramsList[0] = IController.TakeOrderParams({
-            id: key.toId(),
-            limitPrice: type(uint256).max,
-            quoteAmount: quoteAmount,
-            hookData: ""
-        });
-
-        vm.startPrank(taker);
-        mockErc20.approve(address(controller), maxBaseAmount);
-        controller.take(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp));
-        vm.stopPrank();
-    }
-
-    function _claimOrder(OrderId id) internal {
-        IController.ClaimOrderParams[] memory paramsList = new IController.ClaimOrderParams[](1);
-        paramsList[0] = IController.ClaimOrderParams({id: id, hookData: ""});
-        address[] memory tokensToSettle = new address[](1);
-        tokensToSettle[0] = address(mockErc20);
-
-        IController.ERC721PermitParams[] memory permitParamsList;
-
-        vm.prank(manager.ownerOf(OrderId.unwrap(id)));
-        controller.claim(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp));
     }
 
     function testClaimAllOrder() public {
