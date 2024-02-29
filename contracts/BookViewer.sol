@@ -103,6 +103,9 @@ contract BookViewer is IBookViewer {
                 if (baseAmount == 0) break;
 
                 takenQuoteAmount += quoteAmount;
+                if (leftBaseAmount <= baseAmount) {
+                    return (takenQuoteAmount, params.baseAmount + baseAmount - leftBaseAmount);
+                }
                 leftBaseAmount -= baseAmount;
                 tick = bookManager.minGreaterThan(params.id, tick);
             }
