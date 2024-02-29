@@ -75,19 +75,19 @@ contract BookViewer is IBookViewer {
 
         if (bookManager.isEmpty(params.id)) return (0, 0);
 
-        uint256 leftBaseAmount = params.baseAmount;
+        uint256 spendBaseAmount;
         uint256 takenQuoteAmount;
 
         Tick tick = bookManager.getLowest(params.id);
 
         unchecked {
-            while (Tick.unwrap(tick) > type(int24).min) {
+            while (spendBaseAmount <= params.baseAmount && Tick.unwrap(tick) > type(int24).min) {
                 if (params.limitPrice < tick.toPrice()) break;
                 uint256 maxAmount;
                 if (key.takerPolicy.usesQuote()) {
-                    maxAmount = leftBaseAmount;
+                    maxAmount = params.baseAmount - spendBaseAmount;
                 } else {
-                    maxAmount = key.takerPolicy.calculateOriginalAmount(leftBaseAmount, false);
+                    maxAmount = key.takerPolicy.calculateOriginalAmount(params.baseAmount - spendBaseAmount, false);
                 }
                 maxAmount = tick.baseToQuote(maxAmount, false) / key.unit;
 
@@ -103,14 +103,11 @@ contract BookViewer is IBookViewer {
                 if (baseAmount == 0) break;
 
                 takenQuoteAmount += quoteAmount;
-                if (leftBaseAmount <= baseAmount) {
-                    return (takenQuoteAmount, params.baseAmount + baseAmount - leftBaseAmount);
-                }
-                leftBaseAmount -= baseAmount;
+                spendBaseAmount += baseAmount;
                 tick = bookManager.minGreaterThan(params.id, tick);
             }
 
-            return (takenQuoteAmount, params.baseAmount - leftBaseAmount);
+            return (takenQuoteAmount, spendBaseAmount);
         }
     }
 }
