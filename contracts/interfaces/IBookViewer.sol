@@ -17,7 +17,13 @@ interface IBookViewer {
 
     function getLiquidity(BookId id, Tick from, uint256 n) external view returns (Liquidity[] memory liquidity);
 
-    function getExpectedInput(IController.TakeOrderParams memory params) external view returns (uint256, uint256);
+    function getExpectedInput(IController.TakeOrderParams memory params)
+        external
+        view
+        returns (uint256 takenQuoteAmount, uint256 spendBaseAmount);
 
-    function getExpectedOutput(IController.SpendOrderParams memory params) external view returns (uint256, uint256);
+    function getExpectedOutput(IController.SpendOrderParams memory params)
+        external
+        view
+        returns (uint256 takenQuoteAmount, uint256 spendBaseAmount);
 }
