@@ -36,6 +36,7 @@ contract ControllerSpendOrderTest is ControllerTest {
 
         manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "baseUrl", "contractUrl", "name", "symbol");
         controller = new Controller(address(manager));
+        bookViewer = new BookViewer(manager);
         IController.OpenBookParams[] memory openBookParamsList = new IController.OpenBookParams[](1);
         openBookParamsList[0] = IController.OpenBookParams({key: key, hookData: ""});
         controller.open(openBookParamsList, uint64(block.timestamp));
@@ -62,7 +63,9 @@ contract ControllerSpendOrderTest is ControllerTest {
 
         uint256 beforeBalance = Constants.TAKER1.balance;
         uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
-        _spendOrder(Constants.BASE_AMOUNT1, Constants.TAKER1);
+        (uint256 expectedTakeAmount, uint256 expectedBaseAmount) = _spendOrder(Constants.BASE_AMOUNT1, Constants.TAKER1);
+        assertEq(expectedTakeAmount, takeAmount);
+        assertEq(expectedBaseAmount, baseAmount);
         assertEq(Constants.TAKER1.balance - beforeBalance, takeAmount);
         assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), baseAmount);
     }

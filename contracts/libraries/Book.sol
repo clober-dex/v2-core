@@ -70,6 +70,10 @@ library Book {
         return self.tickBitmap.lowest().toTick();
     }
 
+    function minGreaterThan(State storage self, Tick tick) internal view returns (Tick) {
+        return self.tickBitmap.minGreaterThan(tick.toUint24()).toTick();
+    }
+
     function isEmpty(State storage self) internal view returns (bool) {
         return self.tickBitmap.isEmpty();
     }

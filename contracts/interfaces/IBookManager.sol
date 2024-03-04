@@ -80,6 +80,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     function getLowest(BookId id) external view returns (Tick tick);
 
+    function minGreaterThan(BookId id, Tick tick) external view returns (Tick);
+
     function isEmpty(BookId id) external view returns (bool);
 
     function load(bytes32 slot) external view returns (bytes32);

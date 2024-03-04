@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 
 import "../../../../contracts/Controller.sol";
 import "../../mocks/MockERC20.sol";
+import "../../../../contracts/BookViewer.sol";
 
 abstract contract ControllerTest is Test {
     using BookIdLibrary for IBookManager.BookKey;
@@ -12,6 +13,7 @@ abstract contract ControllerTest is Test {
     IBookManager.BookKey public key;
     IBookManager public manager;
     Controller public controller;
+    BookViewer public bookViewer;
     MockERC20 public mockErc20;
 
     function _makeOrder(int24 tick, uint256 quoteAmount, address maker) internal returns (OrderId id) {
@@ -25,7 +27,10 @@ abstract contract ControllerTest is Test {
         id = controller.make{value: quoteAmount}(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp))[0];
     }
 
-    function _takeOrder(uint256 quoteAmount, uint256 maxBaseAmount, address taker) internal {
+    function _takeOrder(uint256 quoteAmount, uint256 maxBaseAmount, address taker)
+        internal
+        returns (uint256 expectedTakeAmount, uint256 expectedBaseAmount)
+    {
         IController.TakeOrderParams[] memory paramsList = new IController.TakeOrderParams[](1);
         address[] memory tokensToSettle = new address[](1);
         tokensToSettle[0] = address(mockErc20);
@@ -37,13 +42,17 @@ abstract contract ControllerTest is Test {
             hookData: ""
         });
 
+        (expectedTakeAmount, expectedBaseAmount) = bookViewer.getExpectedInput(paramsList[0]);
         vm.startPrank(taker);
         mockErc20.approve(address(controller), maxBaseAmount);
         controller.take(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp));
         vm.stopPrank();
     }
 
-    function _spendOrder(uint256 baseAmount, address taker) internal {
+    function _spendOrder(uint256 baseAmount, address taker)
+        internal
+        returns (uint256 expectedTakeAmount, uint256 expectedBaseAmount)
+    {
         IController.SpendOrderParams[] memory paramsList = new IController.SpendOrderParams[](1);
         address[] memory tokensToSettle = new address[](1);
         tokensToSettle[0] = address(mockErc20);
@@ -55,6 +64,7 @@ abstract contract ControllerTest is Test {
             hookData: ""
         });
 
+        (expectedTakeAmount, expectedBaseAmount) = bookViewer.getExpectedOutput(paramsList[0]);
         vm.startPrank(taker);
         mockErc20.approve(address(controller), baseAmount);
         controller.spend(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp));

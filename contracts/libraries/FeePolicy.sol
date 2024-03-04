@@ -65,11 +65,11 @@ library FeePolicyLibrary {
         int24 r = rate(self);
 
         bool positive = r > 0;
-        uint256 rate;
+        uint256 divider;
         assembly {
             if reverseFee { r := sub(0, r) }
-            rate := add(RATE_PRECISION, r)
+            divider := add(RATE_PRECISION, r)
         }
-        originalAmount = Math.divide(amount * RATE_PRECISION, rate, positive);
+        originalAmount = Math.divide(amount * RATE_PRECISION, divider, positive);
     }
 }
