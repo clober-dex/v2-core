@@ -29,13 +29,14 @@ contract BookViewer is IBookViewer {
         }
     }
 
-    function getExpectedInput(IController.TakeOrderParams memory params) external view returns (uint256, uint256) {
+    function getExpectedInput(IController.TakeOrderParams memory params)
+        external
+        view
+        returns (uint256 takenQuoteAmount, uint256 spendBaseAmount)
+    {
         IBookManager.BookKey memory key = bookManager.getBookKey(params.id);
 
         if (bookManager.isEmpty(params.id)) return (0, 0);
-
-        uint256 spendBaseAmount;
-        uint256 takenQuoteAmount;
 
         Tick tick = bookManager.getLowest(params.id);
 
@@ -67,16 +68,16 @@ contract BookViewer is IBookViewer {
                 tick = bookManager.minGreaterThan(params.id, tick);
             }
         }
-        return (takenQuoteAmount, spendBaseAmount);
     }
 
-    function getExpectedOutput(IController.SpendOrderParams memory params) external view returns (uint256, uint256) {
+    function getExpectedOutput(IController.SpendOrderParams memory params)
+        external
+        view
+        returns (uint256 takenQuoteAmount, uint256 spendBaseAmount)
+    {
         IBookManager.BookKey memory key = bookManager.getBookKey(params.id);
 
         if (bookManager.isEmpty(params.id)) return (0, 0);
-
-        uint256 spendBaseAmount;
-        uint256 takenQuoteAmount;
 
         Tick tick = bookManager.getLowest(params.id);
 
@@ -106,8 +107,6 @@ contract BookViewer is IBookViewer {
                 spendBaseAmount += baseAmount;
                 tick = bookManager.minGreaterThan(params.id, tick);
             }
-
-            return (takenQuoteAmount, spendBaseAmount);
         }
     }
 }
