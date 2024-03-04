@@ -89,8 +89,16 @@ contract Controller is IController, ILocker, ReentrancyGuard {
                 _open(abi.decode(orderParamsList[i], (OpenBookParams)));
             } else if (action == Action.MAKE) {
                 OrderId id = _make(abi.decode(orderParamsList[i], (MakeOrderParams)));
-                _bookManager.transferFrom(address(this), user, OrderId.unwrap(id));
-                ids[orderIdIndex++] = id;
+                if (OrderId.unwrap(id) != 0) {
+                    _bookManager.transferFrom(address(this), user, OrderId.unwrap(id));
+                    ids[orderIdIndex++] = id;
+                }
+            } else if (action == Action.LIMIT) {
+                OrderId id = _limit(abi.decode(orderParamsList[i], (LimitOrderParams)));
+                if (OrderId.unwrap(id) != 0) {
+                    _bookManager.transferFrom(address(this), user, OrderId.unwrap(id));
+                    ids[orderIdIndex++] = id;
+                }
             } else if (action == Action.TAKE) {
                 _take(abi.decode(orderParamsList[i], (TakeOrderParams)));
             } else if (action == Action.SPEND) {
@@ -150,6 +158,24 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         address[] memory tokensToSettle;
         bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
         _bookManager.lock(address(this), lockData);
+    }
+
+    function limit(
+        LimitOrderParams[] calldata orderParamsList,
+        address[] calldata tokensToSettle,
+        ERC20PermitParams[] calldata permitParamsList,
+        uint64 deadline
+    ) external payable checkDeadline(deadline) permitERC20(permitParamsList) returns (OrderId[] memory ids) {
+        uint256 length = orderParamsList.length;
+        Action[] memory actionList = new Action[](length);
+        bytes[] memory paramsDataList = new bytes[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            actionList[i] = Action.LIMIT;
+            paramsDataList[i] = abi.encode(orderParamsList[i]);
+        }
+        bytes memory lockData = abi.encode(msg.sender, actionList, paramsDataList, tokensToSettle);
+        bytes memory result = _bookManager.lock(address(this), lockData);
+        (ids) = abi.decode(result, (OrderId[]));
     }
 
     function make(
@@ -251,70 +277,98 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         if (key.makerPolicy.usesQuote()) {
             quoteAmount = key.makerPolicy.calculateOriginalAmount(quoteAmount, false);
         }
-        (id,) = _bookManager.make(
-            IBookManager.MakeParams({
-                key: key,
-                tick: params.tick,
-                amount: (quoteAmount / key.unit).toUint64(),
-                provider: address(0)
-            }),
-            params.hookData
-        );
+        uint64 rawAmount = (quoteAmount / key.unit).toUint64();
+        if (rawAmount > 0) {
+            (id,) = _bookManager.make(
+                IBookManager.MakeParams({
+                    key: key,
+                    tick: params.tick,
+                    amount: rawAmount,
+                    provider: address(0)
+                }),
+                params.hookData
+            );
+        }
         return id;
     }
 
-    function _take(TakeOrderParams memory params) internal {
-        IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
-
-        uint256 leftQuoteAmount = params.quoteAmount;
-
-        uint256 quoteAmount;
-        while (leftQuoteAmount > quoteAmount && !_bookManager.isEmpty(params.id)) {
-            Tick tick = _bookManager.getLowest(params.id);
-            if (params.limitPrice < tick.toPrice()) break;
-            uint256 maxAmount;
-            unchecked {
-                leftQuoteAmount -= quoteAmount;
-                if (key.takerPolicy.usesQuote()) {
-                    maxAmount = key.takerPolicy.calculateOriginalAmount(leftQuoteAmount, true);
-                } else {
-                    maxAmount = leftQuoteAmount;
-                }
-                maxAmount = maxAmount.divide(key.unit, true);
-            }
-
-            if (maxAmount == 0) break;
-            (quoteAmount,) = _bookManager.take(
-                IBookManager.TakeParams({key: key, tick: tick, maxAmount: maxAmount.toUint64()}), params.hookData
+    function _limit(LimitOrderParams memory params) internal returns (OrderId id) {
+        (uint256 takenQuoteAmount, uint256 spendBaseAmount) = _spend(
+            SpendOrderParams({
+                id: params.takeBookId,
+                limitPrice: params.limitPrice,
+                baseAmount: params.quoteAmount,
+                hookData: params.takeHookData
+            })
+        );
+        params.quoteAmount -= spendBaseAmount;
+        if (params.quoteAmount > 0) {
+            id = _make(
+                MakeOrderParams({
+                    id: params.makeBookId,
+                    quoteAmount: params.quoteAmount,
+                    tick: params.tick,
+                    hookData: params.makeHookData
+                })
             );
-            if (quoteAmount == 0) break;
         }
     }
 
-    function _spend(SpendOrderParams memory params) internal {
+    function _take(TakeOrderParams memory params)
+        internal
+        returns (uint256 takenQuoteAmount, uint256 spendBaseAmount)
+    {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
 
-        uint256 leftBaseAmount = params.baseAmount;
-        uint256 baseAmount;
-
-        while (leftBaseAmount > baseAmount && !_bookManager.isEmpty(params.id)) {
+        while (params.quoteAmount > takenQuoteAmount && !_bookManager.isEmpty(params.id)) {
             Tick tick = _bookManager.getLowest(params.id);
             if (params.limitPrice < tick.toPrice()) break;
             uint256 maxAmount;
             unchecked {
-                leftBaseAmount -= baseAmount;
                 if (key.takerPolicy.usesQuote()) {
-                    maxAmount = leftBaseAmount;
+                    maxAmount = key.takerPolicy.calculateOriginalAmount(params.quoteAmount - takenQuoteAmount, true);
                 } else {
-                    maxAmount = key.takerPolicy.calculateOriginalAmount(leftBaseAmount, false);
+                    maxAmount = params.quoteAmount - takenQuoteAmount;
                 }
-                maxAmount = tick.baseToQuote(maxAmount, false) / key.unit;
             }
+            maxAmount = maxAmount.divide(key.unit, true);
+
             if (maxAmount == 0) break;
-            (, baseAmount) = _bookManager.take(
+            (uint256 quoteAmount, uint256 baseAmount) = _bookManager.take(
+                IBookManager.TakeParams({key: key, tick: tick, maxAmount: maxAmount.toUint64()}), params.hookData
+            );
+            if (quoteAmount == 0) break;
+
+            takenQuoteAmount += quoteAmount;
+            spendBaseAmount += baseAmount;
+        }
+    }
+
+    function _spend(SpendOrderParams memory params)
+        internal
+        returns (uint256 takenQuoteAmount, uint256 spendBaseAmount)
+    {
+        IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
+
+        while (spendBaseAmount < params.baseAmount && !_bookManager.isEmpty(params.id)) {
+            Tick tick = _bookManager.getLowest(params.id);
+            if (params.limitPrice < tick.toPrice()) break;
+            uint256 maxAmount;
+            unchecked {
+                if (key.takerPolicy.usesQuote()) {
+                    maxAmount = params.baseAmount - spendBaseAmount;
+                } else {
+                    maxAmount = key.takerPolicy.calculateOriginalAmount(params.baseAmount - spendBaseAmount, false);
+                }
+            }
+            maxAmount = tick.baseToQuote(maxAmount, false) / key.unit;
+            if (maxAmount == 0) break;
+            (uint256 quoteAmount, uint256 baseAmount) = _bookManager.take(
                 IBookManager.TakeParams({key: key, tick: tick, maxAmount: maxAmount.toUint64()}), params.hookData
             );
             if (baseAmount == 0) break;
+            takenQuoteAmount += quoteAmount;
+            spendBaseAmount += baseAmount;
         }
     }
 
