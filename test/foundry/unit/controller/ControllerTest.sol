@@ -71,7 +71,9 @@ abstract contract ControllerTest is Test {
         vm.stopPrank();
     }
 
-    function _limitOrder(int24 tick, uint256 quoteAmount, address taker, IBookManager.BookKey memory takeBookKey) internal {
+    function _limitOrder(int24 tick, uint256 quoteAmount, address taker, IBookManager.BookKey memory takeBookKey)
+        internal
+    {
         IController.LimitOrderParams[] memory paramsList = new IController.LimitOrderParams[](1);
         address[] memory tokensToSettle = new address[](1);
         tokensToSettle[0] = address(mockErc20);
