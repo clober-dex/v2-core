@@ -16,7 +16,6 @@ contract ControllerCancelOrderTest is ControllerTest {
     using OrderIdLibrary for OrderId;
     using Hooks for IHooks;
 
-    IBookManager.BookKey public unopenedKey;
     OrderId public orderId1;
     OrderId public orderId2;
 
@@ -31,8 +30,6 @@ contract ControllerCancelOrderTest is ControllerTest {
             takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });
-        unopenedKey = key;
-        unopenedKey.unit = 1e11;
 
         manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "baseUrl", "contractUrl", "name", "symbol");
         controller = new Controller(address(manager));

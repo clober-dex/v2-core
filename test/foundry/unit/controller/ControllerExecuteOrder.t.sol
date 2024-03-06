@@ -20,7 +20,6 @@ contract ControllerExecuteOrderTest is Test {
     MockERC20 public mockErc20;
 
     IBookManager.BookKey public key;
-    IBookManager.BookKey public unopenedKey;
     IBookManager public manager;
     Controller public controller;
     BookViewer public bookViewer;
@@ -37,8 +36,6 @@ contract ControllerExecuteOrderTest is Test {
             takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: IHooks(address(0))
         });
-        unopenedKey = key;
-        unopenedKey.unit = 1e11;
 
         manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "baseUrl", "contractUrl", "name", "symbol");
         controller = new Controller(address(manager));

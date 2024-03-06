@@ -17,7 +17,6 @@ contract ControllerSpendOrderTest is ControllerTest {
     using OrderIdLibrary for OrderId;
     using Hooks for IHooks;
 
-    IBookManager.BookKey public unopenedKey;
     OrderId public orderId;
 
     function setUp() public {
@@ -31,8 +30,6 @@ contract ControllerSpendOrderTest is ControllerTest {
             takerPolicy: FeePolicyLibrary.encode(false, 100),
             hooks: IHooks(address(0))
         });
-        unopenedKey = key;
-        unopenedKey.unit = 1e11;
 
         manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "baseUrl", "contractUrl", "name", "symbol");
         controller = new Controller(address(manager));
