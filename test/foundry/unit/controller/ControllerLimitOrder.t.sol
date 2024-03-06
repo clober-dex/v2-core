@@ -78,8 +78,8 @@ contract ControllerLimitOrderTest is ControllerTest {
     }
 
     function testLimitOrder() public {
-        uint256 quoteAmount = 1999999998800000000000;
-        uint256 takeAmount = 939999990600000000000;
+        uint256 quoteAmount = 199999999880000000000;
+        uint256 takeAmount = 93999999060000000000;
 
         uint256 beforeBalance = Constants.MAKER2.balance;
         uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.MAKER2);
