@@ -33,4 +33,10 @@ library OrderIdLibrary {
             index := id
         }
     }
+
+    function getBookId(OrderId id) internal pure returns (BookId bookId) {
+        assembly {
+            bookId := shr(64, id)
+        }
+    }
 }

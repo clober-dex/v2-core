@@ -323,8 +323,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
     }
 
     function _cancel(CancelOrderParams memory params) internal {
-        (BookId bookId,,) = params.id.decode();
-        IBookManager.BookKey memory key = _bookManager.getBookKey(bookId);
+        IBookManager.BookKey memory key = _bookManager.getBookKey(params.id.getBookId());
         try _bookManager.cancel(
             IBookManager.CancelParams({id: params.id, to: (params.leftQuoteAmount / key.unit).toUint64()}),
             params.hookData
