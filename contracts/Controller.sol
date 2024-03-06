@@ -288,7 +288,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
     }
 
     function _limit(LimitOrderParams memory params) internal returns (OrderId id) {
-        (uint256 takenQuoteAmount, uint256 spendBaseAmount) = _spend(
+        (, uint256 spendBaseAmount) = _spend(
             SpendOrderParams({
                 id: params.takeBookId,
                 limitPrice: params.limitPrice,
