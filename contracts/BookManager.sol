@@ -220,8 +220,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     {
         _checkAuthorized(_ownerOf(OrderId.unwrap(params.id)), msg.sender, OrderId.unwrap(params.id));
 
-        (BookId bookId,,) = params.id.decode();
-        Book.State storage book = _books[bookId];
+        Book.State storage book = _books[params.id.getBookId()];
         BookKey memory key = book.key;
 
         if (!key.hooks.beforeCancel(params, hookData)) return 0;

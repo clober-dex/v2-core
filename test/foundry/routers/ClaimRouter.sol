@@ -26,8 +26,7 @@ contract ClaimRouter is ILocker {
         uint256 claimedAmount = bookManager.claim(id, hookData);
         returnData = abi.encode(claimedAmount);
         if (claimedAmount > 0) {
-            (BookId bookId,,) = id.decode();
-            bookManager.withdraw(bookManager.getBookKey(bookId).base, payer, claimedAmount);
+            bookManager.withdraw(bookManager.getBookKey(id.getBookId()).base, payer, claimedAmount);
         }
     }
 }

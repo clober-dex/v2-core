@@ -28,8 +28,7 @@ contract CancelRouter is ILocker {
         returnData = abi.encode(canceledAmount);
 
         if (canceledAmount > 0) {
-            (BookId bookId,,) = params.id.decode();
-            bookManager.withdraw(bookManager.getBookKey(bookId).quote, payer, canceledAmount);
+            bookManager.withdraw(bookManager.getBookKey(params.id.getBookId()).quote, payer, canceledAmount);
         }
     }
 }
