@@ -71,6 +71,27 @@ abstract contract ControllerTest is Test {
         vm.stopPrank();
     }
 
+    function _limitOrder(int24 tick, uint256 quoteAmount, address taker, IBookManager.BookKey memory takeBookKey)
+        internal
+    {
+        IController.LimitOrderParams[] memory paramsList = new IController.LimitOrderParams[](1);
+        address[] memory tokensToSettle = new address[](1);
+        tokensToSettle[0] = address(mockErc20);
+        IController.ERC20PermitParams[] memory permitParamsList;
+        paramsList[0] = IController.LimitOrderParams({
+            takeBookId: takeBookKey.toId(),
+            makeBookId: key.toId(),
+            limitPrice: type(uint256).max,
+            tick: Tick.wrap(tick),
+            quoteAmount: quoteAmount,
+            takeHookData: "",
+            makeHookData: ""
+        });
+
+        vm.prank(taker);
+        controller.limit{value: quoteAmount}(paramsList, tokensToSettle, permitParamsList, uint64(block.timestamp));
+    }
+
     function _claimOrder(OrderId id) internal {
         IController.ClaimOrderParams[] memory paramsList = new IController.ClaimOrderParams[](1);
         paramsList[0] = IController.ClaimOrderParams({id: id, hookData: ""});

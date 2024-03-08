@@ -19,6 +19,7 @@ interface IController {
     enum Action {
         OPEN,
         MAKE,
+        LIMIT,
         TAKE,
         SPEND,
         CLAIM,
@@ -53,6 +54,16 @@ interface IController {
         Tick tick;
         uint256 quoteAmount;
         bytes hookData;
+    }
+
+    struct LimitOrderParams {
+        BookId takeBookId;
+        BookId makeBookId;
+        uint256 limitPrice;
+        Tick tick;
+        uint256 quoteAmount;
+        bytes takeHookData;
+        bytes makeHookData;
     }
 
     struct TakeOrderParams {
