@@ -39,4 +39,16 @@ library OrderIdLibrary {
             bookId := shr(64, id)
         }
     }
+
+    function getTick(OrderId id) internal pure returns (Tick tick) {
+        assembly {
+            tick := shr(40, id)
+        }
+    }
+
+    function getIndex(OrderId id) internal pure returns (uint40 index) {
+        assembly {
+            index := id
+        }
+    }
 }
