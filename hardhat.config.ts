@@ -76,7 +76,7 @@ const config: HardhatConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.23',
+        version: '0.8.24',
         settings: {
           optimizer: {
             enabled: true,
@@ -87,8 +87,22 @@ const config: HardhatConfig = {
     ],
     overrides: {},
   },
-  defaultNetwork: 'hardhat',
+  defaultNetwork: networkInfos.hardhat.name,
   networks: {
+    [networkInfos.berachainTestnet.id]: {
+      url: networkInfos.berachainTestnet.rpcUrls.default.http[0],
+      chainId: networkInfos.berachainTestnet.id,
+      accounts: process.env.DEV_PRIVATE_KEY ? [process.env.DEV_PRIVATE_KEY] : [],
+      gas: 'auto',
+      gasPrice: 'auto',
+      gasMultiplier: 1,
+      timeout: 3000000,
+      httpHeaders: {},
+      live: true,
+      saveDeployments: true,
+      tags: ['testnet', 'test'],
+      companionNetworks: {},
+    },
     [networkInfos.arbitrum.id]: {
       url: networkInfos.arbitrum.rpcUrls.default.http[0],
       chainId: networkInfos.arbitrum.id,
@@ -109,12 +123,11 @@ const config: HardhatConfig = {
         },
       },
     },
-    [networkInfos.hardhat.network]: {
+    [networkInfos.hardhat.name]: {
       chainId: networkInfos.hardhat.id,
       gas: 20000000,
       gasPrice: 250000000000,
       gasMultiplier: 1,
-      hardfork: 'shanghai',
       // @ts-ignore
       // forking: {
       //   enabled: true,
