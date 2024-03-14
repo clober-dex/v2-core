@@ -87,7 +87,7 @@ const config: HardhatConfig = {
     ],
     overrides: {},
   },
-  defaultNetwork: networkInfos.hardhat.name,
+  defaultNetwork: 'hardhat',
   networks: {
     [networkInfos.berachainTestnet.id]: {
       url: networkInfos.berachainTestnet.rpcUrls.default.http[0],
@@ -123,7 +123,7 @@ const config: HardhatConfig = {
         },
       },
     },
-    [networkInfos.hardhat.name]: {
+    hardhat: {
       chainId: networkInfos.hardhat.id,
       gas: 20000000,
       gasPrice: 250000000000,
