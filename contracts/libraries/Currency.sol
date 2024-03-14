@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.20;
 
-import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+pragma solidity ^0.8.20;
 
 type Currency is address;
 
@@ -59,7 +60,7 @@ library CurrencyLibrary {
 
     function balanceOfSelf(Currency currency) internal view returns (uint256) {
         if (currency.isNative()) return address(this).balance;
-        else return IERC20Minimal(Currency.unwrap(currency)).balanceOf(address(this));
+        else return IERC20(Currency.unwrap(currency)).balanceOf(address(this));
     }
 
     function equals(Currency currency, Currency other) internal pure returns (bool) {

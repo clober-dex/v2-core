@@ -149,19 +149,4 @@ interface IController {
         ERC721PermitParams[] calldata permitParamsList,
         uint64 deadline
     ) external;
-
-    //    function makeAfterClaim(
-    //        ClaimOrderParams[] calldata claimOrderParamsList,
-    //        MakeOrderParams[] calldata makeOrderParamsList
-    //    ) external;
-    //
-    //    function takeAfterClaim(
-    //        ClaimOrderParams[] calldata claimOrderParamsList,
-    //        TakeOrderParams[] calldata takeOrderParamsList
-    //    ) external;
-    //
-    //    function spendAfterClaim(
-    //        ClaimOrderParams[] calldata claimOrderParamsList,
-    //        SpendOrderParams[] calldata spendOrderParamsList
-    //    ) external;
 }
