@@ -219,6 +219,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     /**
      * @notice Finds the minimum tick greater than a specified tick in a book
+     * @dev Returns `Tick.wrap(type(int24).min)` if the specified tick is the highest
      * @param id The book ID
      * @param tick The specified tick
      * @return The next higher tick
