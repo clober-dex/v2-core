@@ -288,7 +288,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     }
 
     /**
-     * @notice Take a limit order
+     * @notice Take a limit order at specific tick
      * @param params The order parameters
      * @param hookData The hook data
      * @return quoteAmount The amount of quote currency to be received
