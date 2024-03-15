@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 
-import "../libraries/Book.sol";
+import "../libraries/BookId.sol";
 import "../libraries/Currency.sol";
 import "../libraries/OrderId.sol";
 import "../libraries/Tick.sol";
