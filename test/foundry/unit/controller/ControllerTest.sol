@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 
 import "../../../../contracts/Controller.sol";
-import "../../mocks/MockERC20.sol";
+import "../../../../contracts/mocks/MockERC20.sol";
 import "../../../../contracts/BookViewer.sol";
 
 abstract contract ControllerTest is Test {

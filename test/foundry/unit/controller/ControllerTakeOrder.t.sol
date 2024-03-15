@@ -9,7 +9,7 @@ import "../../../../contracts/libraries/BookId.sol";
 import "../../../../contracts/libraries/Hooks.sol";
 import "../../../../contracts/Controller.sol";
 import "../../../../contracts/BookManager.sol";
-import "../../mocks/MockERC20.sol";
+import "../../../../contracts/mocks/MockERC20.sol";
 
 contract ControllerTakeOrderTest is ControllerTest {
     using FeePolicyLibrary for FeePolicy;

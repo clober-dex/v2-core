@@ -8,7 +8,7 @@ import "../../../../contracts/interfaces/IBookManager.sol";
 import "../../../../contracts/libraries/Hooks.sol";
 import "../../../../contracts/BookManager.sol";
 import "../../mocks/MockHooks.sol";
-import "../../mocks/MockERC20.sol";
+import "../../../../contracts/mocks/MockERC20.sol";
 import "../../Constants.sol";
 import "../../routers/MakeRouter.sol";
 import "../../routers/TakeRouter.sol";

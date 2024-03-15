@@ -7,7 +7,7 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 import "../../../contracts/BookManager.sol";
-import "../mocks/MockERC20.sol";
+import "../../../contracts/mocks/MockERC20.sol";
 import "../routers/MakeRouter.sol";
 import "../routers/TakeRouter.sol";
 import "../routers/OpenRouter.sol";

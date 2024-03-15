@@ -8,7 +8,7 @@ import "../../../../contracts/libraries/BookId.sol";
 import "../../../../contracts/libraries/Hooks.sol";
 import "../../../../contracts/Controller.sol";
 import "../../../../contracts/BookManager.sol";
-import "../../mocks/MockERC20.sol";
+import "../../../../contracts/mocks/MockERC20.sol";
 import "../../../../contracts/BookViewer.sol";
 
 contract ControllerExecuteOrderTest is Test {
