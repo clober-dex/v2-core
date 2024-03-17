@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./Tick.sol";
-import "./BookId.sol";
+import {Tick} from "./Tick.sol";
+import {BookId} from "./BookId.sol";
 
 type OrderId is uint256;
 

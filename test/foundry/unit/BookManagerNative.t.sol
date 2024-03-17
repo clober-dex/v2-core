@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 import "../../../contracts/BookManager.sol";
 import "../../../contracts/mocks/MockERC20.sol";
+import "../../../contracts/libraries/TickBitmap.sol";
 import "../routers/MakeRouter.sol";
 import "../routers/TakeRouter.sol";
 import "../routers/OpenRouter.sol";

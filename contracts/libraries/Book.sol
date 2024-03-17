@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import "@clober/library/contracts/SegmentedSegmentTree.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {SegmentedSegmentTree} from "@clober/library/contracts/SegmentedSegmentTree.sol";
 
-import "../interfaces/IBookManager.sol";
-import "./Tick.sol";
-import "./OrderId.sol";
-import "./TotalClaimableMap.sol";
-import "./TickBitmap.sol";
+import {IBookManager} from "../interfaces/IBookManager.sol";
+import {Tick, TickLibrary} from "./Tick.sol";
+import {OrderId, OrderIdLibrary} from "./OrderId.sol";
+import {TotalClaimableMap} from "./TotalClaimableMap.sol";
+import {TickBitmap} from "./TickBitmap.sol";
 
 library Book {
     using Book for State;

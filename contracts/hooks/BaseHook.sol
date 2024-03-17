@@ -2,8 +2,10 @@
 
 pragma solidity ^0.8.19;
 
-import "../interfaces/IHooks.sol";
-import "../libraries/Hooks.sol";
+import {IHooks} from "../interfaces/IHooks.sol";
+import {IBookManager} from "../interfaces/IBookManager.sol";
+import {Hooks} from "../libraries/Hooks.sol";
+import {OrderId} from "../libraries/OrderId.sol";
 
 /// @author Clober
 /// @author Modified from https://github.com/Uniswap/v4-periphery/blob/63d64fcd82bff9ec0bad89730ce28d7ffa8e4225/contracts/BaseHook.sol

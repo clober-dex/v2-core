@@ -2,8 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./IHooks.sol";
-import "../libraries/Currency.sol";
+import {IBookManager} from "./IBookManager.sol";
+import {Currency} from "../libraries/Currency.sol";
+import {OrderId} from "../libraries/OrderId.sol";
 
 /**
  * @title IBountyPlatform

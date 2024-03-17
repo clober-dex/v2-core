@@ -2,16 +2,21 @@
 
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import "./libraries/BookId.sol";
-import "./libraries/Book.sol";
-import "./libraries/OrderId.sol";
-import "./libraries/Lockers.sol";
-import "./interfaces/ILocker.sol";
-import "./libraries/ERC721Permit.sol";
-import "./libraries/Hooks.sol";
+import {IBookManager} from "./interfaces/IBookManager.sol";
+import {ILocker} from "./interfaces/ILocker.sol";
+import {IHooks} from "./interfaces/IHooks.sol";
+import {BookId, BookIdLibrary} from "./libraries/BookId.sol";
+import {Book} from "./libraries/Book.sol";
+import {Currency, CurrencyLibrary} from "./libraries/Currency.sol";
+import {FeePolicy, FeePolicyLibrary} from "./libraries/FeePolicy.sol";
+import {Tick, TickLibrary} from "./libraries/Tick.sol";
+import {OrderId, OrderIdLibrary} from "./libraries/OrderId.sol";
+import {Lockers} from "./libraries/Lockers.sol";
+import {ERC721Permit} from "./libraries/ERC721Permit.sol";
+import {Hooks} from "./libraries/Hooks.sol";
 
 contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     using SafeCast for *;

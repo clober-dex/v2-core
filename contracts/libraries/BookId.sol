@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import "../interfaces/IBookManager.sol";
+import {IBookManager} from "../interfaces/IBookManager.sol";
 
 type BookId is uint192;
 

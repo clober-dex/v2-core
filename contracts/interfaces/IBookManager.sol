@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import {IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 
-import "../libraries/Book.sol";
-import "../libraries/Currency.sol";
-import "../libraries/OrderId.sol";
-import "../libraries/Tick.sol";
-import "../libraries/FeePolicy.sol";
-import "./IERC721Permit.sol";
-import "./IHooks.sol";
+import {BookId} from "../libraries/BookId.sol";
+import {Currency} from "../libraries/Currency.sol";
+import {OrderId} from "../libraries/OrderId.sol";
+import {Tick} from "../libraries/Tick.sol";
+import {FeePolicy} from "../libraries/FeePolicy.sol";
+import {IERC721Permit} from "./IERC721Permit.sol";
+import {IHooks} from "./IHooks.sol";
 
 /**
  * @title IBookManager

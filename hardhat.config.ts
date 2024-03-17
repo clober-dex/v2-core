@@ -102,6 +102,12 @@ const config: HardhatConfig = {
       saveDeployments: true,
       tags: ['testnet', 'test'],
       companionNetworks: {},
+      verify: {
+        etherscan: {
+          apiKey: 'artio_testnet',
+          apiUrl: 'https://api.routescan.io/v2/network/testnet/evm/80085/etherscan',
+        },
+      },
     },
     [networkInfos.arbitrumSepolia.id]: {
       url: networkInfos.arbitrumSepolia.rpcUrls.default.http[0],
@@ -116,6 +122,12 @@ const config: HardhatConfig = {
       saveDeployments: true,
       tags: ['testnet', 'test'],
       companionNetworks: {},
+      verify: {
+        etherscan: {
+          apiKey: process.env.ARBISCAN_API_KEY,
+          apiUrl: 'https://api-sepolia.arbiscan.io',
+        },
+      },
     },
     [networkInfos.arbitrum.id]: {
       url: networkInfos.arbitrum.rpcUrls.default.http[0],

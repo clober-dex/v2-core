@@ -2,9 +2,8 @@
 
 pragma solidity ^0.8.20;
 
-import "./IBookManager.sol";
-import "../libraries/OrderId.sol";
-import "../libraries/Tick.sol";
+import {IBookManager} from "./IBookManager.sol";
+import {OrderId} from "../libraries/OrderId.sol";
 
 /**
  * @title IHooks

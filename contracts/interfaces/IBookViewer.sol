@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-import "../libraries/Currency.sol";
-import "../libraries/BookId.sol";
-import "./IBookManager.sol";
-import "./IController.sol";
+import {BookId} from "../libraries/BookId.sol";
+import {IBookManager} from "./IBookManager.sol";
+import {IController} from "./IController.sol";
+import {Tick} from "../libraries/Tick.sol";
 
 /**
  * @title IBookViewer

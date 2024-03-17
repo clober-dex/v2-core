@@ -2,9 +2,17 @@
 
 pragma solidity ^0.8.20;
 
-import "./interfaces/IBookViewer.sol";
-import "./libraries/Lockers.sol";
-import "./interfaces/IController.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
+import {IBookManager} from "./interfaces/IBookManager.sol";
+import {IBookViewer} from "./interfaces/IBookViewer.sol";
+import {IController} from "./interfaces/IController.sol";
+import {SignificantBit} from "./libraries/SignificantBit.sol";
+import {Math} from "./libraries/Math.sol";
+import {Lockers} from "./libraries/Lockers.sol";
+import {BookId} from "./libraries/BookId.sol";
+import {Tick, TickLibrary} from "./libraries/Tick.sol";
+import {FeePolicy, FeePolicyLibrary} from "./libraries/FeePolicy.sol";
 
 contract BookViewer is IBookViewer {
     using SafeCast for *;

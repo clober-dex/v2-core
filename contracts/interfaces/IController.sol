@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
+import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 
-import "../libraries/OrderId.sol";
-import "../libraries/Currency.sol";
-import "./IBookManager.sol";
+import {OrderId} from "../libraries/OrderId.sol";
+import {BookId} from "../libraries/BookId.sol";
+import {Tick} from "../libraries/Tick.sol";
+import {IBookManager} from "./IBookManager.sol";
 
 interface IController {
     error InvalidAccess();

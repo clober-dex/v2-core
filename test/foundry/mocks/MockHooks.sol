@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 
 import "../../../contracts/interfaces/IHooks.sol";
 import "../../../contracts/libraries/Hooks.sol";
+import "../../../contracts/libraries/BookId.sol";
 
 contract MockHooks is IHooks {
     using BookIdLibrary for IBookManager.BookKey;

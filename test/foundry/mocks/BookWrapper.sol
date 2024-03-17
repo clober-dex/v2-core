@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import "../../../contracts/libraries/BookId.sol";
 import "../../../contracts/libraries/Book.sol";
 
 contract BookWrapper {

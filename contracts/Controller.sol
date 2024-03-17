@@ -7,10 +7,17 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "./interfaces/IController.sol";
-import "./interfaces/ILocker.sol";
-import "./interfaces/IBookManager.sol";
-import "./libraries/OrderId.sol";
+import {IController} from "./interfaces/IController.sol";
+import {ILocker} from "./interfaces/ILocker.sol";
+import {IBookManager} from "./interfaces/IBookManager.sol";
+import {IERC721Permit} from "./interfaces/IERC721Permit.sol";
+import {Math} from "./libraries/Math.sol";
+import {BookId, BookIdLibrary} from "./libraries/BookId.sol";
+import {OrderId, OrderIdLibrary} from "./libraries/OrderId.sol";
+import {Currency, CurrencyLibrary} from "./libraries/Currency.sol";
+import {FeePolicy, FeePolicyLibrary} from "./libraries/FeePolicy.sol";
+import {Tick, TickLibrary} from "./libraries/Tick.sol";
+import {OrderId, OrderIdLibrary} from "./libraries/OrderId.sol";
 
 contract Controller is IController, ILocker, ReentrancyGuard {
     using TickLibrary for *;
