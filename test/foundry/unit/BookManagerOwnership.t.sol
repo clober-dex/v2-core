@@ -59,7 +59,7 @@ contract BookManagerOwnershipTest is Test {
         assertEq(bookManager.defaultProvider(), DEFAULT_PROVIDER);
 
         vm.expectEmit(address(bookManager));
-        emit IBookManager.SetDefaultProvider(DEFAULT_PROVIDER, address(0x1234));
+        emit IBookManager.SetDefaultProvider(address(0x1234));
         bookManager.setDefaultProvider(address(0x1234));
 
         assertEq(bookManager.defaultProvider(), address(0x1234));

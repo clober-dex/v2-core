@@ -202,7 +202,7 @@ contract BookManagerNativeTest is Test {
         uint256 beforeQuoteAmount = mockErc20.balanceOf(address(this));
 
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Make(nativeBaseKey.toId(), address(makeRouter), tick, 0, makeAmount);
+        emit IBookManager.Make(nativeBaseKey.toId(), address(makeRouter), tick, 0, makeAmount, address(0));
         (OrderId id, uint256 actualQuoteAmount) = makeRouter.make(
             IBookManager.MakeParams({key: nativeBaseKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
         );
@@ -229,7 +229,7 @@ contract BookManagerNativeTest is Test {
         uint256 beforeQuoteAmount = address(this).balance;
 
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Make(nativeQuoteKey.toId(), address(makeRouter), tick, 0, makeAmount);
+        emit IBookManager.Make(nativeQuoteKey.toId(), address(makeRouter), tick, 0, makeAmount, address(0));
         (OrderId id, uint256 actualQuoteAmount) = makeRouter.make{value: 100 ether}(
             IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
         );

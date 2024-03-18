@@ -181,7 +181,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         params.key.hooks.afterMake(params, id, hookData);
 
-        emit Make(bookId, msg.sender, params.tick, orderIndex, params.amount);
+        emit Make(bookId, msg.sender, params.tick, orderIndex, params.amount, params.provider);
     }
 
     function take(TakeParams calldata params, bytes calldata hookData)
@@ -345,9 +345,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function setDefaultProvider(address newDefaultProvider) public onlyOwner {
-        address oldDefaultProvider = defaultProvider;
         defaultProvider = newDefaultProvider;
-        emit SetDefaultProvider(oldDefaultProvider, newDefaultProvider);
+        emit SetDefaultProvider(newDefaultProvider);
     }
 
     function _baseURI() internal view override returns (string memory) {

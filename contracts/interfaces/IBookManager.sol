@@ -50,8 +50,11 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @param tick The order tick
      * @param orderIndex The order index
      * @param amount The order amount
+     * @param provider The provider address
      */
-    event Make(BookId indexed bookId, address indexed user, Tick tick, uint256 orderIndex, uint64 amount);
+    event Make(
+        BookId indexed bookId, address indexed user, Tick tick, uint256 orderIndex, uint64 amount, address provider
+    );
 
     /**
      * @notice Event emitted when an order is taken
@@ -98,10 +101,9 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     /**
      * @notice Event emitted when new default provider is set
-     * @param oldDefaultProvider The old default provider address
      * @param newDefaultProvider The new default provider address
      */
-    event SetDefaultProvider(address indexed oldDefaultProvider, address indexed newDefaultProvider);
+    event SetDefaultProvider(address indexed newDefaultProvider);
 
     struct BookKey {
         Currency base;
