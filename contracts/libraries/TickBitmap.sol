@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: -
-// License: https://license.clober.io/LICENSE.pdf
+// License: https://license.clober.io/LICENSE_V2.pdf
 
 pragma solidity ^0.8.0;
 

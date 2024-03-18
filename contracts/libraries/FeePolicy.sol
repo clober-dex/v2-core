@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import "./Math.sol";
+import {Math} from "./Math.sol";
 
 type FeePolicy is uint24;
 

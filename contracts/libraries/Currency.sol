@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 pragma solidity ^0.8.20;
+
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 type Currency is address;
 
