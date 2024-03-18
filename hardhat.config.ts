@@ -50,7 +50,7 @@ const loadPrivateKeyFromKeyfile = () => {
     }
   }
 
-  const prodNetworks = new Set<number>([networkInfos.mainnet.id])
+  const prodNetworks = new Set<number>([networkInfos.mainnet.id, networkInfos.arbitrum.id])
   if (network && prodNetworks.has(network)) {
     if (privateKey) {
       return privateKey
