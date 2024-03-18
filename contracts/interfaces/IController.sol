@@ -97,7 +97,7 @@ interface IController {
 
     function getDepth(BookId id, Tick tick) external view returns (uint256);
 
-    function getLowestPrice(BookId id) external view returns (uint256);
+    function getHighestPrice(BookId id) external view returns (uint256);
 
     function getOrder(OrderId orderId)
         external

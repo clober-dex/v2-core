@@ -213,20 +213,20 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     function getDepth(BookId id, Tick tick) external view returns (uint64);
 
     /**
-     * @notice Retrieves the lowest tick for a given book ID
+     * @notice Retrieves the highest tick for a given book ID
      * @param id The book ID
-     * @return tick The lowest tick
+     * @return tick The highest tick
      */
-    function getLowest(BookId id) external view returns (Tick tick);
+    function getHighest(BookId id) external view returns (Tick tick);
 
     /**
-     * @notice Finds the minimum tick greater than a specified tick in a book
-     * @dev Returns `Tick.wrap(type(int24).min)` if the specified tick is the highest
+     * @notice Finds the maximum tick less than a specified tick in a book
+     * @dev Returns `Tick.wrap(type(int24).min)` if the specified tick is the lowest
      * @param id The book ID
      * @param tick The specified tick
-     * @return The next higher tick
+     * @return The next lower tick
      */
-    function minGreaterThan(BookId id, Tick tick) external view returns (Tick);
+    function maxLessThan(BookId id, Tick tick) external view returns (Tick);
 
     /**
      * @notice Checks if a book is empty

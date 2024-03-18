@@ -81,9 +81,9 @@ contract ControllerTakeOrderTest is ControllerTest {
         uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
         (uint256 expectedTakeAmount, uint256 expectedBaseAmount) =
             _takeOrder(Constants.QUOTE_AMOUNT4, type(uint256).max, Constants.TAKER1);
-        assertEq(expectedTakeAmount, takeAmount);
-        assertEq(expectedBaseAmount, baseAmount);
-        assertEq(Constants.TAKER1.balance - beforeBalance, takeAmount);
-        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), baseAmount);
+        assertEq(expectedTakeAmount, takeAmount, "TAKE_AMOUNT");
+        assertEq(expectedBaseAmount, baseAmount, "BASE_AMOUNT");
+        assertEq(Constants.TAKER1.balance - beforeBalance, takeAmount, "TAKER_BALANCE");
+        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), baseAmount, "TOKEN_BALANCE");
     }
 }

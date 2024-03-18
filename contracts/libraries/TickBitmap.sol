@@ -25,15 +25,15 @@ library TickBitmap {
         return self[B0_BITMAP_KEY] == 0;
     }
 
-    function _split(Tick tick) private pure returns (uint256 b0b1, uint8 b2) {
-        uint24 value = _toUint24(tick);
+    function _split(Tick tick) private pure returns (uint256 b0b1, uint256 b2) {
         assembly {
-            b2 := value
-            b0b1 := shr(8, value)
+            let value := add(not(tick), 0x800000)
+            b0b1 := shr(8, and(value, 0xffff00))
+            b2 := and(value, 0xff)
         }
     }
 
-    function lowest(mapping(uint256 => uint256) storage self) internal view returns (Tick) {
+    function highest(mapping(uint256 => uint256) storage self) internal view returns (Tick) {
         if (isEmpty(self)) revert EmptyError();
 
         uint256 b0 = self[B0_BITMAP_KEY].leastSignificantBit();
@@ -78,7 +78,7 @@ library TickBitmap {
         }
     }
 
-    function minGreaterThan(mapping(uint256 => uint256) storage self, Tick tick) internal view returns (Tick) {
+    function maxLessThan(mapping(uint256 => uint256) storage self, Tick tick) internal view returns (Tick) {
         (uint256 b0b1, uint256 b2) = _split(tick);
         uint256 b2Bitmap = (MAX_UINT_256_MINUS_1 << b2) & self[b0b1];
         if (b2Bitmap == 0) {
@@ -97,15 +97,9 @@ library TickBitmap {
         return _toTick(uint24((b0b1 << 8) | b2));
     }
 
-    function _toTick(uint24 x) private pure returns (Tick t) {
+    function _toTick(uint24 raw) private pure returns (Tick t) {
         assembly {
-            t := sub(x, 0x800000)
-        }
-    }
-
-    function _toUint24(Tick tick) private pure returns (uint24 r) {
-        assembly {
-            r := add(tick, 0x800000)
+            t := not(sub(raw, 0x800000))
         }
     }
 }

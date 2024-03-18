@@ -29,11 +29,11 @@ contract BookViewer is IBookViewer {
 
     function getLiquidity(BookId id, Tick tick, uint256 n) external view returns (Liquidity[] memory liquidity) {
         liquidity = new Liquidity[](n);
-        if (bookManager.getDepth(id, tick) == 0) tick = bookManager.minGreaterThan(id, tick);
+        if (bookManager.getDepth(id, tick) == 0) tick = bookManager.maxLessThan(id, tick);
         for (uint256 i = 0; i < n; ++i) {
             if (Tick.unwrap(tick) == type(int24).min) break;
             liquidity[i] = Liquidity({tick: tick, depth: bookManager.getDepth(id, tick)});
-            tick = bookManager.minGreaterThan(id, tick);
+            tick = bookManager.maxLessThan(id, tick);
         }
     }
 
@@ -46,11 +46,11 @@ contract BookViewer is IBookViewer {
 
         if (bookManager.isEmpty(params.id)) return (0, 0);
 
-        Tick tick = bookManager.getLowest(params.id);
+        Tick tick = bookManager.getHighest(params.id);
 
         while (Tick.unwrap(tick) > type(int24).min) {
             unchecked {
-                if (params.limitPrice < tick.toPrice()) break;
+                if (params.limitPrice > tick.toPrice()) break;
                 uint256 maxAmount;
                 if (key.takerPolicy.usesQuote()) {
                     maxAmount = key.takerPolicy.calculateOriginalAmount(params.quoteAmount - takenQuoteAmount, true);
@@ -73,7 +73,7 @@ contract BookViewer is IBookViewer {
                 takenQuoteAmount += quoteAmount;
                 spendBaseAmount += baseAmount;
                 if (params.quoteAmount <= takenQuoteAmount) break;
-                tick = bookManager.minGreaterThan(params.id, tick);
+                tick = bookManager.maxLessThan(params.id, tick);
             }
         }
     }
@@ -87,11 +87,11 @@ contract BookViewer is IBookViewer {
 
         if (bookManager.isEmpty(params.id)) return (0, 0);
 
-        Tick tick = bookManager.getLowest(params.id);
+        Tick tick = bookManager.getHighest(params.id);
 
         unchecked {
             while (spendBaseAmount <= params.baseAmount && Tick.unwrap(tick) > type(int24).min) {
-                if (params.limitPrice < tick.toPrice()) break;
+                if (params.limitPrice > tick.toPrice()) break;
                 uint256 maxAmount;
                 if (key.takerPolicy.usesQuote()) {
                     maxAmount = params.baseAmount - spendBaseAmount;
@@ -113,7 +113,7 @@ contract BookViewer is IBookViewer {
 
                 takenQuoteAmount += quoteAmount;
                 spendBaseAmount += baseAmount;
-                tick = bookManager.minGreaterThan(params.id, tick);
+                tick = bookManager.maxLessThan(params.id, tick);
             }
         }
     }

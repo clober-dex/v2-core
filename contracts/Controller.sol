@@ -50,8 +50,8 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         return uint256(_bookManager.getDepth(id, tick)) * _bookManager.getBookKey(id).unit;
     }
 
-    function getLowestPrice(BookId id) external view returns (uint256) {
-        return _bookManager.getLowest(id).toPrice();
+    function getHighestPrice(BookId id) external view returns (uint256) {
+        return _bookManager.getHighest(id).toPrice();
     }
 
     function getOrder(OrderId orderId)
@@ -324,8 +324,8 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
 
         while (params.quoteAmount > takenQuoteAmount && !_bookManager.isEmpty(params.id)) {
-            Tick tick = _bookManager.getLowest(params.id);
-            if (params.limitPrice < tick.toPrice()) break;
+            Tick tick = _bookManager.getHighest(params.id);
+            if (params.limitPrice > tick.toPrice()) break;
             uint256 maxAmount;
             unchecked {
                 if (key.takerPolicy.usesQuote()) {
@@ -354,8 +354,8 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
 
         while (spendBaseAmount < params.baseAmount && !_bookManager.isEmpty(params.id)) {
-            Tick tick = _bookManager.getLowest(params.id);
-            if (params.limitPrice < tick.toPrice()) break;
+            Tick tick = _bookManager.getHighest(params.id);
+            if (params.limitPrice > tick.toPrice()) break;
             uint256 maxAmount;
             unchecked {
                 if (key.takerPolicy.usesQuote()) {

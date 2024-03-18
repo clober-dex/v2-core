@@ -67,12 +67,12 @@ library Book {
         return self.queues[tick].tree.total() - self.totalClaimableOf.get(tick);
     }
 
-    function lowest(State storage self) internal view returns (Tick) {
-        return self.tickBitmap.lowest();
+    function highest(State storage self) internal view returns (Tick) {
+        return self.tickBitmap.highest();
     }
 
-    function minGreaterThan(State storage self, Tick tick) internal view returns (Tick) {
-        return self.tickBitmap.minGreaterThan(tick);
+    function maxLessThan(State storage self, Tick tick) internal view returns (Tick) {
+        return self.tickBitmap.maxLessThan(tick);
     }
 
     function isEmpty(State storage self) internal view returns (bool) {
