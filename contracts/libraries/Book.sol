@@ -17,7 +17,7 @@ library Book {
     using TickBitmap for mapping(uint256 => uint256);
     using SegmentedSegmentTree for SegmentedSegmentTree.Core;
     using TotalClaimableMap for mapping(uint24 => uint256);
-    using TickLibrary for *;
+    using TickLibrary for Tick;
     using OrderIdLibrary for OrderId;
 
     error ZeroAmount();
@@ -68,11 +68,11 @@ library Book {
     }
 
     function lowest(State storage self) internal view returns (Tick) {
-        return self.tickBitmap.lowest().toTick();
+        return self.tickBitmap.lowest();
     }
 
     function minGreaterThan(State storage self, Tick tick) internal view returns (Tick) {
-        return self.tickBitmap.minGreaterThan(tick.toUint24()).toTick();
+        return self.tickBitmap.minGreaterThan(tick);
     }
 
     function isEmpty(State storage self) internal view returns (bool) {
@@ -92,8 +92,7 @@ library Book {
         returns (uint40 orderIndex)
     {
         if (amount == 0) revert ZeroAmount();
-        uint24 tickIndex = tick.toUint24();
-        if (!self.tickBitmap.has(tickIndex)) self.tickBitmap.set(tickIndex);
+        if (!self.tickBitmap.has(tick)) self.tickBitmap.set(tick);
 
         Queue storage queue = self.queues[tick];
         // @dev Assume that orders.length cannot reach to type(uint40).max + 1.
@@ -133,7 +132,7 @@ library Book {
             takenAmount = maxTakeAmount;
         } else {
             takenAmount = currentDepth;
-            self.tickBitmap.clear(tick.toUint24());
+            self.tickBitmap.clear(tick);
         }
 
         self.totalClaimableOf.add(tick, takenAmount);
@@ -161,7 +160,7 @@ library Book {
         if (depth(self, tick) == 0) {
             // clear() won't revert so we can cancel with to=0 even if the depth() is already zero
             // works even if bitmap is empty
-            self.tickBitmap.clear(tick.toUint24());
+            self.tickBitmap.clear(tick);
         }
     }
 

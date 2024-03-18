@@ -4,6 +4,7 @@
 pragma solidity ^0.8.0;
 
 import {SignificantBit} from "./SignificantBit.sol";
+import {Tick} from "./Tick.sol";
 
 library TickBitmap {
     using SignificantBit for uint256;
@@ -14,8 +15,8 @@ library TickBitmap {
     uint256 public constant B0_BITMAP_KEY = uint256(keccak256("TickBitmap"));
     uint256 public constant MAX_UINT_256_MINUS_1 = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe;
 
-    function has(mapping(uint256 => uint256) storage self, uint24 value) internal view returns (bool) {
-        (uint256 b0b1, uint256 b2) = _split(value);
+    function has(mapping(uint256 => uint256) storage self, Tick tick) internal view returns (bool) {
+        (uint256 b0b1, uint256 b2) = _split(tick);
         uint256 mask = 1 << b2;
         return self[b0b1] & mask == mask;
     }
@@ -24,24 +25,25 @@ library TickBitmap {
         return self[B0_BITMAP_KEY] == 0;
     }
 
-    function _split(uint24 value) private pure returns (uint256 b0b1, uint8 b2) {
+    function _split(Tick tick) private pure returns (uint256 b0b1, uint8 b2) {
+        uint24 value = _toUint24(tick);
         assembly {
             b2 := value
             b0b1 := shr(8, value)
         }
     }
 
-    function lowest(mapping(uint256 => uint256) storage self) internal view returns (uint24) {
+    function lowest(mapping(uint256 => uint256) storage self) internal view returns (Tick) {
         if (isEmpty(self)) revert EmptyError();
 
         uint256 b0 = self[B0_BITMAP_KEY].leastSignificantBit();
         uint256 b0b1 = (b0 << 8) | (self[~b0].leastSignificantBit());
         uint256 b2 = self[b0b1].leastSignificantBit();
-        return uint24((b0b1 << 8) | b2);
+        return _toTick(uint24((b0b1 << 8) | b2));
     }
 
-    function set(mapping(uint256 => uint256) storage self, uint24 value) internal {
-        (uint256 b0b1, uint256 b2) = _split(value);
+    function set(mapping(uint256 => uint256) storage self, Tick tick) internal {
+        (uint256 b0b1, uint256 b2) = _split(tick);
         uint256 mask = 1 << b2;
         uint256 b2Bitmap = self[b0b1];
         if (b2Bitmap & mask > 0) revert AlreadyExistsError();
@@ -57,8 +59,8 @@ library TickBitmap {
         }
     }
 
-    function clear(mapping(uint256 => uint256) storage self, uint24 value) internal {
-        (uint256 b0b1, uint256 b2) = _split(value);
+    function clear(mapping(uint256 => uint256) storage self, Tick tick) internal {
+        (uint256 b0b1, uint256 b2) = _split(tick);
         uint256 mask = 1 << b2;
         uint256 b2Bitmap = self[b0b1];
 
@@ -76,15 +78,15 @@ library TickBitmap {
         }
     }
 
-    function minGreaterThan(mapping(uint256 => uint256) storage self, uint24 value) internal view returns (uint24) {
-        (uint256 b0b1, uint256 b2) = _split(value);
+    function minGreaterThan(mapping(uint256 => uint256) storage self, Tick tick) internal view returns (Tick) {
+        (uint256 b0b1, uint256 b2) = _split(tick);
         uint256 b2Bitmap = (MAX_UINT_256_MINUS_1 << b2) & self[b0b1];
         if (b2Bitmap == 0) {
             uint256 b0 = b0b1 >> 8;
             uint256 b1Bitmap = (MAX_UINT_256_MINUS_1 << (b0b1 & 0xff)) & self[~b0];
             if (b1Bitmap == 0) {
                 uint256 b0Bitmap = (MAX_UINT_256_MINUS_1 << b0) & self[B0_BITMAP_KEY];
-                if (b0Bitmap == 0) return 0;
+                if (b0Bitmap == 0) return Tick.wrap(type(int24).min);
                 b0 = b0Bitmap.leastSignificantBit();
                 b1Bitmap = self[~b0];
             }
@@ -92,6 +94,18 @@ library TickBitmap {
             b2Bitmap = self[b0b1];
         }
         b2 = b2Bitmap.leastSignificantBit();
-        return uint24((b0b1 << 8) | b2);
+        return _toTick(uint24((b0b1 << 8) | b2));
+    }
+
+    function _toTick(uint24 x) private pure returns (Tick t) {
+        assembly {
+            t := sub(x, 0x800000)
+        }
+    }
+
+    function _toUint24(Tick tick) private pure returns (uint24 r) {
+        assembly {
+            r := add(tick, 0x800000)
+        }
     }
 }

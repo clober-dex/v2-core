@@ -82,6 +82,6 @@ contract BookWrapper {
     }
 
     function tickBitmapHas(Tick tick) external view returns (bool) {
-        return _book.tickBitmap.has(tick.toUint24());
+        return _book.tickBitmap.has(tick);
     }
 }
