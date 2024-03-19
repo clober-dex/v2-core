@@ -72,10 +72,10 @@ contract ControllerCancelOrderTest is ControllerTest {
     function testCancelPartialOrder() public {
         uint256 beforeBalance = Constants.MAKER2.balance;
         (,, uint256 openAmount,) = controller.getOrder(orderId2);
-        uint256 cancelToAmount = openAmount / 3;
+        uint256 cancelToAmount = ((openAmount / 3) / 1e12) * 1e12;
         _cancelOrder(orderId2, cancelToAmount);
-        assertEq(Constants.MAKER2.balance - beforeBalance, 133333334000000000000);
+        assertEq(Constants.MAKER2.balance - beforeBalance, openAmount - cancelToAmount);
         (,, openAmount,) = controller.getOrder(orderId2);
-        assertEq(openAmount, 66666666000000000000);
+        assertEq(openAmount, cancelToAmount);
     }
 }

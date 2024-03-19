@@ -53,8 +53,8 @@ contract ControllerSpendOrderTest is ControllerTest {
     }
 
     function testSpendOrder() public {
-        uint256 baseAmount = 11999999362772318955;
-        uint256 takeAmount = Tick.wrap(Constants.PRICE_TICK).baseToQuote(
+        uint256 baseAmount = 11999999674501820674;
+        uint256 takeAmount = Tick.wrap(Constants.PRICE_TICK + 2).baseToQuote(
             key.takerPolicy.calculateOriginalAmount(baseAmount, false), false
         ) / key.unit * key.unit;
 
