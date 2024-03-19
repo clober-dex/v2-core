@@ -52,8 +52,9 @@ contract ControllerTakeOrderTest is ControllerTest {
 
     function testTakeOrder() public {
         uint256 takeAmount = 152000000479800000000;
-        uint256 baseAmount =
-            Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(key.takerPolicy.calculateOriginalAmount(takeAmount, true), true);
+        uint256 baseAmount = Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(
+            key.takerPolicy.calculateOriginalAmount(takeAmount, true), true
+        );
 
         uint256 beforeBalance = Constants.TAKER1.balance;
         uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
