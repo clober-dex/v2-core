@@ -80,23 +80,13 @@ contract ControllerExecuteOrderTest is Test {
     }
 
     function _takeOrder(uint256 quoteAmount) internal view returns (IController.TakeOrderParams memory params) {
-        params = IController.TakeOrderParams({
-            id: key.toId(),
-            limitPrice: type(uint256).max,
-            quoteAmount: quoteAmount,
-            hookData: ""
-        });
+        params = IController.TakeOrderParams({id: key.toId(), limitPrice: 0, quoteAmount: quoteAmount, hookData: ""});
 
         return params;
     }
 
     function _spendOrder(uint256 baseAmount) internal view returns (IController.SpendOrderParams memory params) {
-        params = IController.SpendOrderParams({
-            id: key.toId(),
-            limitPrice: type(uint256).max,
-            baseAmount: baseAmount,
-            hookData: ""
-        });
+        params = IController.SpendOrderParams({id: key.toId(), limitPrice: 0, baseAmount: baseAmount, hookData: ""});
     }
 
     function _claimOrder(OrderId id) internal pure returns (IController.ClaimOrderParams memory) {
@@ -114,7 +104,7 @@ contract ControllerExecuteOrderTest is Test {
         actionList[2] = IController.Action.SPEND;
 
         bytes[] memory paramsDataList = new bytes[](3);
-        paramsDataList[0] = abi.encode(_makeOrder(Constants.PRICE_TICK + 2, Constants.QUOTE_AMOUNT2));
+        paramsDataList[0] = abi.encode(_makeOrder(Constants.PRICE_TICK + 2, Constants.QUOTE_AMOUNT3));
         paramsDataList[1] = abi.encode(_takeOrder(Constants.QUOTE_AMOUNT2));
         paramsDataList[2] = abi.encode(_spendOrder(Constants.BASE_AMOUNT1));
 
@@ -128,7 +118,7 @@ contract ControllerExecuteOrderTest is Test {
 
         vm.startPrank(Constants.TAKER1);
         mockErc20.approve(address(controller), type(uint256).max);
-        OrderId orderId2 = controller.execute{value: Constants.QUOTE_AMOUNT2}(
+        OrderId orderId2 = controller.execute{value: Constants.QUOTE_AMOUNT3}(
             actionList,
             paramsDataList,
             tokensToSettle,
@@ -138,13 +128,15 @@ contract ControllerExecuteOrderTest is Test {
         )[0];
         vm.stopPrank();
 
-        uint256 quoteAmount = 152000001000000000000 + 15956916000000000000 - 152000000000000000000;
+        uint256 spendQuoteAmount =
+            Tick.wrap(Constants.PRICE_TICK).baseToQuote(Constants.BASE_AMOUNT1, false) / 10 ** 12 * 10 ** 12;
+        uint256 quoteAmount = spendQuoteAmount + 152 * 10 ** 18 + 1000000000000 - 94000000000000000000;
         assertEq(Constants.TAKER1.balance - beforeBalance, quoteAmount);
-        uint256 takeAmount = Tick.wrap(Constants.PRICE_TICK).quoteToBase(94000000000000000000, true)
-            + Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(58000001000000000000, true)
-            + Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(15956916000000000000, true);
+        uint256 spendAmount = Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(94000000000000000000, true)
+            + Tick.wrap(Constants.PRICE_TICK).quoteToBase(152 * 10 ** 18 + 1000000000000 - 94000000000000000000, true)
+            + Tick.wrap(Constants.PRICE_TICK).quoteToBase(spendQuoteAmount, true);
 
-        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), takeAmount);
+        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), spendAmount);
 
         actionList = new IController.Action[](1);
         actionList[0] = IController.Action.CLAIM;
@@ -168,20 +160,24 @@ contract ControllerExecuteOrderTest is Test {
         );
         vm.stopPrank();
 
-        assertEq(mockErc20.balanceOf(Constants.MAKER1) - beforeTokenBalance, 70704485945479345753);
+        assertEq(
+            mockErc20.balanceOf(Constants.MAKER1) - beforeTokenBalance,
+            Tick.wrap(Constants.PRICE_TICK).quoteToBase(152 * 10 ** 18 + 1000000000000 - 94000000000000000000, true)
+                + Tick.wrap(Constants.PRICE_TICK).quoteToBase(spendQuoteAmount, false)
+        );
 
         actionList[0] = IController.Action.CANCEL;
 
-        paramsDataList[0] = abi.encode(_cancelOrder(orderId2));
+        paramsDataList[0] = abi.encode(_cancelOrder(orderId1));
 
-        beforeBalance = Constants.TAKER1.balance;
+        beforeBalance = Constants.MAKER1.balance;
 
         erc721PermitParamsList = new IController.ERC721PermitParams[](1);
         erc721PermitParamsList[0] =
-            IController.ERC721PermitParams({tokenId: OrderId.unwrap(orderId2), signature: signature});
+            IController.ERC721PermitParams({tokenId: OrderId.unwrap(orderId1), signature: signature});
 
-        vm.startPrank(Constants.TAKER1);
-        manager.approve(address(controller), OrderId.unwrap(orderId2));
+        vm.startPrank(Constants.MAKER1);
+        manager.approve(address(controller), OrderId.unwrap(orderId1));
         controller.execute(
             actionList,
             paramsDataList,
@@ -192,6 +188,9 @@ contract ControllerExecuteOrderTest is Test {
         );
         vm.stopPrank();
 
-        assertEq(Constants.TAKER1.balance - beforeBalance, 78043083000000000000);
+        assertEq(
+            Constants.MAKER1.balance - beforeBalance,
+            94 * 10 ** 18 - (152 * 10 ** 18 + 1000000000000 - 94000000000000000000 + spendQuoteAmount)
+        );
     }
 }

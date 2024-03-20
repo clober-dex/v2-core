@@ -66,8 +66,8 @@ contract BookWrapper {
         return _book.getOrder(tick, index);
     }
 
-    function getLowest() external view returns (Tick) {
-        return _book.lowest();
+    function getHighest() external view returns (Tick) {
+        return _book.highest();
     }
 
     function isEmpty() external view returns (bool) {
@@ -82,6 +82,6 @@ contract BookWrapper {
     }
 
     function tickBitmapHas(Tick tick) external view returns (bool) {
-        return _book.tickBitmap.has(tick.toUint24());
+        return _book.tickBitmap.has(tick);
     }
 }

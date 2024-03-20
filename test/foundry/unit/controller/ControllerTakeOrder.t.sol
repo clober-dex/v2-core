@@ -47,13 +47,14 @@ contract ControllerTakeOrderTest is ControllerTest {
         _makeOrder(Constants.PRICE_TICK, Constants.QUOTE_AMOUNT1, Constants.MAKER1);
         _makeOrder(Constants.PRICE_TICK + 1, Constants.QUOTE_AMOUNT2, Constants.MAKER2);
         _makeOrder(Constants.PRICE_TICK + 1, Constants.QUOTE_AMOUNT3, Constants.MAKER3);
-        _makeOrder(Constants.PRICE_TICK + 2, Constants.QUOTE_AMOUNT2, Constants.MAKER1);
+        _makeOrder(Constants.PRICE_TICK + 2, Constants.QUOTE_AMOUNT1, Constants.MAKER1);
     }
 
     function testTakeOrder() public {
         uint256 takeAmount = 152000000479800000000;
-        uint256 baseAmount =
-            Tick.wrap(Constants.PRICE_TICK).quoteToBase(key.takerPolicy.calculateOriginalAmount(takeAmount, true), true);
+        uint256 baseAmount = Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(
+            key.takerPolicy.calculateOriginalAmount(takeAmount, true), true
+        );
 
         uint256 beforeBalance = Constants.TAKER1.balance;
         uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
@@ -67,13 +68,13 @@ contract ControllerTakeOrderTest is ControllerTest {
 
     function testTake3TickOrder() public {
         uint256 takeAmount = 500000000999400000000;
-        uint256 baseAmount = Tick.wrap(Constants.PRICE_TICK).quoteToBase(
+        uint256 baseAmount = Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(
             key.takerPolicy.calculateOriginalAmount(199960002999900000000, true), true
         )
             + Tick.wrap(Constants.PRICE_TICK + 1).quoteToBase(
                 key.takerPolicy.calculateOriginalAmount(245950803459900000000, true), true
             )
-            + Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(
+            + Tick.wrap(Constants.PRICE_TICK).quoteToBase(
                 key.takerPolicy.calculateOriginalAmount(54089194539600000000, true), true
             );
 
@@ -81,9 +82,9 @@ contract ControllerTakeOrderTest is ControllerTest {
         uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
         (uint256 expectedTakeAmount, uint256 expectedBaseAmount) =
             _takeOrder(Constants.QUOTE_AMOUNT4, type(uint256).max, Constants.TAKER1);
-        assertEq(expectedTakeAmount, takeAmount);
-        assertEq(expectedBaseAmount, baseAmount);
-        assertEq(Constants.TAKER1.balance - beforeBalance, takeAmount);
-        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), baseAmount);
+        assertEq(expectedTakeAmount, takeAmount, "TAKE_AMOUNT");
+        assertEq(expectedBaseAmount, baseAmount, "BASE_AMOUNT");
+        assertEq(Constants.TAKER1.balance - beforeBalance, takeAmount, "TAKER_BALANCE");
+        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), baseAmount, "TOKEN_BALANCE");
     }
 }

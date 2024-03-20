@@ -51,7 +51,7 @@ contract BookTest is Test {
         assertTrue(book.isEmpty());
 
         vm.expectRevert(abi.encodeWithSelector(TickBitmap.EmptyError.selector));
-        book.getLowest();
+        book.getHighest();
     }
 
     function testOpenDuplicatedKey() public {
@@ -70,13 +70,13 @@ contract BookTest is Test {
 
         uint40 index = book.make(Tick.wrap(0), 100);
         assertFalse(book.isEmpty());
-        assertEq(Tick.unwrap(book.getLowest()), 0);
+        assertEq(Tick.unwrap(book.getHighest()), 0);
         assertEq(index, 0);
         assertEq(book.depth(Tick.wrap(0)), 100);
 
         index = book.make(Tick.wrap(0), 200);
         assertFalse(book.isEmpty());
-        assertEq(Tick.unwrap(book.getLowest()), 0);
+        assertEq(Tick.unwrap(book.getHighest()), 0);
         assertEq(index, 1);
         assertEq(book.depth(Tick.wrap(0)), 300);
     }
@@ -139,7 +139,7 @@ contract BookTest is Test {
 
         book.take(Tick.wrap(0), 200);
 
-        assertEq(Tick.unwrap(book.getLowest()), 4);
+        assertEq(Tick.unwrap(book.getHighest()), 4);
     }
 
     function testCancel() public opened {
@@ -192,15 +192,15 @@ contract BookTest is Test {
         book.make(Tick.wrap(123), 100);
         book.make(Tick.wrap(1234), 100);
 
-        assertEq(Tick.unwrap(book.getLowest()), 0);
-
-        book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0), 0);
-
-        assertEq(Tick.unwrap(book.getLowest()), 123);
+        assertEq(Tick.unwrap(book.getHighest()), 1234);
 
         book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(1234), 0), 0);
 
-        assertFalse(book.tickBitmapHas(Tick.wrap(1234)));
+        assertEq(Tick.unwrap(book.getHighest()), 123);
+
+        book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0), 0);
+
+        assertFalse(book.tickBitmapHas(Tick.wrap(0)));
     }
 
     function testClaim() public opened {

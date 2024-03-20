@@ -135,12 +135,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         return _books[id].depth(tick);
     }
 
-    function getLowest(BookId id) external view returns (Tick) {
-        return _books[id].lowest();
+    function getHighest(BookId id) external view returns (Tick) {
+        return _books[id].highest();
     }
 
-    function minGreaterThan(BookId id, Tick tick) external view returns (Tick) {
-        return _books[id].minGreaterThan(tick);
+    function maxLessThan(BookId id, Tick tick) external view returns (Tick) {
+        return _books[id].maxLessThan(tick);
     }
 
     function isEmpty(BookId id) external view returns (bool) {

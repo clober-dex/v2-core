@@ -35,12 +35,8 @@ abstract contract ControllerTest is Test {
         address[] memory tokensToSettle = new address[](1);
         tokensToSettle[0] = address(mockErc20);
         IController.ERC20PermitParams[] memory permitParamsList;
-        paramsList[0] = IController.TakeOrderParams({
-            id: key.toId(),
-            limitPrice: type(uint256).max,
-            quoteAmount: quoteAmount,
-            hookData: ""
-        });
+        paramsList[0] =
+            IController.TakeOrderParams({id: key.toId(), limitPrice: 0, quoteAmount: quoteAmount, hookData: ""});
 
         (expectedTakeAmount, expectedBaseAmount) = bookViewer.getExpectedInput(paramsList[0]);
         vm.startPrank(taker);
@@ -57,12 +53,8 @@ abstract contract ControllerTest is Test {
         address[] memory tokensToSettle = new address[](1);
         tokensToSettle[0] = address(mockErc20);
         IController.ERC20PermitParams[] memory permitParamsList;
-        paramsList[0] = IController.SpendOrderParams({
-            id: key.toId(),
-            limitPrice: type(uint256).max,
-            baseAmount: baseAmount,
-            hookData: ""
-        });
+        paramsList[0] =
+            IController.SpendOrderParams({id: key.toId(), limitPrice: 0, baseAmount: baseAmount, hookData: ""});
 
         (expectedTakeAmount, expectedBaseAmount) = bookViewer.getExpectedOutput(paramsList[0]);
         vm.startPrank(taker);
@@ -81,7 +73,7 @@ abstract contract ControllerTest is Test {
         paramsList[0] = IController.LimitOrderParams({
             takeBookId: takeBookKey.toId(),
             makeBookId: key.toId(),
-            limitPrice: type(uint256).max,
+            limitPrice: 0,
             tick: Tick.wrap(tick),
             quoteAmount: quoteAmount,
             takeHookData: "",

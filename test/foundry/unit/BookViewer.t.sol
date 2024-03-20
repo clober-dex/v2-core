@@ -35,23 +35,24 @@ contract BookViewerTest is Test {
             bookManager.forceMake(id, tick, uint64(i + 2));
         }
 
-        IBookViewer.Liquidity[] memory queried = viewer.getLiquidity(id, Tick.wrap(type(int24).min), tickDiff.length);
+        IBookViewer.Liquidity[] memory queried = viewer.getLiquidity(id, Tick.wrap(type(int24).max), tickDiff.length);
+        console.log(queried.length, liquidity.length);
         for (uint256 i; i < queried.length; i++) {
-            assertEq(Tick.unwrap(queried[i].tick), Tick.unwrap(liquidity[i].tick));
-            assertEq(queried[i].depth, liquidity[i].depth);
+            assertEq(Tick.unwrap(queried[i].tick), Tick.unwrap(liquidity[liquidity.length - 1 - i].tick));
+            assertEq(queried[i].depth, liquidity[liquidity.length - 1 - i].depth);
         }
 
-        queried = viewer.getLiquidity(id, Tick.wrap(type(int24).min), tickDiff.length - 1);
+        queried = viewer.getLiquidity(id, Tick.wrap(type(int24).max), tickDiff.length - 1);
         for (uint256 i; i < queried.length; i++) {
-            assertEq(Tick.unwrap(queried[i].tick), Tick.unwrap(liquidity[i].tick));
-            assertEq(queried[i].depth, liquidity[i].depth);
+            assertEq(Tick.unwrap(queried[i].tick), Tick.unwrap(liquidity[liquidity.length - 1 - i].tick));
+            assertEq(queried[i].depth, liquidity[liquidity.length - 1 - i].depth);
         }
 
-        queried = viewer.getLiquidity(id, Tick.wrap(type(int24).min), tickDiff.length + 10);
+        queried = viewer.getLiquidity(id, Tick.wrap(type(int24).max), tickDiff.length + 10);
         for (uint256 i; i < queried.length; i++) {
             if (i < liquidity.length) {
-                assertEq(Tick.unwrap(queried[i].tick), Tick.unwrap(liquidity[i].tick));
-                assertEq(queried[i].depth, liquidity[i].depth);
+                assertEq(Tick.unwrap(queried[i].tick), Tick.unwrap(liquidity[liquidity.length - 1 - i].tick));
+                assertEq(queried[i].depth, liquidity[liquidity.length - 1 - i].depth);
             } else {
                 assertEq(Tick.unwrap(queried[i].tick), 0);
                 assertEq(queried[i].depth, 0);
