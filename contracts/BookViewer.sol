@@ -30,10 +30,17 @@ contract BookViewer is IBookViewer {
     function getLiquidity(BookId id, Tick tick, uint256 n) external view returns (Liquidity[] memory liquidity) {
         liquidity = new Liquidity[](n);
         if (bookManager.getDepth(id, tick) == 0) tick = bookManager.maxLessThan(id, tick);
-        for (uint256 i = 0; i < n; ++i) {
+        uint256 i;
+        while (i < n) {
             if (Tick.unwrap(tick) == type(int24).min) break;
             liquidity[i] = Liquidity({tick: tick, depth: bookManager.getDepth(id, tick)});
             tick = bookManager.maxLessThan(id, tick);
+            unchecked {
+                ++i;
+            }
+        }
+        assembly {
+            mstore(liquidity, i)
         }
     }
 

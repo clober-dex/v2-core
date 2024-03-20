@@ -118,7 +118,7 @@ contract ControllerExecuteOrderTest is Test {
 
         vm.startPrank(Constants.TAKER1);
         mockErc20.approve(address(controller), type(uint256).max);
-        OrderId orderId2 = controller.execute{value: Constants.QUOTE_AMOUNT3}(
+        controller.execute{value: Constants.QUOTE_AMOUNT3}(
             actionList,
             paramsDataList,
             tokensToSettle,
