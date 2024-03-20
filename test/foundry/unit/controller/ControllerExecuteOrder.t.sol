@@ -116,7 +116,6 @@ contract ControllerExecuteOrderTest is Test {
         uint256 beforeBalance = Constants.TAKER1.balance;
         uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);
 
-        console.log("-------");
         vm.startPrank(Constants.TAKER1);
         mockErc20.approve(address(controller), type(uint256).max);
         OrderId orderId2 = controller.execute{value: Constants.QUOTE_AMOUNT3}(
