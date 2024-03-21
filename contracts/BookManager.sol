@@ -146,6 +146,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         return _books[id].maxLessThan(tick);
     }
 
+    function isOpened(BookId id) external view returns (bool) {
+        return _books[id].isOpened();
+    }
+
     function isEmpty(BookId id) external view returns (bool) {
         return _books[id].isEmpty();
     }

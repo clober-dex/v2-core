@@ -229,6 +229,13 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     function maxLessThan(BookId id, Tick tick) external view returns (Tick);
 
     /**
+     * @notice Checks if a book is opened
+     * @param id The book ID
+     * @return True if the book is opened, false otherwise
+     */
+    function isOpened(BookId id) external view returns (bool);
+
+    /**
      * @notice Checks if a book is empty
      * @param id The book ID
      * @return True if the book is empty, false otherwise
