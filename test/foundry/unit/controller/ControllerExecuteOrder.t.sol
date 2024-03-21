@@ -125,7 +125,7 @@ contract ControllerExecuteOrderTest is Test {
             erc20PermitParamsList,
             erc721PermitParamsList,
             uint64(block.timestamp)
-        )[0];
+        );
         vm.stopPrank();
 
         uint256 spendQuoteAmount =
