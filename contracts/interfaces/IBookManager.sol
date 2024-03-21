@@ -327,8 +327,9 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @notice Collects fees from a provider
      * @param recipient The recipient address
      * @param currency The currency
+     * @return The collected amount
      */
-    function collect(address recipient, Currency currency) external;
+    function collect(address recipient, Currency currency) external returns (uint256);
 
     /**
      * @notice Withdraws a currency
