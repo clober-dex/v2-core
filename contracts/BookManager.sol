@@ -89,23 +89,26 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         //      But it is not checked here because it is not possible to check it without knowing circulatingTotalSupply.
         if (key.unit == 0) revert InvalidUnit();
 
-        if (!(key.makerPolicy.isValid() && key.takerPolicy.isValid())) revert InvalidFeePolicy();
+        FeePolicy makerPolicy = key.makerPolicy;
+        FeePolicy takerPolicy = key.takerPolicy;
+        if (!(makerPolicy.isValid() && takerPolicy.isValid())) revert InvalidFeePolicy();
         unchecked {
-            if (key.makerPolicy.rate() + key.takerPolicy.rate() < 0) revert InvalidFeePolicy();
+            if (makerPolicy.rate() + takerPolicy.rate() < 0) revert InvalidFeePolicy();
         }
-        if (key.makerPolicy.rate() < 0 || key.takerPolicy.rate() < 0) {
-            if (key.makerPolicy.usesQuote() != key.takerPolicy.usesQuote()) revert InvalidFeePolicy();
+        if (makerPolicy.rate() < 0 || takerPolicy.rate() < 0) {
+            if (makerPolicy.usesQuote() != takerPolicy.usesQuote()) revert InvalidFeePolicy();
         }
-        if (!key.hooks.isValidHookAddress()) revert Hooks.HookAddressNotValid(address(key.hooks));
+        IHooks hooks = key.hooks;
+        if (!hooks.isValidHookAddress()) revert Hooks.HookAddressNotValid(address(hooks));
 
-        key.hooks.beforeOpen(key, hookData);
+        hooks.beforeOpen(key, hookData);
 
         BookId id = key.toId();
         _books[id].open(key);
 
-        key.hooks.afterOpen(key, hookData);
+        hooks.afterOpen(key, hookData);
 
-        emit Open(id, key.base, key.quote, key.unit, key.makerPolicy, key.takerPolicy, key.hooks);
+        emit Open(id, key.base, key.quote, key.unit, makerPolicy, takerPolicy, hooks);
     }
 
     function lock(address locker, bytes calldata data) external returns (bytes memory result) {
@@ -141,6 +144,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
     function maxLessThan(BookId id, Tick tick) external view returns (Tick) {
         return _books[id].maxLessThan(tick);
+    }
+
+    function isOpened(BookId id) external view returns (bool) {
+        return _books[id].isOpened();
     }
 
     function isEmpty(BookId id) external view returns (bool) {
