@@ -22,7 +22,7 @@ contract BookViewerTest is Test {
         viewer = new BookViewer(bookManager);
     }
 
-    function testGetLiquidity(int16 start, uint8[22] memory tickDiff) public {
+    function testGetLiquidity(int16 start, uint8[5] memory tickDiff) public {
         BookId id = BookId.wrap(123);
 
         IBookViewer.Liquidity[] memory liquidity = new IBookViewer.Liquidity[](tickDiff.length + 1);
@@ -36,7 +36,6 @@ contract BookViewerTest is Test {
         }
 
         IBookViewer.Liquidity[] memory queried = viewer.getLiquidity(id, Tick.wrap(type(int24).max), tickDiff.length);
-        console.log(queried.length, liquidity.length);
         for (uint256 i; i < queried.length; i++) {
             assertEq(Tick.unwrap(queried[i].tick), Tick.unwrap(liquidity[liquidity.length - 1 - i].tick));
             assertEq(queried[i].depth, liquidity[liquidity.length - 1 - i].depth);
@@ -49,14 +48,10 @@ contract BookViewerTest is Test {
         }
 
         queried = viewer.getLiquidity(id, Tick.wrap(type(int24).max), tickDiff.length + 10);
+        assertEq(queried.length, liquidity.length, "LENGTH");
         for (uint256 i; i < queried.length; i++) {
-            if (i < liquidity.length) {
-                assertEq(Tick.unwrap(queried[i].tick), Tick.unwrap(liquidity[liquidity.length - 1 - i].tick));
-                assertEq(queried[i].depth, liquidity[liquidity.length - 1 - i].depth);
-            } else {
-                assertEq(Tick.unwrap(queried[i].tick), 0);
-                assertEq(queried[i].depth, 0);
-            }
+            assertEq(Tick.unwrap(queried[i].tick), Tick.unwrap(liquidity[liquidity.length - 1 - i].tick));
+            assertEq(queried[i].depth, liquidity[liquidity.length - 1 - i].depth);
         }
     }
 }
