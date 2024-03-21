@@ -315,14 +315,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         emit Claim(id, claimedRaw);
     }
 
-    function collect(address provider, Currency currency) external {
-        uint256 amount = tokenOwed[provider][currency];
-        if (amount > 0) {
-            tokenOwed[provider][currency] = 0;
-            reservesOf[currency] -= amount;
-            currency.transfer(provider, amount);
-            emit Collect(provider, currency, amount);
-        }
+    function collect(address recipient, Currency currency) external returns (uint256 amount) {
+        amount = tokenOwed[msg.sender][currency];
+        tokenOwed[msg.sender][currency] = 0;
+        reservesOf[currency] -= amount;
+        currency.transfer(recipient, amount);
+        emit Collect(msg.sender, recipient, currency, amount);
     }
 
     function withdraw(Currency currency, address to, uint256 amount) external onlyByLocker {

@@ -94,10 +94,11 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     /**
      * @notice Event emitted when a provider collects fees
      * @param provider The provider address
+     * @param recipient The recipient address
      * @param currency The currency
      * @param amount The collected amount
      */
-    event Collect(address indexed provider, Currency indexed currency, uint256 amount);
+    event Collect(address indexed provider, address indexed recipient, Currency indexed currency, uint256 amount);
 
     /**
      * @notice Event emitted when new default provider is set
@@ -331,10 +332,11 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
 
     /**
      * @notice Collects fees from a provider
-     * @param provider The provider address
+     * @param recipient The recipient address
      * @param currency The currency
+     * @return The collected amount
      */
-    function collect(address provider, Currency currency) external;
+    function collect(address recipient, Currency currency) external returns (uint256);
 
     /**
      * @notice Withdraws a currency
