@@ -182,7 +182,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             }
         }
 
-        _accountDelta(params.key.quote, quoteDelta);
+        _accountDelta(params.key.quote, -quoteDelta);
 
         _mint(msg.sender, OrderId.unwrap(id));
 
@@ -218,8 +218,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
             baseDelta += params.key.takerPolicy.calculateFee(baseAmount, false);
             baseAmount = uint256(baseDelta);
         }
-        _accountDelta(params.key.quote, -quoteDelta);
-        _accountDelta(params.key.base, baseDelta);
+        _accountDelta(params.key.quote, quoteDelta);
+        _accountDelta(params.key.base, -baseDelta);
 
         emit Take(bookId, msg.sender, params.tick, takenAmount);
 
@@ -250,7 +250,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (pending == 0) _burn(OrderId.unwrap(params.id));
 
-        _accountDelta(key.quote, -int256(canceledAmount));
+        _accountDelta(key.quote, int256(canceledAmount));
 
         emit Cancel(params.id, canceled);
 
@@ -308,7 +308,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (order.pending == 0) _burn(OrderId.unwrap(id));
 
-        _accountDelta(key.base, -claimedAmount.toInt256());
+        _accountDelta(key.base, claimedAmount.toInt256());
 
         emit Claim(id, claimedRaw);
 
@@ -325,7 +325,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
     function withdraw(Currency currency, address to, uint256 amount) external onlyByLocker {
         if (amount > 0) {
-            _accountDelta(currency, amount.toInt256());
+            _accountDelta(currency, -amount.toInt256());
             reservesOf[currency] -= amount;
             currency.transfer(to, amount);
         }
@@ -336,7 +336,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
         // subtraction must be safe
-        _accountDelta(currency, -(paid.toInt256()));
+        _accountDelta(currency, paid.toInt256());
     }
 
     function whitelist(address provider) external onlyOwner {
