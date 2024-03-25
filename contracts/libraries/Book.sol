@@ -4,9 +4,9 @@
 pragma solidity ^0.8.20;
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import {SegmentedSegmentTree} from "@clober/library/contracts/SegmentedSegmentTree.sol";
 
 import {IBookManager} from "../interfaces/IBookManager.sol";
+import {SegmentedSegmentTree} from "./SegmentedSegmentTree.sol";
 import {Tick, TickLibrary} from "./Tick.sol";
 import {OrderId, OrderIdLibrary} from "./OrderId.sol";
 import {TotalClaimableMap} from "./TotalClaimableMap.sol";

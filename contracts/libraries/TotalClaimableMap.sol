@@ -3,9 +3,8 @@
 
 pragma solidity ^0.8.20;
 
-import {DirtyUint64} from "@clober/library/contracts/DirtyUint64.sol";
-import {PackedUint256} from "@clober/library/contracts/PackedUint256.sol";
-
+import {DirtyUint64} from "./DirtyUint64.sol";
+import {PackedUint256} from "./PackedUint256.sol";
 import {Tick} from "./Tick.sol";
 
 library TotalClaimableMap {

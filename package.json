@@ -51,7 +51,6 @@
     "viem": "^2.8.6"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.2",
-    "@clober/library": "^1.0.0"
+    "@openzeppelin/contracts": "^5.0.2"
   }
 }
