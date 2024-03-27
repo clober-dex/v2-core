@@ -390,26 +390,26 @@ contract Controller is IController, ILocker, ReentrancyGuard {
     function _settleTokens(address user, address[] memory tokensToSettle) internal {
         Currency native = CurrencyLibrary.NATIVE;
         int256 currencyDelta = _bookManager.currencyDelta(address(this), native);
-        if (currencyDelta > 0) {
-            native.transfer(address(_bookManager), uint256(currencyDelta));
+        if (currencyDelta < 0) {
+            native.transfer(address(_bookManager), uint256(-currencyDelta));
             _bookManager.settle(native);
         }
         currencyDelta = _bookManager.currencyDelta(address(this), native);
-        if (currencyDelta < 0) {
-            _bookManager.withdraw(native, user, uint256(-currencyDelta));
+        if (currencyDelta > 0) {
+            _bookManager.withdraw(native, user, uint256(currencyDelta));
         }
 
         uint256 length = tokensToSettle.length;
         for (uint256 i = 0; i < length; ++i) {
             Currency currency = Currency.wrap(tokensToSettle[i]);
             currencyDelta = _bookManager.currencyDelta(address(this), currency);
-            if (currencyDelta > 0) {
-                IERC20(tokensToSettle[i]).safeTransferFrom(user, address(_bookManager), uint256(currencyDelta));
+            if (currencyDelta < 0) {
+                IERC20(tokensToSettle[i]).safeTransferFrom(user, address(_bookManager), uint256(-currencyDelta));
                 _bookManager.settle(currency);
             }
             currencyDelta = _bookManager.currencyDelta(address(this), currency);
-            if (currencyDelta < 0) {
-                _bookManager.withdraw(Currency.wrap(tokensToSettle[i]), user, uint256(-currencyDelta));
+            if (currencyDelta > 0) {
+                _bookManager.withdraw(Currency.wrap(tokensToSettle[i]), user, uint256(currencyDelta));
             }
             uint256 balance = IERC20(tokensToSettle[i]).balanceOf(address(this));
             if (balance > 0) {

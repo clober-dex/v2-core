@@ -223,9 +223,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -238,8 +236,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeOpen(uint160 addr) public {
@@ -258,9 +254,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -273,8 +267,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAfterOpen(uint160 addr) public {
@@ -293,9 +285,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -308,8 +298,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterOpen(uint160 addr) public {
@@ -327,9 +315,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -342,8 +328,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeMake(uint160 addr) public {
@@ -361,9 +345,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -376,8 +358,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAfterMake(uint160 addr) public {
@@ -395,9 +375,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -410,8 +388,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterMake(uint160 addr) public {
@@ -429,9 +405,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -444,8 +418,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeTake(uint160 addr) public {
@@ -463,9 +435,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -478,8 +448,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAfterTake(uint160 addr) public {
@@ -497,9 +465,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -512,8 +478,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeAfterTake(uint160 addr) public {
@@ -531,9 +495,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -546,8 +508,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeOpenAfterMake(uint160 addr) public {
@@ -565,9 +525,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -580,8 +538,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeCancel(uint160 addr) public {
@@ -599,9 +555,7 @@ contract HooksTest is Test {
                 beforeCancel: true,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -614,8 +568,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAfterCancel(uint160 addr) public {
@@ -633,9 +585,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: true,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -648,8 +598,6 @@ contract HooksTest is Test {
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterCancel(uint160 addr) public {
@@ -667,9 +615,7 @@ contract HooksTest is Test {
                 beforeCancel: true,
                 afterCancel: true,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -682,8 +628,6 @@ contract HooksTest is Test {
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeClaim(uint160 addr) public {
@@ -701,9 +645,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: true,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -716,8 +658,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAfterClaim(uint160 addr) public {
@@ -735,9 +675,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: true,
-                noOp: false,
-                accessLock: false
+                afterClaim: true
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -750,8 +688,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterClaim(uint160 addr) public {
@@ -769,9 +705,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: true,
-                afterClaim: true,
-                noOp: false,
-                accessLock: false
+                afterClaim: true
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -784,42 +718,6 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
-    }
-
-    function testValidateHookAddressAccessLock(uint160 addr) public {
-        uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.ACCESS_LOCK_FLAG)));
-        Hooks.validateHookPermissions(
-            hookAddr,
-            Hooks.Permissions({
-                beforeOpen: false,
-                afterOpen: false,
-                beforeMake: false,
-                afterMake: false,
-                beforeTake: false,
-                afterTake: false,
-                beforeCancel: false,
-                afterCancel: false,
-                beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: true
-            })
-        );
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_OPEN_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MAKE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MAKE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_TAKE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_TAKE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CANCEL_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAllHooks(uint160 addr) public {
@@ -838,9 +736,7 @@ contract HooksTest is Test {
                 beforeCancel: true,
                 afterCancel: true,
                 beforeClaim: true,
-                afterClaim: true,
-                noOp: true,
-                accessLock: true
+                afterClaim: true
             })
         );
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
@@ -853,49 +749,6 @@ contract HooksTest is Test {
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
-    }
-
-    function testValidateHookAddressNoOp(uint160 addr) public {
-        uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
-        IHooks hookAddr = IHooks(
-            address(
-                uint160(
-                    preAddr | Hooks.BEFORE_MAKE_FLAG | Hooks.BEFORE_CANCEL_FLAG | Hooks.BEFORE_CLAIM_FLAG
-                        | Hooks.NO_OP_FLAG
-                )
-            )
-        );
-        Hooks.validateHookPermissions(
-            hookAddr,
-            Hooks.Permissions({
-                beforeOpen: false,
-                afterOpen: false,
-                beforeMake: true,
-                afterMake: false,
-                beforeTake: false,
-                afterTake: false,
-                beforeCancel: true,
-                afterCancel: false,
-                beforeClaim: true,
-                afterClaim: false,
-                noOp: true,
-                accessLock: false
-            })
-        );
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_OPEN_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_OPEN_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_MAKE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MAKE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_TAKE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_TAKE_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_CANCEL_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_CANCEL_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_CLAIM_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressFailsAllHooks(uint152 addr, uint8 mask) public {
@@ -915,9 +768,7 @@ contract HooksTest is Test {
                 beforeCancel: true,
                 afterCancel: true,
                 beforeClaim: true,
-                afterClaim: true,
-                noOp: true,
-                accessLock: true
+                afterClaim: true
             })
         );
     }
@@ -940,9 +791,7 @@ contract HooksTest is Test {
                 beforeCancel: false,
                 afterCancel: false,
                 beforeClaim: false,
-                afterClaim: false,
-                noOp: false,
-                accessLock: false
+                afterClaim: false
             })
         );
     }

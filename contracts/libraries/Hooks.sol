@@ -26,10 +26,6 @@ library Hooks {
     uint256 internal constant AFTER_CANCEL_FLAG = 1 << 152;
     uint256 internal constant BEFORE_CLAIM_FLAG = 1 << 151;
     uint256 internal constant AFTER_CLAIM_FLAG = 1 << 150;
-    uint256 internal constant NO_OP_FLAG = 1 << 149;
-    uint256 internal constant ACCESS_LOCK_FLAG = 1 << 148;
-
-    bytes4 public constant NO_OP_SELECTOR = bytes4(keccak256(abi.encodePacked("NoOp")));
 
     struct Permissions {
         bool beforeOpen;
@@ -42,8 +38,6 @@ library Hooks {
         bool afterCancel;
         bool beforeClaim;
         bool afterClaim;
-        bool noOp;
-        bool accessLock;
     }
 
     /// @notice Thrown if the address will not lead to the specified hook calls being called
@@ -72,8 +66,6 @@ library Hooks {
                 || permissions.afterCancel != self.hasPermission(AFTER_CANCEL_FLAG)
                 || permissions.beforeClaim != self.hasPermission(BEFORE_CLAIM_FLAG)
                 || permissions.afterClaim != self.hasPermission(AFTER_CLAIM_FLAG)
-                || permissions.noOp != self.hasPermission(NO_OP_FLAG)
-                || permissions.accessLock != self.hasPermission(ACCESS_LOCK_FLAG)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -82,16 +74,8 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook) internal pure returns (bool) {
-        // if NoOp is allowed, at least one of beforeMake, beforeTake, beforeCancel and beforeClaim should be allowed
-        if (
-            hook.hasPermission(NO_OP_FLAG) && !hook.hasPermission(BEFORE_MAKE_FLAG)
-                && !hook.hasPermission(BEFORE_TAKE_FLAG) && !hook.hasPermission(BEFORE_CANCEL_FLAG)
-                && !hook.hasPermission(BEFORE_CLAIM_FLAG)
-        ) {
-            return false;
-        }
         // If a hook contract is set, it must have at least 1 flag set
-        return address(hook) == address(0) || uint160(address(hook)) >= ACCESS_LOCK_FLAG;
+        return address(hook) == address(0) || uint160(address(hook)) >= AFTER_CLAIM_FLAG;
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
@@ -120,16 +104,6 @@ library Hooks {
         if (selector != expectedSelector) revert InvalidHookResponse();
     }
 
-    /// @notice performs a hook call using the given calldata on the given hook
-    /// @return shouldExecute Whether the operation should be executed or nooped
-    function callHookNoopable(IHooks self, bytes memory data) internal returns (bool shouldExecute) {
-        (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
-
-        if (selector == expectedSelector) shouldExecute = true;
-        else if (selector == NO_OP_SELECTOR && self.hasPermission(NO_OP_FLAG)) shouldExecute = false;
-        else revert InvalidHookResponse();
-    }
-
     /// @notice calls beforeOpen hook if permissioned and validates return value
     function beforeOpen(IHooks self, IBookManager.BookKey memory key, bytes calldata hookData) internal {
         if (self.hasPermission(BEFORE_OPEN_FLAG)) {
@@ -145,15 +119,9 @@ library Hooks {
     }
 
     /// @notice calls beforeMake hook if permissioned and validates return value
-    function beforeMake(IHooks self, IBookManager.MakeParams memory params, bytes calldata hookData)
-        internal
-        returns (bool shouldExecute)
-    {
+    function beforeMake(IHooks self, IBookManager.MakeParams memory params, bytes calldata hookData) internal {
         if (self.hasPermission(BEFORE_MAKE_FLAG)) {
-            shouldExecute =
-                self.callHookNoopable(abi.encodeWithSelector(IHooks.beforeMake.selector, msg.sender, params, hookData));
-        } else {
-            shouldExecute = true;
+            self.callHook(abi.encodeWithSelector(IHooks.beforeMake.selector, msg.sender, params, hookData));
         }
     }
 
@@ -167,15 +135,9 @@ library Hooks {
     }
 
     /// @notice calls beforeTake hook if permissioned and validates return value
-    function beforeTake(IHooks self, IBookManager.TakeParams memory params, bytes calldata hookData)
-        internal
-        returns (bool shouldExecute)
-    {
+    function beforeTake(IHooks self, IBookManager.TakeParams memory params, bytes calldata hookData) internal {
         if (self.hasPermission(BEFORE_TAKE_FLAG)) {
-            shouldExecute =
-                self.callHookNoopable(abi.encodeWithSelector(IHooks.beforeTake.selector, msg.sender, params, hookData));
-        } else {
-            shouldExecute = true;
+            self.callHook(abi.encodeWithSelector(IHooks.beforeTake.selector, msg.sender, params, hookData));
         }
     }
 
@@ -189,16 +151,9 @@ library Hooks {
     }
 
     /// @notice calls beforeCancel hook if permissioned and validates return value
-    function beforeCancel(IHooks self, IBookManager.CancelParams calldata params, bytes calldata hookData)
-        internal
-        returns (bool shouldExecute)
-    {
+    function beforeCancel(IHooks self, IBookManager.CancelParams calldata params, bytes calldata hookData) internal {
         if (self.hasPermission(BEFORE_CANCEL_FLAG)) {
-            shouldExecute = self.callHookNoopable(
-                abi.encodeWithSelector(IHooks.beforeCancel.selector, msg.sender, params, hookData)
-            );
-        } else {
-            shouldExecute = true;
+            self.callHook(abi.encodeWithSelector(IHooks.beforeCancel.selector, msg.sender, params, hookData));
         }
     }
 
@@ -217,13 +172,9 @@ library Hooks {
     }
 
     /// @notice calls beforeClaim hook if permissioned and validates return value
-    function beforeClaim(IHooks self, OrderId orderId, bytes calldata hookData) internal returns (bool shouldExecute) {
+    function beforeClaim(IHooks self, OrderId orderId, bytes calldata hookData) internal {
         if (self.hasPermission(BEFORE_CLAIM_FLAG)) {
-            shouldExecute = self.callHookNoopable(
-                abi.encodeWithSelector(IHooks.beforeClaim.selector, msg.sender, orderId, hookData)
-            );
-        } else {
-            shouldExecute = true;
+            self.callHook(abi.encodeWithSelector(IHooks.beforeClaim.selector, msg.sender, orderId, hookData));
         }
     }
 
@@ -242,12 +193,9 @@ library Hooks {
 
     /// @notice bubble up revert if present. Else throw FailedHookCall
     function _revert(bytes memory result) private pure {
-        if (result.length > 0) {
-            assembly {
-                revert(add(0x20, result), mload(result))
-            }
-        } else {
-            revert FailedHookCall();
+        if (result.length == 0) revert FailedHookCall();
+        assembly {
+            revert(add(0x20, result), mload(result))
         }
     }
 }
