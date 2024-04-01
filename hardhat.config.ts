@@ -6,6 +6,7 @@ import readlineSync from 'readline-sync'
 
 import 'hardhat-deploy'
 import '@nomicfoundation/hardhat-viem'
+import '@nomicfoundation/hardhat-foundry'
 import 'hardhat-gas-reporter'
 import 'hardhat-contract-sizer'
 import 'hardhat-abi-exporter'

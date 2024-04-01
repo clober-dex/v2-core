@@ -244,6 +244,13 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     function isEmpty(BookId id) external view returns (bool);
 
     /**
+     * @notice Encodes a BookKey into a BookId
+     * @param key The BookKey to encode
+     * @return The encoded BookId
+     */
+    function encodeBookKey(BookKey calldata key) external pure returns (BookId);
+
+    /**
      * @notice Loads a value from a specific storage slot
      * @param slot The storage slot
      * @return The value in the slot

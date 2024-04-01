@@ -154,6 +154,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         return _books[id].isEmpty();
     }
 
+    function encodeBookKey(BookKey calldata key) external pure returns (BookId) {
+        return key.toId();
+    }
+
     function make(MakeParams calldata params, bytes calldata hookData)
         external
         onlyByLocker
