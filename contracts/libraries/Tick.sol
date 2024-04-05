@@ -93,12 +93,12 @@ library TickLibrary {
     }
 
     function baseToQuote(Tick tick, uint256 base, bool roundingUp) internal pure returns (uint256) {
-        return Math.divide((base * tick.toPrice()), 1 << 128, roundingUp);
+        return Math.divide((base * tick.toPrice()), 1 << 96, roundingUp);
     }
 
     function quoteToBase(Tick tick, uint256 quote, bool roundingUp) internal pure returns (uint256) {
         // @dev quote = raw(uint64) * unit(uint64) < 2^128
         //      We don't need to check overflow here
-        return Math.divide(quote << 128, tick.toPrice(), roundingUp);
+        return Math.divide(quote << 96, tick.toPrice(), roundingUp);
     }
 }
