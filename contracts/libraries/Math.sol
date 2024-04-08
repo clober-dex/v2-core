@@ -16,7 +16,7 @@ library Math {
 
     /// @dev Returns `ln(x)`, denominated in `WAD`.
     /// Credit to Remco Bloemen under MIT license: https://2π.com/22/exp-ln
-    function lnWad(int256 x) external pure returns (int256 r) {
+    function lnWad(int256 x) internal pure returns (int256 r) {
         /// @solidity memory-safe-assembly
         assembly {
             // We want to convert `x` from `10**18` fixed point to `2**96` fixed point.
