@@ -50,7 +50,7 @@ library TickLibrary {
         _;
     }
 
-    function fromPrice(uint256 price) internal pure validatePrice(price) returns (Tick tick) {
+    function fromPrice(uint256 price) internal pure validatePrice(price) returns (Tick) {
         unchecked {
             int24 tick = int24((int256(price).lnWad() * 42951820407860) / 2 ** 128);
             if (toPrice(Tick.wrap(tick)) > price) return Tick.wrap(tick - 1);
@@ -97,7 +97,7 @@ library TickLibrary {
     }
 
     function quoteToBase(Tick tick, uint256 quote, bool roundingUp) internal pure returns (uint256) {
-        // @dev quote = raw(uint64) * unit(uint64) < 2^128
+        // @dev quote = raw(uint64) * unit(uint64) < 2^96
         //      We don't need to check overflow here
         return Math.divide(quote << 96, tick.toPrice(), roundingUp);
     }

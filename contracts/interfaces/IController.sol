@@ -149,7 +149,7 @@ interface IController {
     /**
      * @notice Returns the highest price of a book
      * @param id The id of the book
-     * @return The highest price of the book with 2**128 precision
+     * @return The highest price of the book with 2**96 precision
      */
     function getHighestPrice(BookId id) external view returns (uint256);
 
@@ -157,7 +157,7 @@ interface IController {
      * @notice Returns the details of an order
      * @param orderId The id of the order
      * @return provider The provider of the order
-     * @return price The price of the order with 2**128 precision
+     * @return price The price of the order with 2**96 precision
      * @return openAmount The open quote amount of the order
      * @return claimableAmount The claimable base amount of the order
      */
@@ -176,7 +176,7 @@ interface IController {
     /**
      * @notice Converts a tick to a price
      * @param tick The tick to convert
-     * @return The price with 2**128 precision
+     * @return The price with 2**96 precision
      */
     function toPrice(Tick tick) external pure returns (uint256);
 
