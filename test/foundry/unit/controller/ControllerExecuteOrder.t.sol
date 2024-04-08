@@ -80,13 +80,25 @@ contract ControllerExecuteOrderTest is Test {
     }
 
     function _takeOrder(uint256 quoteAmount) internal view returns (IController.TakeOrderParams memory params) {
-        params = IController.TakeOrderParams({id: key.toId(), limitPrice: 0, quoteAmount: quoteAmount, hookData: ""});
+        params = IController.TakeOrderParams({
+            id: key.toId(),
+            limitPrice: 0,
+            quoteAmount: quoteAmount,
+            maxBaseAmount: type(uint256).max,
+            hookData: ""
+        });
 
         return params;
     }
 
     function _spendOrder(uint256 baseAmount) internal view returns (IController.SpendOrderParams memory params) {
-        params = IController.SpendOrderParams({id: key.toId(), limitPrice: 0, baseAmount: baseAmount, hookData: ""});
+        params = IController.SpendOrderParams({
+            id: key.toId(),
+            limitPrice: 0,
+            baseAmount: baseAmount,
+            minQuoteAmount: 0,
+            hookData: ""
+        });
     }
 
     function _claimOrder(OrderId id) internal pure returns (IController.ClaimOrderParams memory) {

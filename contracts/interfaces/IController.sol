@@ -20,7 +20,6 @@ interface IController {
     error Deadline();
     error InvalidMarket();
     error ControllerSlippage();
-    error ValueTransferFailed();
     error InvalidAction();
 
     /**
@@ -101,6 +100,7 @@ interface IController {
         BookId id;
         uint256 limitPrice;
         uint256 quoteAmount;
+        uint256 maxBaseAmount;
         bytes hookData;
     }
 
@@ -111,6 +111,7 @@ interface IController {
         BookId id;
         uint256 limitPrice;
         uint256 baseAmount;
+        uint256 minQuoteAmount;
         bytes hookData;
     }
 

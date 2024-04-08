@@ -301,6 +301,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
                 id: params.takeBookId,
                 limitPrice: params.limitPrice,
                 baseAmount: params.quoteAmount,
+                minQuoteAmount: 0,
                 hookData: params.takeHookData
             })
         );
@@ -345,6 +346,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
             takenQuoteAmount += quoteAmount;
             spendBaseAmount += baseAmount;
         }
+        if (params.maxBaseAmount < spendBaseAmount) revert ControllerSlippage();
     }
 
     function _spend(SpendOrderParams memory params)
@@ -373,6 +375,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
             takenQuoteAmount += quoteAmount;
             spendBaseAmount += baseAmount;
         }
+        if (params.minQuoteAmount > takenQuoteAmount) revert ControllerSlippage();
     }
 
     function _claim(ClaimOrderParams memory params) internal {
