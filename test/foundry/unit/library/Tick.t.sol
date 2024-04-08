@@ -15,6 +15,25 @@ contract TickUnitTest is Test {
         tickWrapper = new TickWrapper();
     }
 
+    function testTickToPrice(int24 index) public {
+        vm.assume(index > TickLibrary.MIN_TICK && index < TickLibrary.MAX_TICK);
+
+        uint256 price = tickWrapper.toPrice(index);
+
+        int24 tick = tickWrapper.fromPrice(price - 1);
+        assertEq(tick, index - 1, "LOWER_PRICE");
+
+        tick = tickWrapper.fromPrice(price);
+        assertEq(tick, index, "EXACT_PRICE");
+
+        tick = tickWrapper.fromPrice(price + 1);
+        assertEq(tick, index, "HIGHER_PRICE");
+
+        uint256 spread = (price - tickWrapper.toPrice(index - 1)) * 1000000 / price;
+        assertGe(spread, 99);
+        assertLe(spread, 100);
+    }
+
     function testMinTickToPrice() public {
         uint256 lastPrice = tickWrapper.toPrice(TickLibrary.MIN_TICK);
 
@@ -100,7 +119,7 @@ contract TickUnitTest is Test {
     }
 
     //    // Have to check all ticks is validate.
-    //    function testIndexToPrice() public {
+    //    function testTickToPrice() public {
     //        uint256 lastPrice = tickWrapper.toPrice(TickLibrary.MIN_TICK);
     //        int24 tick;
     //        uint256 price;
