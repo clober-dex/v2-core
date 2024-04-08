@@ -8,7 +8,6 @@ library Constants {
     address constant USER = address(0xabc);
     uint64 public constant RAW_AMOUNT = 1873;
     int24 public constant PRICE_TICK = 2848;
-    uint256 public constant PRICE = 18000000000000000;
     uint256 public constant QUOTE_AMOUNT1 = 200 * 10 ** 18 + 123;
     uint256 public constant QUOTE_AMOUNT2 = 152 * 10 ** 18 + 7347;
     uint256 public constant QUOTE_AMOUNT3 = 94 * 10 ** 18 + 461767;
