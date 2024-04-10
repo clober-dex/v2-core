@@ -106,6 +106,15 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      */
     event SetDefaultProvider(address indexed newDefaultProvider);
 
+    /**
+     * @notice This structure represents a unique identifier for a book in the BookManager.
+     * @param base The base currency of the book
+     * @param unit The unit of the book
+     * @param quote The quote currency of the book
+     * @param makerPolicy The maker fee policy of the book
+     * @param hooks The hooks contract of the book
+     * @param takerPolicy The taker fee policy of the book
+     */
     struct BookKey {
         Currency base;
         uint64 unit;
@@ -178,6 +187,12 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      */
     function getBookKey(BookId id) external view returns (BookKey memory);
 
+    /**
+     * @notice This structure represents a current status for an order in the BookManager.
+     * @param provider The provider of the order
+     * @param open The open amount of the order
+     * @param claimable The claimable amount of the order
+     */
     struct OrderInfo {
         address provider;
         uint64 open;
@@ -280,11 +295,17 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      */
     function lock(address locker, bytes calldata data) external returns (bytes memory);
 
+    /**
+     * @notice This structure represents the parameters for making an order.
+     * @param key The book key for the order
+     * @param tick The tick for the order
+     * @param amount The amount for the order. Times 10**unitDecimals to get actual bid amount.
+     * @param provider The provider for the order. The limit order service provider address to collect fees.
+     */
     struct MakeParams {
         BookKey key;
         Tick tick;
         uint64 amount; // times 10**unitDecimals to get actual bid amount
-        /// @notice The limit order service provider address to collect fees
         address provider;
     }
 
@@ -299,6 +320,12 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         external
         returns (OrderId id, uint256 quoteAmount);
 
+    /**
+     * @notice This structure represents the parameters for taking orders in the specified tick.
+     * @param key The book key for the order
+     * @param tick The tick for the order
+     * @param maxAmount The max amount to take
+     */
     struct TakeParams {
         BookKey key;
         Tick tick;
@@ -316,6 +343,11 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         external
         returns (uint256 quoteAmount, uint256 baseAmount);
 
+    /**
+     * @notice This structure represents the parameters for canceling an order.
+     * @param id The order id for the order
+     * @param to The remaining open amount for the order after cancellation. Must not exceed the current open amount.
+     */
     struct CancelParams {
         OrderId id;
         uint64 to;
