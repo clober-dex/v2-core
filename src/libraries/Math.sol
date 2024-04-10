@@ -2,11 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import {SignificantBit} from "./SignificantBit.sol";
-
 library Math {
-    using SignificantBit for uint256;
-
     function divide(uint256 a, uint256 b, bool roundingUp) internal pure returns (uint256 ret) {
         // In the OrderBook contract code, b is never zero.
         assembly {
