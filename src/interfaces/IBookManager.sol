@@ -299,13 +299,13 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @notice This structure represents the parameters for making an order.
      * @param key The book key for the order
      * @param tick The tick for the order
-     * @param amount The amount for the order. Times 10**unitDecimals to get actual bid amount.
+     * @param amount The amount for the order. Times key.unit to get actual bid amount.
      * @param provider The provider for the order. The limit order service provider address to collect fees.
      */
     struct MakeParams {
         BookKey key;
         Tick tick;
-        uint64 amount; // times 10**unitDecimals to get actual bid amount
+        uint64 amount;
         address provider;
     }
 
