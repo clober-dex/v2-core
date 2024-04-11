@@ -32,7 +32,7 @@ All deployments can be found in the [deployments](./deployments) directory.
 ### Installing From Source
 
 ```bash
-git clone https://github.com/clober-dex/core && cd core
+git clone https://github.com/clober-dex/v2-core && cd v2-core
 npm install
 ```
 
