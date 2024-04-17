@@ -47,7 +47,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         string memory name_,
         string memory symbol_
     ) Ownable(owner_) ERC721Permit(name_, symbol_, "2") {
-        setDefaultProvider(defaultProvider_);
+        _setDefaultProvider(defaultProvider_);
         baseURI = baseURI_;
         contractURI = contractURI_;
         Lockers.initialize();
@@ -353,7 +353,11 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         emit Delist(provider);
     }
 
-    function setDefaultProvider(address newDefaultProvider) public onlyOwner {
+    function setDefaultProvider(address newDefaultProvider) external onlyOwner {
+        _setDefaultProvider(newDefaultProvider);
+    }
+
+    function _setDefaultProvider(address newDefaultProvider) internal {
         defaultProvider = newDefaultProvider;
         emit SetDefaultProvider(newDefaultProvider);
     }
