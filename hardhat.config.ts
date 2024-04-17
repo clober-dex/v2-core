@@ -51,7 +51,7 @@ const loadPrivateKeyFromKeyfile = () => {
     }
   }
 
-  const prodNetworks = new Set<number>([networkInfos.mainnet.id, networkInfos.arbitrum.id])
+  const prodNetworks = new Set<number>([networkInfos.mainnet.id, networkInfos.arbitrum.id, networkInfos.base.id])
   if (network && prodNetworks.has(network)) {
     if (privateKey) {
       return privateKey
@@ -147,6 +147,26 @@ const config: HardhatConfig = {
         etherscan: {
           apiKey: process.env.ARBISCAN_API_KEY,
           apiUrl: 'https://api.arbiscan.io',
+        },
+      },
+    },
+    [networkInfos.base.id]: {
+      url: networkInfos.base.rpcUrls.default.http[0],
+      chainId: networkInfos.base.id,
+      accounts: [loadPrivateKeyFromKeyfile()],
+      gas: 'auto',
+      gasPrice: 'auto',
+      gasMultiplier: 1,
+      timeout: 3000000,
+      httpHeaders: {},
+      live: true,
+      saveDeployments: true,
+      tags: ['mainnet', 'prod'],
+      companionNetworks: {},
+      verify: {
+        etherscan: {
+          apiKey: process.env.BASESCAN_API_KEY,
+          apiUrl: 'https://api.basescan.org',
         },
       },
     },
