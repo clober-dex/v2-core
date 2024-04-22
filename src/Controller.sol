@@ -47,7 +47,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
     }
 
     function getDepth(BookId id, Tick tick) external view returns (uint256) {
-        return uint256(_bookManager.getDepth(id, tick)) * _bookManager.getBookKey(id).unit;
+        return uint256(_bookManager.getDepth(id, tick)) * _bookManager.getBookKey(id).unitSize;
     }
 
     function getHighestPrice(BookId id) external view returns (uint256) {
@@ -61,13 +61,13 @@ contract Controller is IController, ILocker, ReentrancyGuard {
     {
         (BookId bookId, Tick tick,) = orderId.decode();
         IBookManager.BookKey memory key = _bookManager.getBookKey(bookId);
-        uint256 unit = key.unit;
+        uint256 unitSize = key.unitSize;
         price = tick.toPrice();
         IBookManager.OrderInfo memory orderInfo = _bookManager.getOrder(orderId);
         provider = orderInfo.provider;
-        openAmount = unit * orderInfo.open;
+        openAmount = unitSize * orderInfo.open;
         FeePolicy makerPolicy = key.makerPolicy;
-        claimableAmount = tick.quoteToBase(unit * orderInfo.claimable, false);
+        claimableAmount = tick.quoteToBase(unitSize * orderInfo.claimable, false);
         if (!makerPolicy.usesQuote()) {
             int256 fee = makerPolicy.calculateFee(claimableAmount, false);
             claimableAmount = fee > 0 ? claimableAmount - uint256(fee) : claimableAmount + uint256(-fee);
@@ -285,10 +285,10 @@ contract Controller is IController, ILocker, ReentrancyGuard {
         if (key.makerPolicy.usesQuote()) {
             quoteAmount = key.makerPolicy.calculateOriginalAmount(quoteAmount, false);
         }
-        uint64 rawAmount = (quoteAmount / key.unit).toUint64();
-        if (rawAmount > 0) {
+        uint64 unit = (quoteAmount / key.unitSize).toUint64();
+        if (unit > 0) {
             (id,) = _bookManager.make(
-                IBookManager.MakeParams({key: key, tick: params.tick, amount: rawAmount, provider: address(0)}),
+                IBookManager.MakeParams({key: key, tick: params.tick, unit: unit, provider: address(0)}),
                 params.hookData
             );
         }
@@ -335,11 +335,11 @@ contract Controller is IController, ILocker, ReentrancyGuard {
                     maxAmount = params.quoteAmount - takenQuoteAmount;
                 }
             }
-            maxAmount = maxAmount.divide(key.unit, true);
+            maxAmount = maxAmount.divide(key.unitSize, true);
 
             if (maxAmount == 0) break;
             (uint256 quoteAmount, uint256 baseAmount) = _bookManager.take(
-                IBookManager.TakeParams({key: key, tick: tick, maxAmount: maxAmount.toUint64()}), params.hookData
+                IBookManager.TakeParams({key: key, tick: tick, maxUnit: maxAmount.toUint64()}), params.hookData
             );
             if (quoteAmount == 0) break;
 
@@ -366,10 +366,10 @@ contract Controller is IController, ILocker, ReentrancyGuard {
                     maxAmount = key.takerPolicy.calculateOriginalAmount(params.baseAmount - spentBaseAmount, false);
                 }
             }
-            maxAmount = tick.baseToQuote(maxAmount, false) / key.unit;
+            maxAmount = tick.baseToQuote(maxAmount, false) / key.unitSize;
             if (maxAmount == 0) break;
             (uint256 quoteAmount, uint256 baseAmount) = _bookManager.take(
-                IBookManager.TakeParams({key: key, tick: tick, maxAmount: maxAmount.toUint64()}), params.hookData
+                IBookManager.TakeParams({key: key, tick: tick, maxUnit: maxAmount.toUint64()}), params.hookData
             );
             if (baseAmount == 0) break;
             takenQuoteAmount += quoteAmount;
@@ -385,7 +385,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
     function _cancel(CancelOrderParams memory params) internal {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id.getBookId());
         try _bookManager.cancel(
-            IBookManager.CancelParams({id: params.id, to: (params.leftQuoteAmount / key.unit).toUint64()}),
+            IBookManager.CancelParams({id: params.id, toUnit: (params.leftQuoteAmount / key.unitSize).toUint64()}),
             params.hookData
         ) {} catch {}
     }

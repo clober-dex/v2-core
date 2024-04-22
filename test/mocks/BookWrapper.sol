@@ -52,9 +52,9 @@ contract BookWrapper {
         return _book.claim(tick, index);
     }
 
-    function calculateClaimableRawAmount(OrderId orderId) external view returns (uint64) {
+    function calculateClaimableUnit(OrderId orderId) external view returns (uint64) {
         (, Tick tick, uint40 index) = orderId.decode();
-        return _book.calculateClaimableRawAmount(tick, index);
+        return _book.calculateClaimableUnit(tick, index);
     }
 
     function getBookKey() external view returns (IBookManager.BookKey memory) {

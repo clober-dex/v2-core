@@ -48,14 +48,14 @@ contract HooksTest is Test {
 
         key = IBookManager.BookKey({
             base: CurrencyLibrary.NATIVE,
-            unit: 1e12,
+            unitSize: 1e12,
             quote: Currency.wrap(address(mockErc20)),
             makerPolicy: FeePolicyLibrary.encode(false, 0),
             takerPolicy: FeePolicyLibrary.encode(true, 0),
             hooks: mockHooks
         });
         unopenedKey = key;
-        unopenedKey.unit = 1e11;
+        unopenedKey.unitSize = 1e11;
 
         manager = new BookManager(address(this), Constants.DEFAULT_PROVIDER, "url", "url", "name", "symbol");
 

@@ -6,7 +6,6 @@ library Constants {
     address internal constant DEFAULT_PROVIDER = address(0x9999);
 
     address constant USER = address(0xabc);
-    uint64 public constant RAW_AMOUNT = 1873;
     int24 public constant PRICE_TICK = 2848;
     uint256 public constant QUOTE_AMOUNT1 = 200 * 10 ** 18 + 123;
     uint256 public constant QUOTE_AMOUNT2 = 152 * 10 ** 18 + 7347;

@@ -73,14 +73,14 @@ interface IHooks {
      * @notice Hook called after taking an order
      * @param sender The sender of the take transaction
      * @param params The parameters of the take transaction
-     * @param takenAmount The amount that was taken
+     * @param takenUnit The unit that was taken
      * @param hookData The data passed to the hook
      * @return Returns the function selector if the hook is successful
      */
     function afterTake(
         address sender,
         IBookManager.TakeParams calldata params,
-        uint64 takenAmount,
+        uint64 takenUnit,
         bytes calldata hookData
     ) external returns (bytes4);
 
@@ -99,14 +99,14 @@ interface IHooks {
      * @notice Hook called after canceling an order
      * @param sender The sender of the cancel transaction
      * @param params The parameters of the cancel transaction
-     * @param canceledAmount The amount that was canceled
+     * @param canceledUnit The unit that was canceled
      * @param hookData The data passed to the hook
      * @return Returns the function selector if the hook is successful
      */
     function afterCancel(
         address sender,
         IBookManager.CancelParams calldata params,
-        uint64 canceledAmount,
+        uint64 canceledUnit,
         bytes calldata hookData
     ) external returns (bytes4);
 
@@ -123,11 +123,11 @@ interface IHooks {
      * @notice Hook called after claiming an order
      * @param sender The sender of the claim transaction
      * @param orderId The id of the order being claimed
-     * @param claimedAmount The amount that was claimed
+     * @param claimedUnit The unit that was claimed
      * @param hookData The data passed to the hook
      * @return Returns the function selector if the hook is successful
      */
-    function afterClaim(address sender, OrderId orderId, uint64 claimedAmount, bytes calldata hookData)
+    function afterClaim(address sender, OrderId orderId, uint64 claimedUnit, bytes calldata hookData)
         external
         returns (bytes4);
 }

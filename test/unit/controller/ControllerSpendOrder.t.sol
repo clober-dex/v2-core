@@ -25,7 +25,7 @@ contract ControllerSpendOrderTest is ControllerTest {
 
         key = IBookManager.BookKey({
             base: Currency.wrap(address(mockErc20)),
-            unit: 1e12,
+            unitSize: 1e12,
             quote: CurrencyLibrary.NATIVE,
             makerPolicy: FeePolicyLibrary.encode(true, 100),
             takerPolicy: FeePolicyLibrary.encode(false, 100),
@@ -57,7 +57,7 @@ contract ControllerSpendOrderTest is ControllerTest {
         uint256 baseAmount = 11999999674501820674;
         uint256 takeAmount = Tick.wrap(Constants.PRICE_TICK + 2).baseToQuote(
             key.takerPolicy.calculateOriginalAmount(baseAmount, false), false
-        ) / key.unit * key.unit;
+        ) / key.unitSize * key.unitSize;
 
         uint256 beforeBalance = Constants.TAKER1.balance;
         uint256 beforeTokenBalance = mockErc20.balanceOf(Constants.TAKER1);

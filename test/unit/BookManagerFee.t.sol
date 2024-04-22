@@ -53,7 +53,7 @@ contract BookManagerFee is Test {
     function _openMarket(FeePolicy maker, FeePolicy taker) internal returns (IBookManager.BookKey memory key) {
         key = IBookManager.BookKey({
             base: Currency.wrap(address(base)),
-            unit: 1,
+            unitSize: 1,
             quote: Currency.wrap(address(quote)),
             makerPolicy: maker,
             takerPolicy: taker,
@@ -70,7 +70,7 @@ contract BookManagerFee is Test {
         uint256 beforeBalance = quote.balanceOf(address(this));
 
         (OrderId id, uint256 quoteAmount) = makeRouter.make(
-            IBookManager.MakeParams({key: key, tick: Tick.wrap(0), amount: 1000, provider: address(0)}), ""
+            IBookManager.MakeParams({key: key, tick: Tick.wrap(0), unit: 1000, provider: address(0)}), ""
         );
 
         assertEq(quote.balanceOf(address(this)), beforeBalance - 1003, "QUOTE_BALANCE");
@@ -85,7 +85,7 @@ contract BookManagerFee is Test {
         uint256 beforeBalance = quote.balanceOf(address(this));
 
         (OrderId id, uint256 quoteAmount) = makeRouter.make(
-            IBookManager.MakeParams({key: key, tick: Tick.wrap(0), amount: 1000, provider: address(0)}), ""
+            IBookManager.MakeParams({key: key, tick: Tick.wrap(0), unit: 1000, provider: address(0)}), ""
         );
 
         assertEq(quote.balanceOf(address(this)), beforeBalance - 997, "QUOTE_BALANCE");
@@ -96,13 +96,13 @@ contract BookManagerFee is Test {
     function testTakeFeeUsePositiveQuoteRate() public {
         IBookManager.BookKey memory key =
             _openMarket(FeePolicyLibrary.encode(true, 0), FeePolicyLibrary.encode(true, 3000));
-        makeRouter.make(IBookManager.MakeParams({key: key, tick: Tick.wrap(0), amount: 2000, provider: address(0)}), "");
+        makeRouter.make(IBookManager.MakeParams({key: key, tick: Tick.wrap(0), unit: 2000, provider: address(0)}), "");
 
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
 
         (uint256 quoteAmount, uint256 baseAmount) = takeRouter.take(
-            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxAmount: 1000}), ""
+            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxUnit: 1000}), ""
         );
 
         assertEq(quote.balanceOf(address(this)), beforeQuote + 997, "QUOTE_BALANCE");
@@ -114,13 +114,13 @@ contract BookManagerFee is Test {
     function testTakeFeeUseNegativeQuoteRate() public {
         IBookManager.BookKey memory key =
             _openMarket(FeePolicyLibrary.encode(true, 5000), FeePolicyLibrary.encode(true, -3000));
-        makeRouter.make(IBookManager.MakeParams({key: key, tick: Tick.wrap(0), amount: 2000, provider: address(0)}), "");
+        makeRouter.make(IBookManager.MakeParams({key: key, tick: Tick.wrap(0), unit: 2000, provider: address(0)}), "");
 
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
 
         (uint256 quoteAmount, uint256 baseAmount) = takeRouter.take(
-            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxAmount: 1000}), ""
+            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxUnit: 1000}), ""
         );
 
         assertEq(quote.balanceOf(address(this)), beforeQuote + 1003, "QUOTE_BALANCE");
@@ -132,13 +132,13 @@ contract BookManagerFee is Test {
     function testTakeFeeUsePositiveBaseRate() public {
         IBookManager.BookKey memory key =
             _openMarket(FeePolicyLibrary.encode(true, 3000), FeePolicyLibrary.encode(false, 3000));
-        makeRouter.make(IBookManager.MakeParams({key: key, tick: Tick.wrap(0), amount: 2000, provider: address(0)}), "");
+        makeRouter.make(IBookManager.MakeParams({key: key, tick: Tick.wrap(0), unit: 2000, provider: address(0)}), "");
 
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
 
         (uint256 quoteAmount, uint256 baseAmount) = takeRouter.take(
-            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxAmount: 1000}), ""
+            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxUnit: 1000}), ""
         );
 
         assertEq(quote.balanceOf(address(this)), beforeQuote + 1000, "QUOTE_BALANCE");
@@ -150,13 +150,13 @@ contract BookManagerFee is Test {
     function testTakeFeeUseNegativeBaseRate() public {
         IBookManager.BookKey memory key =
             _openMarket(FeePolicyLibrary.encode(false, 5000), FeePolicyLibrary.encode(false, -3000));
-        makeRouter.make(IBookManager.MakeParams({key: key, tick: Tick.wrap(0), amount: 2000, provider: address(0)}), "");
+        makeRouter.make(IBookManager.MakeParams({key: key, tick: Tick.wrap(0), unit: 2000, provider: address(0)}), "");
 
         uint256 beforeQuote = quote.balanceOf(address(this));
         uint256 beforeBase = base.balanceOf(address(this));
 
         (uint256 quoteAmount, uint256 baseAmount) = takeRouter.take(
-            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxAmount: 1000}), ""
+            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxUnit: 1000}), ""
         );
 
         assertEq(quote.balanceOf(address(this)), beforeQuote + 1000, "QUOTE_BALANCE");
@@ -169,10 +169,10 @@ contract BookManagerFee is Test {
         IBookManager.BookKey memory key =
             _openMarket(FeePolicyLibrary.encode(false, 3000), FeePolicyLibrary.encode(false, 3000));
         (OrderId id,) = makeRouter.make(
-            IBookManager.MakeParams({key: key, tick: Tick.wrap(0), amount: 2000, provider: address(0)}), ""
+            IBookManager.MakeParams({key: key, tick: Tick.wrap(0), unit: 2000, provider: address(0)}), ""
         );
         takeRouter.take(
-            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxAmount: 1000}), ""
+            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxUnit: 1000}), ""
         );
 
         uint256 beforeQuote = quote.balanceOf(address(this));
@@ -189,10 +189,10 @@ contract BookManagerFee is Test {
         IBookManager.BookKey memory key =
             _openMarket(FeePolicyLibrary.encode(false, -3000), FeePolicyLibrary.encode(false, 5000));
         (OrderId id,) = makeRouter.make(
-            IBookManager.MakeParams({key: key, tick: Tick.wrap(0), amount: 2000, provider: address(0)}), ""
+            IBookManager.MakeParams({key: key, tick: Tick.wrap(0), unit: 2000, provider: address(0)}), ""
         );
         takeRouter.take(
-            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxAmount: 1000}), ""
+            IBookManager.TakeParams({key: key, tick: bookManager.getHighest(key.toId()), maxUnit: 1000}), ""
         );
 
         uint256 beforeQuote = quote.balanceOf(address(this));
