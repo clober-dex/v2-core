@@ -141,15 +141,15 @@ contract ControllerExecuteOrderTest is Test {
         );
         vm.stopPrank();
 
-        uint256 spendQuoteAmount =
+        uint256 spentQuoteAmount =
             Tick.wrap(Constants.PRICE_TICK).baseToQuote(Constants.BASE_AMOUNT1, false) / 10 ** 12 * 10 ** 12;
-        uint256 quoteAmount = spendQuoteAmount + 152 * 10 ** 18 + 1000000000000 - 94000000000000000000;
+        uint256 quoteAmount = spentQuoteAmount + 152 * 10 ** 18 + 1000000000000 - 94000000000000000000;
         assertEq(Constants.TAKER1.balance - beforeBalance, quoteAmount);
-        uint256 spendAmount = Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(94000000000000000000, true)
+        uint256 spentAmount = Tick.wrap(Constants.PRICE_TICK + 2).quoteToBase(94000000000000000000, true)
             + Tick.wrap(Constants.PRICE_TICK).quoteToBase(152 * 10 ** 18 + 1000000000000 - 94000000000000000000, true)
-            + Tick.wrap(Constants.PRICE_TICK).quoteToBase(spendQuoteAmount, true);
+            + Tick.wrap(Constants.PRICE_TICK).quoteToBase(spentQuoteAmount, true);
 
-        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), spendAmount);
+        assertEq(beforeTokenBalance - mockErc20.balanceOf(Constants.TAKER1), spentAmount);
 
         actionList = new IController.Action[](1);
         actionList[0] = IController.Action.CLAIM;
@@ -176,7 +176,7 @@ contract ControllerExecuteOrderTest is Test {
         assertEq(
             mockErc20.balanceOf(Constants.MAKER1) - beforeTokenBalance,
             Tick.wrap(Constants.PRICE_TICK).quoteToBase(152 * 10 ** 18 + 1000000000000 - 94000000000000000000, true)
-                + Tick.wrap(Constants.PRICE_TICK).quoteToBase(spendQuoteAmount, false)
+                + Tick.wrap(Constants.PRICE_TICK).quoteToBase(spentQuoteAmount, false)
         );
 
         actionList[0] = IController.Action.CANCEL;
@@ -203,7 +203,7 @@ contract ControllerExecuteOrderTest is Test {
 
         assertEq(
             Constants.MAKER1.balance - beforeBalance,
-            94 * 10 ** 18 - (152 * 10 ** 18 + 1000000000000 - 94000000000000000000 + spendQuoteAmount)
+            94 * 10 ** 18 - (152 * 10 ** 18 + 1000000000000 - 94000000000000000000 + spentQuoteAmount)
         );
     }
 }

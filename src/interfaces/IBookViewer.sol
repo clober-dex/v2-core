@@ -36,21 +36,21 @@ interface IBookViewer {
      * @notice Returns the expected input for a take order
      * @param params The parameters of the take order
      * @return takenQuoteAmount The expected taken quote amount
-     * @return spendBaseAmount The expected spend base amount
+     * @return spentBaseAmount The expected spend base amount
      */
     function getExpectedInput(IController.TakeOrderParams memory params)
         external
         view
-        returns (uint256 takenQuoteAmount, uint256 spendBaseAmount);
+        returns (uint256 takenQuoteAmount, uint256 spentBaseAmount);
 
     /**
      * @notice Returns the expected output for a spend order
      * @param params The parameters of the spend order
      * @return takenQuoteAmount The expected taken quote amount
-     * @return spendBaseAmount The expected spend base amount
+     * @return spentBaseAmount The expected spend base amount
      */
     function getExpectedOutput(IController.SpendOrderParams memory params)
         external
         view
-        returns (uint256 takenQuoteAmount, uint256 spendBaseAmount);
+        returns (uint256 takenQuoteAmount, uint256 spentBaseAmount);
 }
