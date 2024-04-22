@@ -296,7 +296,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
     }
 
     function _limit(LimitOrderParams memory params) internal returns (OrderId id) {
-        (, uint256 spendBaseAmount) = _spend(
+        (, uint256 spentBaseAmount) = _spend(
             SpendOrderParams({
                 id: params.takeBookId,
                 limitPrice: params.limitPrice,
@@ -305,7 +305,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
                 hookData: params.takeHookData
             })
         );
-        params.quoteAmount -= spendBaseAmount;
+        params.quoteAmount -= spentBaseAmount;
         if (params.quoteAmount > 0) {
             id = _make(
                 MakeOrderParams({
@@ -320,7 +320,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
 
     function _take(TakeOrderParams memory params)
         internal
-        returns (uint256 takenQuoteAmount, uint256 spendBaseAmount)
+        returns (uint256 takenQuoteAmount, uint256 spentBaseAmount)
     {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
 
@@ -344,26 +344,26 @@ contract Controller is IController, ILocker, ReentrancyGuard {
             if (quoteAmount == 0) break;
 
             takenQuoteAmount += quoteAmount;
-            spendBaseAmount += baseAmount;
+            spentBaseAmount += baseAmount;
         }
-        if (params.maxBaseAmount < spendBaseAmount) revert ControllerSlippage();
+        if (params.maxBaseAmount < spentBaseAmount) revert ControllerSlippage();
     }
 
     function _spend(SpendOrderParams memory params)
         internal
-        returns (uint256 takenQuoteAmount, uint256 spendBaseAmount)
+        returns (uint256 takenQuoteAmount, uint256 spentBaseAmount)
     {
         IBookManager.BookKey memory key = _bookManager.getBookKey(params.id);
 
-        while (spendBaseAmount < params.baseAmount && !_bookManager.isEmpty(params.id)) {
+        while (spentBaseAmount < params.baseAmount && !_bookManager.isEmpty(params.id)) {
             Tick tick = _bookManager.getHighest(params.id);
             if (params.limitPrice > tick.toPrice()) break;
             uint256 maxAmount;
             unchecked {
                 if (key.takerPolicy.usesQuote()) {
-                    maxAmount = params.baseAmount - spendBaseAmount;
+                    maxAmount = params.baseAmount - spentBaseAmount;
                 } else {
-                    maxAmount = key.takerPolicy.calculateOriginalAmount(params.baseAmount - spendBaseAmount, false);
+                    maxAmount = key.takerPolicy.calculateOriginalAmount(params.baseAmount - spentBaseAmount, false);
                 }
             }
             maxAmount = tick.baseToQuote(maxAmount, false) / key.unit;
@@ -373,7 +373,7 @@ contract Controller is IController, ILocker, ReentrancyGuard {
             );
             if (baseAmount == 0) break;
             takenQuoteAmount += quoteAmount;
-            spendBaseAmount += baseAmount;
+            spentBaseAmount += baseAmount;
         }
         if (params.minQuoteAmount > takenQuoteAmount) revert ControllerSlippage();
     }
