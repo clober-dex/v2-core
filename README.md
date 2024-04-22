@@ -66,5 +66,4 @@ forge install https://github.com/clober-dex/v2-core
 ## Licensing
 - The primary license for Clober Core V2 is the Time-delayed Open Source Software Licence, see [License file](LICENSE_V2.pdf).
 - Interfaces are licensed under MIT (as indicated in their SPDX headers).
-- [Controller](src/Controller.sol) and [Viewer](src/Viewer.sol) are licensed under a GPL license.
 - Some [libraries](src/libraries) have a GPL license.
