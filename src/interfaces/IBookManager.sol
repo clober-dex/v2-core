@@ -17,7 +17,7 @@ import {IHooks} from "./IHooks.sol";
  * @notice The interface for the BookManager contract
  */
 interface IBookManager is IERC721Metadata, IERC721Permit {
-    error InvalidUnit();
+    error InvalidUnitSize();
     error InvalidFeePolicy();
     error InvalidProvider(address provider);
     error LockedBy(address locker, address hook);
@@ -49,11 +49,11 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @param user The user address
      * @param tick The order tick
      * @param orderIndex The order index
-     * @param amount The order amount
+     * @param unit The order unit
      * @param provider The provider address
      */
     event Make(
-        BookId indexed bookId, address indexed user, Tick tick, uint256 orderIndex, uint64 amount, address provider
+        BookId indexed bookId, address indexed user, Tick tick, uint256 orderIndex, uint64 unit, address provider
     );
 
     /**
@@ -61,23 +61,23 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @param bookId The book id
      * @param user The user address
      * @param tick The order tick
-     * @param amount The order amount
+     * @param unit The order unit
      */
-    event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 amount);
+    event Take(BookId indexed bookId, address indexed user, Tick tick, uint64 unit);
 
     /**
      * @notice Event emitted when an order is canceled
      * @param orderId The order id
-     * @param canceledAmount The canceled amount
+     * @param unit The canceled unit
      */
-    event Cancel(OrderId indexed orderId, uint64 canceledAmount);
+    event Cancel(OrderId indexed orderId, uint64 unit);
 
     /**
      * @notice Event emitted when an order is claimed
      * @param orderId The order id
-     * @param rawAmount The claimed amount
+     * @param unit The claimed unit
      */
-    event Claim(OrderId indexed orderId, uint64 rawAmount);
+    event Claim(OrderId indexed orderId, uint64 unit);
 
     /**
      * @notice Event emitted when a provider is whitelisted
@@ -190,8 +190,8 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     /**
      * @notice This structure represents a current status for an order in the BookManager.
      * @param provider The provider of the order
-     * @param open The open amount of the order
-     * @param claimable The claimable amount of the order
+     * @param open The open unit of the order
+     * @param claimable The claimable unit of the order
      */
     struct OrderInfo {
         address provider;
@@ -202,7 +202,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     /**
      * @notice Provides information about an order
      * @param id The order ID
-     * @return Order information including provider, open status, and claimable amount
+     * @return Order information including provider, open status, and claimable unit
      */
     function getOrder(OrderId id) external view returns (OrderInfo memory);
 
@@ -299,13 +299,13 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @notice This structure represents the parameters for making an order.
      * @param key The book key for the order
      * @param tick The tick for the order
-     * @param amount The amount for the order. Times key.unitSize to get actual bid amount.
+     * @param unit The unit for the order. Times key.unitSize to get actual bid amount.
      * @param provider The provider for the order. The limit order service provider address to collect fees.
      */
     struct MakeParams {
         BookKey key;
         Tick tick;
-        uint64 amount;
+        uint64 unit;
         address provider;
     }
 
@@ -324,12 +324,12 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @notice This structure represents the parameters for taking orders in the specified tick.
      * @param key The book key for the order
      * @param tick The tick for the order
-     * @param maxAmount The max amount to take
+     * @param maxUnit The max unit to take
      */
     struct TakeParams {
         BookKey key;
         Tick tick;
-        uint64 maxAmount;
+        uint64 maxUnit;
     }
 
     /**
@@ -346,11 +346,11 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     /**
      * @notice This structure represents the parameters for canceling an order.
      * @param id The order id for the order
-     * @param to The remaining open amount for the order after cancellation. Must not exceed the current open amount.
+     * @param toUnit The remaining open unit for the order after cancellation. Must not exceed the current open unit.
      */
     struct CancelParams {
         OrderId id;
-        uint64 to;
+        uint64 toUnit;
     }
 
     /**

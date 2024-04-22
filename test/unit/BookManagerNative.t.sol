@@ -114,10 +114,10 @@ contract BookManagerNativeTest is Test {
         assertEq(address(remoteBookKey.hooks), address(unopenedKey.hooks));
     }
 
-    function testOpenWithInvalidUnit() public {
+    function testOpenWithInvalidUnitSize() public {
         unopenedKey.unitSize = 0;
 
-        vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidUnit.selector));
+        vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidUnitSize.selector));
         openRouter.open(unopenedKey, "");
     }
 
@@ -196,68 +196,68 @@ contract BookManagerNativeTest is Test {
     }
 
     function testMakeERC20Quote() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         uint256 beforeQuoteAmount = mockErc20.balanceOf(address(this));
 
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Make(nativeBaseKey.toId(), address(makeRouter), tick, 0, makeAmount, address(0));
+        emit IBookManager.Make(nativeBaseKey.toId(), address(makeRouter), tick, 0, makeUnit, address(0));
         (OrderId id, uint256 actualQuoteAmount) = makeRouter.make(
-            IBookManager.MakeParams({key: nativeBaseKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeBaseKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
         assertEq(OrderId.unwrap(OrderIdLibrary.encode(nativeBaseKey.toId(), tick, 0)), OrderId.unwrap(id), "RETURN_ID");
-        assertEq(actualQuoteAmount, makeAmount * nativeBaseKey.unitSize, "RETURN_QUOTE_AMOUNT");
+        assertEq(actualQuoteAmount, makeUnit * nativeBaseKey.unitSize, "RETURN_QUOTE_AMOUNT");
         assertEq(mockErc20.balanceOf(address(this)), beforeQuoteAmount - actualQuoteAmount, "QUOTE_BALANCE");
         assertEq(bookManager.balanceOf(address(this)), 1, "BOOK_BALANCE");
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
         assertEq(bookManager.reservesOf(nativeBaseKey.quote), actualQuoteAmount, "RESERVES");
-        assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeAmount, "DEPTH");
+        assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeUnit, "DEPTH");
         assertEq(Tick.unwrap(bookManager.getHighest(nativeBaseKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeBaseKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
-        assertEq(orderInfo.open, makeAmount, "ORDER_OPEN");
+        assertEq(orderInfo.open, makeUnit, "ORDER_OPEN");
         assertEq(orderInfo.claimable, 0, "ORDER_CLAIMABLE");
     }
 
     function testMakeNativeQuote() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         uint256 beforeQuoteAmount = address(this).balance;
 
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Make(nativeQuoteKey.toId(), address(makeRouter), tick, 0, makeAmount, address(0));
+        emit IBookManager.Make(nativeQuoteKey.toId(), address(makeRouter), tick, 0, makeUnit, address(0));
         (OrderId id, uint256 actualQuoteAmount) = makeRouter.make{value: 100 ether}(
-            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
         assertEq(OrderId.unwrap(OrderIdLibrary.encode(nativeQuoteKey.toId(), tick, 0)), OrderId.unwrap(id), "RETURN_ID");
-        assertEq(actualQuoteAmount, makeAmount * nativeQuoteKey.unitSize, "RETURN_QUOTE_AMOUNT");
+        assertEq(actualQuoteAmount, makeUnit * nativeQuoteKey.unitSize, "RETURN_QUOTE_AMOUNT");
         assertEq(address(this).balance, beforeQuoteAmount - actualQuoteAmount, "QUOTE_BALANCE");
         assertEq(bookManager.balanceOf(address(this)), 1, "BOOK_BALANCE");
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
         assertEq(bookManager.reservesOf(nativeQuoteKey.quote), actualQuoteAmount, "RESERVES");
-        assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeAmount, "DEPTH");
+        assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeUnit, "DEPTH");
         assertEq(Tick.unwrap(bookManager.getHighest(nativeQuoteKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
-        assertEq(orderInfo.open, makeAmount, "ORDER_OPEN");
+        assertEq(orderInfo.open, makeUnit, "ORDER_OPEN");
         assertEq(orderInfo.claimable, 0, "ORDER_CLAIMABLE");
     }
 
     function testMakeWithInvalidProvider() public {
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidProvider.selector, (address(1))));
         makeRouter.make(
-            IBookManager.MakeParams({key: nativeBaseKey, tick: Tick.wrap(0), amount: 10000, provider: address(1)}), ""
+            IBookManager.MakeParams({key: nativeBaseKey, tick: Tick.wrap(0), unit: 10000, provider: address(1)}), ""
         );
 
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidProvider.selector, (DEFAULT_PROVIDER)));
         makeRouter.make(
-            IBookManager.MakeParams({key: nativeBaseKey, tick: Tick.wrap(0), amount: 10000, provider: DEFAULT_PROVIDER}),
+            IBookManager.MakeParams({key: nativeBaseKey, tick: Tick.wrap(0), unit: 10000, provider: DEFAULT_PROVIDER}),
             ""
         );
     }
@@ -268,7 +268,7 @@ contract BookManagerNativeTest is Test {
             IBookManager.MakeParams({
                 key: nativeBaseKey,
                 tick: Tick.wrap(TickLibrary.MAX_TICK + 1),
-                amount: 10000,
+                unit: 10000,
                 provider: address(0)
             }),
             ""
@@ -279,7 +279,7 @@ contract BookManagerNativeTest is Test {
             IBookManager.MakeParams({
                 key: nativeBaseKey,
                 tick: Tick.wrap(TickLibrary.MIN_TICK - 1),
-                amount: 10000,
+                unit: 10000,
                 provider: address(0)
             }),
             ""
@@ -289,110 +289,108 @@ contract BookManagerNativeTest is Test {
     function testMakeWithInvalidBookKey() public {
         vm.expectRevert(abi.encodeWithSelector(Book.BookNotOpened.selector));
         makeRouter.make(
-            IBookManager.MakeParams({key: unopenedKey, tick: Tick.wrap(0), amount: 10000, provider: address(0)}), ""
+            IBookManager.MakeParams({key: unopenedKey, tick: Tick.wrap(0), unit: 10000, provider: address(0)}), ""
         );
     }
 
     function testTakeNativeQuote() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         (OrderId id,) = makeRouter.make{value: 100 ether}(
-            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
 
         uint256 beforeQuoteAmount = address(this).balance;
         uint256 beforeBaseAmount = mockErc20.balanceOf(address(this));
 
-        uint64 takeAmount = 1000;
+        uint64 takeUnit = 1000;
 
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Take(nativeQuoteKey.toId(), address(takeRouter), tick, takeAmount);
+        emit IBookManager.Take(nativeQuoteKey.toId(), address(takeRouter), tick, takeUnit);
         (uint256 actualQuoteAmount, uint256 actualBaseAmount) = takeRouter.take(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
                 tick: bookManager.getHighest(nativeQuoteKey.toId()),
-                maxAmount: takeAmount
+                maxUnit: takeUnit
             }),
             ""
         );
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
-        assertEq(actualQuoteAmount, takeAmount * nativeQuoteKey.unitSize, "RETURN_QUOTE_AMOUNT");
+        assertEq(actualQuoteAmount, takeUnit * nativeQuoteKey.unitSize, "RETURN_QUOTE_AMOUNT");
         assertEq(
-            actualBaseAmount,
-            tick.quoteToBase(uint256(takeAmount) * nativeQuoteKey.unitSize, true),
-            "RETURN_BASE_AMOUNT"
+            actualBaseAmount, tick.quoteToBase(uint256(takeUnit) * nativeQuoteKey.unitSize, true), "RETURN_BASE_AMOUNT"
         );
         assertEq(address(this).balance, beforeQuoteAmount + actualQuoteAmount, "QUOTE_BALANCE");
         assertEq(mockErc20.balanceOf(address(this)), beforeBaseAmount - actualBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.quote),
-            makeAmount * nativeQuoteKey.unitSize - actualQuoteAmount,
+            makeUnit * nativeQuoteKey.unitSize - actualQuoteAmount,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), actualBaseAmount, "RESERVES_BASE");
-        assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeAmount - takeAmount, "DEPTH");
+        assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeUnit - takeUnit, "DEPTH");
         assertEq(Tick.unwrap(bookManager.getHighest(nativeQuoteKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
-        assertEq(orderInfo.open, makeAmount - takeAmount, "ORDER_OPEN");
-        assertEq(orderInfo.claimable, takeAmount, "ORDER_CLAIMABLE");
+        assertEq(orderInfo.open, makeUnit - takeUnit, "ORDER_OPEN");
+        assertEq(orderInfo.claimable, takeUnit, "ORDER_CLAIMABLE");
     }
 
     function testTakeNativeBase() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         (OrderId id,) = makeRouter.make(
-            IBookManager.MakeParams({key: nativeBaseKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeBaseKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
 
         uint256 beforeQuoteAmount = mockErc20.balanceOf(address(this));
         uint256 beforeBaseAmount = address(this).balance;
 
-        uint64 takeAmount = 1000;
+        uint64 takeUnit = 1000;
 
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Take(nativeBaseKey.toId(), address(takeRouter), tick, takeAmount);
+        emit IBookManager.Take(nativeBaseKey.toId(), address(takeRouter), tick, takeUnit);
         (uint256 actualQuoteAmount, uint256 actualBaseAmount) = takeRouter.take{value: 10 ether}(
-            IBookManager.TakeParams({key: nativeBaseKey, tick: tick, maxAmount: takeAmount}), ""
+            IBookManager.TakeParams({key: nativeBaseKey, tick: tick, maxUnit: takeUnit}), ""
         );
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
-        assertEq(actualQuoteAmount, takeAmount * nativeBaseKey.unitSize, "RETURN_QUOTE_AMOUNT");
+        assertEq(actualQuoteAmount, takeUnit * nativeBaseKey.unitSize, "RETURN_QUOTE_AMOUNT");
         assertEq(
-            actualBaseAmount, tick.quoteToBase(uint256(takeAmount) * nativeBaseKey.unitSize, true), "RETURN_BASE_AMOUNT"
+            actualBaseAmount, tick.quoteToBase(uint256(takeUnit) * nativeBaseKey.unitSize, true), "RETURN_BASE_AMOUNT"
         );
         assertEq(mockErc20.balanceOf(address(this)), beforeQuoteAmount + actualQuoteAmount, "QUOTE_BALANCE");
         assertEq(address(this).balance, beforeBaseAmount - actualBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeBaseKey.quote),
-            makeAmount * nativeBaseKey.unitSize - actualQuoteAmount,
+            makeUnit * nativeBaseKey.unitSize - actualQuoteAmount,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeBaseKey.base), actualBaseAmount, "RESERVES_BASE");
-        assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeAmount - takeAmount, "DEPTH");
+        assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeUnit - takeUnit, "DEPTH");
         assertEq(Tick.unwrap(bookManager.getHighest(nativeBaseKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeBaseKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
-        assertEq(orderInfo.open, makeAmount - takeAmount, "ORDER_OPEN");
-        assertEq(orderInfo.claimable, takeAmount, "ORDER_CLAIMABLE");
+        assertEq(orderInfo.open, makeUnit - takeUnit, "ORDER_OPEN");
+        assertEq(orderInfo.claimable, takeUnit, "ORDER_CLAIMABLE");
     }
 
     function testTakeWithInvalidBookKey() public {
         vm.expectRevert(abi.encodeWithSelector(Book.BookNotOpened.selector));
-        takeRouter.take(IBookManager.TakeParams({key: unopenedKey, tick: Tick.wrap(0), maxAmount: 1000}), "");
+        takeRouter.take(IBookManager.TakeParams({key: unopenedKey, tick: Tick.wrap(0), maxUnit: 1000}), "");
     }
 
     function testCancelERC20Quote() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         (OrderId id,) = makeRouter.make{value: 100 ether}(
-            IBookManager.MakeParams({key: nativeBaseKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeBaseKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
 
         uint64 cancelAmount = 1000;
@@ -402,7 +400,7 @@ contract BookManagerNativeTest is Test {
         bookManager.approve(address(cancelRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
         emit IBookManager.Cancel(id, cancelAmount);
-        cancelRouter.cancel(IBookManager.CancelParams({id: id, to: makeAmount - cancelAmount}), "");
+        cancelRouter.cancel(IBookManager.CancelParams({id: id, toUnit: makeUnit - cancelAmount}), "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -414,26 +412,26 @@ contract BookManagerNativeTest is Test {
         assertEq(address(this).balance, beforeBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeBaseKey.quote),
-            (makeAmount - cancelAmount) * nativeBaseKey.unitSize,
+            (makeUnit - cancelAmount) * nativeBaseKey.unitSize,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeBaseKey.base), 0, "RESERVES_BASE");
-        assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeAmount - cancelAmount, "DEPTH");
+        assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeUnit - cancelAmount, "DEPTH");
         assertEq(Tick.unwrap(bookManager.getHighest(nativeBaseKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeBaseKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
-        assertEq(orderInfo.open, makeAmount - cancelAmount, "ORDER_OPEN");
+        assertEq(orderInfo.open, makeUnit - cancelAmount, "ORDER_OPEN");
         assertEq(orderInfo.claimable, 0, "ORDER_CLAIMABLE");
         assertEq(bookManager.balanceOf(address(this)), 1, "ORDER_BALANCE");
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
     }
 
     function testCancelNativeQuote() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         (OrderId id,) = makeRouter.make{value: 100 ether}(
-            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
 
         uint64 cancelAmount = 1000;
@@ -443,7 +441,7 @@ contract BookManagerNativeTest is Test {
         bookManager.approve(address(cancelRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
         emit IBookManager.Cancel(id, cancelAmount);
-        cancelRouter.cancel(IBookManager.CancelParams({id: id, to: makeAmount - cancelAmount}), "");
+        cancelRouter.cancel(IBookManager.CancelParams({id: id, toUnit: makeUnit - cancelAmount}), "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
@@ -451,34 +449,34 @@ contract BookManagerNativeTest is Test {
         assertEq(mockErc20.balanceOf(address(this)), beforeBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.quote),
-            (makeAmount - cancelAmount) * nativeQuoteKey.unitSize,
+            (makeUnit - cancelAmount) * nativeQuoteKey.unitSize,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), 0, "RESERVES_BASE");
-        assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeAmount - cancelAmount, "DEPTH");
+        assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeUnit - cancelAmount, "DEPTH");
         assertEq(Tick.unwrap(bookManager.getHighest(nativeQuoteKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
-        assertEq(orderInfo.open, makeAmount - cancelAmount, "ORDER_OPEN");
+        assertEq(orderInfo.open, makeUnit - cancelAmount, "ORDER_OPEN");
         assertEq(orderInfo.claimable, 0, "ORDER_CLAIMABLE");
         assertEq(bookManager.balanceOf(address(this)), 1, "ORDER_BALANCE");
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
     }
 
     function testCancelToZeroWithPartiallyTakenOrder() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         (OrderId id,) = makeRouter.make{value: 100 ether}(
-            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
 
-        uint64 takeAmount = 1000;
+        uint64 takeUnit = 1000;
         takeRouter.take{value: 10 ether}(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
                 tick: bookManager.getHighest(nativeQuoteKey.toId()),
-                maxAmount: takeAmount
+                maxUnit: takeUnit
             }),
             ""
         );
@@ -490,20 +488,18 @@ contract BookManagerNativeTest is Test {
 
         bookManager.approve(address(cancelRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Cancel(id, makeAmount - takeAmount);
-        cancelRouter.cancel(IBookManager.CancelParams({id: id, to: 0}), "");
+        emit IBookManager.Cancel(id, makeUnit - takeUnit);
+        cancelRouter.cancel(IBookManager.CancelParams({id: id, toUnit: 0}), "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
         assertEq(
-            address(this).balance,
-            beforeQuoteAmount + (makeAmount - takeAmount) * nativeQuoteKey.unitSize,
-            "QUOTE_BALANCE"
+            address(this).balance, beforeQuoteAmount + (makeUnit - takeUnit) * nativeQuoteKey.unitSize, "QUOTE_BALANCE"
         );
         assertEq(mockErc20.balanceOf(address(this)), beforeBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.quote),
-            beforeQuoteReserve - (makeAmount - takeAmount) * nativeQuoteKey.unitSize,
+            beforeQuoteReserve - (makeUnit - takeUnit) * nativeQuoteKey.unitSize,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), beforeBaseReserve, "RESERVES_BASE");
@@ -513,17 +509,17 @@ contract BookManagerNativeTest is Test {
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), true, "IS_EMPTY");
         assertEq(orderInfo.provider, address(0), "ORDER_PROVIDER");
         assertEq(orderInfo.open, 0, "ORDER_OPEN");
-        assertEq(orderInfo.claimable, takeAmount, "ORDER_CLAIMABLE");
+        assertEq(orderInfo.claimable, takeUnit, "ORDER_CLAIMABLE");
         assertEq(bookManager.balanceOf(address(this)), 1, "ORDER_BALANCE");
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
     }
 
     function testCancelToZeroShouldBurnWithZeroClaimable() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         (OrderId id,) = makeRouter.make{value: 100 ether}(
-            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
 
         uint256 beforeQuoteAmount = address(this).balance;
@@ -533,16 +529,16 @@ contract BookManagerNativeTest is Test {
 
         bookManager.approve(address(cancelRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Cancel(id, makeAmount);
-        cancelRouter.cancel(IBookManager.CancelParams({id: id, to: 0}), "");
+        emit IBookManager.Cancel(id, makeUnit);
+        cancelRouter.cancel(IBookManager.CancelParams({id: id, toUnit: 0}), "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
-        assertEq(address(this).balance, beforeQuoteAmount + makeAmount * nativeQuoteKey.unitSize, "QUOTE_BALANCE");
+        assertEq(address(this).balance, beforeQuoteAmount + makeUnit * nativeQuoteKey.unitSize, "QUOTE_BALANCE");
         assertEq(mockErc20.balanceOf(address(this)), beforeBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.quote),
-            beforeQuoteReserve - makeAmount * nativeQuoteKey.unitSize,
+            beforeQuoteReserve - makeUnit * nativeQuoteKey.unitSize,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), beforeBaseReserve, "RESERVES_BASE");
@@ -560,15 +556,15 @@ contract BookManagerNativeTest is Test {
 
     function testCancelNonexistentOrder() public {
         vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721NonexistentToken.selector, (123)));
-        cancelRouter.cancel(IBookManager.CancelParams({id: OrderId.wrap(123), to: 0}), "");
+        cancelRouter.cancel(IBookManager.CancelParams({id: OrderId.wrap(123), toUnit: 0}), "");
     }
 
     function testCancelAuth() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         (OrderId id,) = makeRouter.make{value: 100 ether}(
-            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
 
         vm.expectRevert(
@@ -576,23 +572,23 @@ contract BookManagerNativeTest is Test {
                 IERC721Errors.ERC721InsufficientApproval.selector, address(cancelRouter), OrderId.unwrap(id)
             )
         );
-        cancelRouter.cancel(IBookManager.CancelParams({id: id, to: 0}), "");
+        cancelRouter.cancel(IBookManager.CancelParams({id: id, toUnit: 0}), "");
     }
 
     function testClaimERC20Base() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         (OrderId id,) = makeRouter.make{value: 100 ether}(
-            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
 
-        uint64 takeAmount = 1000;
+        uint64 takeUnit = 1000;
         takeRouter.take(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
                 tick: bookManager.getHighest(nativeQuoteKey.toId()),
-                maxAmount: takeAmount
+                maxUnit: takeUnit
             }),
             ""
         );
@@ -605,7 +601,7 @@ contract BookManagerNativeTest is Test {
 
         bookManager.approve(address(claimRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Claim(id, takeAmount);
+        emit IBookManager.Claim(id, takeUnit);
         claimRouter.claim(id, "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
@@ -613,35 +609,35 @@ contract BookManagerNativeTest is Test {
         assertEq(address(this).balance, beforeQuoteAmount, "QUOTE_BALANCE");
         assertEq(
             mockErc20.balanceOf(address(this)),
-            beforeBaseAmount + tick.quoteToBase(uint256(takeAmount) * nativeQuoteKey.unitSize, false),
+            beforeBaseAmount + tick.quoteToBase(uint256(takeUnit) * nativeQuoteKey.unitSize, false),
             "BASE_BALANCE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.quote), beforeQuoteReserve, "RESERVES_QUOTE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.base),
-            beforeBaseReserve - tick.quoteToBase(uint256(takeAmount) * nativeQuoteKey.unitSize, false),
+            beforeBaseReserve - tick.quoteToBase(uint256(takeUnit) * nativeQuoteKey.unitSize, false),
             "RESERVES_BASE"
         );
-        assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeAmount - takeAmount, "DEPTH");
+        assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeUnit - takeUnit, "DEPTH");
         assertEq(Tick.unwrap(bookManager.getHighest(nativeQuoteKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeQuoteKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.open, beforeOrderInfo.open, "ORDER_OPEN");
-        assertEq(orderInfo.claimable, beforeOrderInfo.claimable - takeAmount, "ORDER_CLAIMABLE");
+        assertEq(orderInfo.claimable, beforeOrderInfo.claimable - takeUnit, "ORDER_CLAIMABLE");
         assertEq(bookManager.balanceOf(address(this)), 1, "ORDER_BALANCE");
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
     }
 
     function testClaimNativeBase() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         (OrderId id,) = makeRouter.make(
-            IBookManager.MakeParams({key: nativeBaseKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeBaseKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
 
-        uint64 takeAmount = 1000;
+        uint64 takeUnit = 1000;
         takeRouter.take{value: 10 ether}(
-            IBookManager.TakeParams({key: nativeBaseKey, tick: tick, maxAmount: takeAmount}), ""
+            IBookManager.TakeParams({key: nativeBaseKey, tick: tick, maxUnit: takeUnit}), ""
         );
 
         uint256 beforeQuoteAmount = mockErc20.balanceOf(address(this));
@@ -652,7 +648,7 @@ contract BookManagerNativeTest is Test {
 
         bookManager.approve(address(claimRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Claim(id, takeAmount);
+        emit IBookManager.Claim(id, takeUnit);
         claimRouter.claim(id, "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
@@ -660,37 +656,37 @@ contract BookManagerNativeTest is Test {
         assertEq(mockErc20.balanceOf(address(this)), beforeQuoteAmount, "QUOTE_BALANCE");
         assertEq(
             address(this).balance,
-            beforeBaseAmount + tick.quoteToBase(uint256(takeAmount) * nativeBaseKey.unitSize, false),
+            beforeBaseAmount + tick.quoteToBase(uint256(takeUnit) * nativeBaseKey.unitSize, false),
             "BASE_BALANCE"
         );
         assertEq(bookManager.reservesOf(nativeBaseKey.quote), beforeQuoteReserve, "RESERVES_QUOTE");
         assertEq(
             bookManager.reservesOf(nativeBaseKey.base),
-            beforeBaseReserve - tick.quoteToBase(uint256(takeAmount) * nativeBaseKey.unitSize, false),
+            beforeBaseReserve - tick.quoteToBase(uint256(takeUnit) * nativeBaseKey.unitSize, false),
             "RESERVES_BASE"
         );
-        assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeAmount - takeAmount, "DEPTH");
+        assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeUnit - takeUnit, "DEPTH");
         assertEq(Tick.unwrap(bookManager.getHighest(nativeBaseKey.toId())), Tick.unwrap(tick), "LOWEST");
         assertEq(bookManager.isEmpty(nativeBaseKey.toId()), false, "IS_EMPTY");
         assertEq(orderInfo.open, beforeOrderInfo.open, "ORDER_OPEN");
-        assertEq(orderInfo.claimable, beforeOrderInfo.claimable - takeAmount, "ORDER_CLAIMABLE");
+        assertEq(orderInfo.claimable, beforeOrderInfo.claimable - takeUnit, "ORDER_CLAIMABLE");
         assertEq(bookManager.balanceOf(address(this)), 1, "ORDER_BALANCE");
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
     }
 
     function testClaimShouldBurnWithZeroPendingOrder() public {
-        uint64 makeAmount = 10000;
+        uint64 makeUnit = 10000;
         Tick tick = Tick.wrap(100000);
 
         (OrderId id,) = makeRouter.make{value: 100 ether}(
-            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, amount: makeAmount, provider: address(0)}), ""
+            IBookManager.MakeParams({key: nativeQuoteKey, tick: tick, unit: makeUnit, provider: address(0)}), ""
         );
 
         takeRouter.take(
             IBookManager.TakeParams({
                 key: nativeQuoteKey,
                 tick: bookManager.getHighest(nativeQuoteKey.toId()),
-                maxAmount: makeAmount
+                maxUnit: makeUnit
             }),
             ""
         );
@@ -702,7 +698,7 @@ contract BookManagerNativeTest is Test {
 
         bookManager.approve(address(claimRouter), OrderId.unwrap(id));
         vm.expectEmit(address(bookManager));
-        emit IBookManager.Claim(id, makeAmount);
+        emit IBookManager.Claim(id, makeUnit);
         claimRouter.claim(id, "");
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
@@ -710,13 +706,13 @@ contract BookManagerNativeTest is Test {
         assertEq(address(this).balance, beforeQuoteAmount, "QUOTE_BALANCE");
         assertEq(
             mockErc20.balanceOf(address(this)),
-            beforeBaseAmount + tick.quoteToBase(uint256(makeAmount) * nativeQuoteKey.unitSize, false),
+            beforeBaseAmount + tick.quoteToBase(uint256(makeUnit) * nativeQuoteKey.unitSize, false),
             "BASE_BALANCE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.quote), beforeQuoteReserve, "RESERVES_QUOTE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.base),
-            beforeBaseReserve - tick.quoteToBase(uint256(makeAmount) * nativeQuoteKey.unitSize, false),
+            beforeBaseReserve - tick.quoteToBase(uint256(makeUnit) * nativeQuoteKey.unitSize, false),
             "RESERVES_BASE"
         );
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), 0, "DEPTH");

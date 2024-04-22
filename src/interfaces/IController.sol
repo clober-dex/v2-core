@@ -18,7 +18,6 @@ interface IController {
     error InvalidAccess();
     error InvalidLength();
     error Deadline();
-    error InvalidMarket();
     error ControllerSlippage();
     error InvalidAction();
 

@@ -210,7 +210,7 @@ contract BountyPlatformTest is Test {
         vm.expectEmit(address(bountyPlatform));
         emit IBountyPlatform.BountyCanceled(id);
         bytes4 ret = bountyPlatform.afterCancel(
-            address(this), IBookManager.CancelParams({id: id, to: 0}), 1000, abi.encode(address(CANCELER))
+            address(this), IBookManager.CancelParams({id: id, toUnit: 0}), 1000, abi.encode(address(CANCELER))
         );
         assertEq(ret, BaseHook.afterCancel.selector, "RETURN");
 
@@ -231,7 +231,7 @@ contract BountyPlatformTest is Test {
         mockOrderInfo.open = 1000;
 
         bytes4 ret = bountyPlatform.afterCancel(
-            address(this), IBookManager.CancelParams({id: id, to: 0}), 1000, abi.encode(CANCELER)
+            address(this), IBookManager.CancelParams({id: id, toUnit: 0}), 1000, abi.encode(CANCELER)
         );
         assertEq(ret, BaseHook.afterCancel.selector, "RETURN");
 
@@ -250,7 +250,7 @@ contract BountyPlatformTest is Test {
         mockOrderInfo.claimable = 1000;
 
         bytes4 ret = bountyPlatform.afterCancel(
-            address(this), IBookManager.CancelParams({id: id, to: 0}), 1000, abi.encode(CANCELER)
+            address(this), IBookManager.CancelParams({id: id, toUnit: 0}), 1000, abi.encode(CANCELER)
         );
         assertEq(ret, BaseHook.afterCancel.selector, "RETURN");
 
@@ -274,7 +274,7 @@ contract BountyPlatformTest is Test {
         uint256 beforeCancelerBalance = address(CANCELER).balance;
 
         bytes4 ret = bountyPlatform.afterCancel(
-            address(this), IBookManager.CancelParams({id: id, to: 0}), 1000, abi.encode(CANCELER)
+            address(this), IBookManager.CancelParams({id: id, toUnit: 0}), 1000, abi.encode(CANCELER)
         );
         assertEq(ret, BaseHook.afterCancel.selector, "RETURN");
 
@@ -293,7 +293,7 @@ contract BountyPlatformTest is Test {
 
         vm.expectEmit(address(bountyPlatform));
         emit IBountyPlatform.BountyCanceled(id);
-        bytes4 ret = bountyPlatform.afterCancel(address(this), IBookManager.CancelParams({id: id, to: 0}), 1000, "");
+        bytes4 ret = bountyPlatform.afterCancel(address(this), IBookManager.CancelParams({id: id, toUnit: 0}), 1000, "");
         assertEq(ret, BaseHook.afterCancel.selector, "RETURN");
 
         (, uint256 afterBountyAmount) = bountyPlatform.getBounty(id);

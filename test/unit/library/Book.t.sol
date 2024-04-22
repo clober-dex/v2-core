@@ -108,8 +108,8 @@ contract BookTest is Test {
         book.make(Tick.wrap(0), 200);
     }
 
-    function testMakeWithZeroAmount() public opened {
-        vm.expectRevert(abi.encodeWithSelector(Book.ZeroAmount.selector));
+    function testMakeWithZeroUnit() public opened {
+        vm.expectRevert(abi.encodeWithSelector(Book.ZeroUnit.selector));
         book.make(Tick.wrap(0), 0);
     }
 
@@ -120,16 +120,16 @@ contract BookTest is Test {
         book.make(Tick.wrap(0), 400);
         book.make(Tick.wrap(0), 500);
 
-        uint64 amount = book.take(Tick.wrap(0), 150);
-        assertEq(amount, 150);
+        uint64 unit = book.take(Tick.wrap(0), 150);
+        assertEq(unit, 150);
         assertEq(book.depth(Tick.wrap(0)), 1350);
 
-        amount = book.take(Tick.wrap(0), 1000);
-        assertEq(amount, 1000);
+        unit = book.take(Tick.wrap(0), 1000);
+        assertEq(unit, 1000);
         assertEq(book.depth(Tick.wrap(0)), 350);
 
-        amount = book.take(Tick.wrap(0), 1000);
-        assertEq(amount, 350);
+        unit = book.take(Tick.wrap(0), 1000);
+        assertEq(unit, 350);
         assertEq(book.depth(Tick.wrap(0)), 0);
     }
 
@@ -154,20 +154,20 @@ contract BookTest is Test {
         book.take(Tick.wrap(0), 30);
         assertEq(book.depth(Tick.wrap(0)), 270);
 
-        (uint64 canceledAmount, uint64 pending) = book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0), 40);
-        assertEq(canceledAmount, 30);
+        (uint64 canceledUnit, uint64 pendingUnit) = book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0), 40);
+        assertEq(canceledUnit, 30);
         assertEq(book.depth(Tick.wrap(0)), 240);
-        assertEq(pending, 70);
+        assertEq(pendingUnit, 70);
 
-        (canceledAmount, pending) = book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1), 150);
-        assertEq(canceledAmount, 50);
+        (canceledUnit, pendingUnit) = book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1), 150);
+        assertEq(canceledUnit, 50);
         assertEq(book.depth(Tick.wrap(0)), 190);
-        assertEq(pending, 150);
+        assertEq(pendingUnit, 150);
 
-        (canceledAmount, pending) = book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1), 0);
-        assertEq(canceledAmount, 150);
+        (canceledUnit, pendingUnit) = book.cancel(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1), 0);
+        assertEq(canceledUnit, 150);
         assertEq(book.depth(Tick.wrap(0)), 40);
-        assertEq(pending, 0);
+        assertEq(pendingUnit, 0);
     }
 
     function testCancelToTooLargeAmount() public opened {
@@ -213,35 +213,35 @@ contract BookTest is Test {
         assertEq(book.getOrder(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)).pending, 100);
         assertEq(book.getOrder(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)).pending, 200);
         assertEq(book.getOrder(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2)).pending, 300);
-        assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)), 100);
-        assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)), 50);
-        assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2)), 0);
+        assertEq(book.calculateClaimableUnit(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)), 100);
+        assertEq(book.calculateClaimableUnit(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)), 50);
+        assertEq(book.calculateClaimableUnit(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2)), 0);
 
-        uint64 claimed = book.claim(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0));
-        assertEq(claimed, 100);
-        claimed = book.claim(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1));
-        assertEq(claimed, 50);
-        claimed = book.claim(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2));
-        assertEq(claimed, 0);
+        uint64 claimedUnit = book.claim(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0));
+        assertEq(claimedUnit, 100);
+        claimedUnit = book.claim(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1));
+        assertEq(claimedUnit, 50);
+        claimedUnit = book.claim(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2));
+        assertEq(claimedUnit, 0);
 
         assertEq(book.getOrder(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)).pending, 0);
         assertEq(book.getOrder(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)).pending, 150);
         assertEq(book.getOrder(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2)).pending, 300);
     }
 
-    function testCalculateClaimableRawAmount() public opened {
+    function testCalculateClaimableUnit() public opened {
         book.make(Tick.wrap(0), 100); // index 0
         book.make(Tick.wrap(0), 200); // index 1
         book.make(Tick.wrap(0), 300); // index 2
 
         book.take(Tick.wrap(0), 150);
 
-        assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)), 100);
-        assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)), 50);
-        assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2)), 0);
+        assertEq(book.calculateClaimableUnit(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)), 100);
+        assertEq(book.calculateClaimableUnit(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)), 50);
+        assertEq(book.calculateClaimableUnit(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2)), 0);
     }
 
-    function testCalculateClaimableRawAmountWithStaleOrder() public opened {
+    function testCalculateClaimableUnitWithStaleOrder() public opened {
         book.make(Tick.wrap(0), 100); // index 0
         book.make(Tick.wrap(0), 200); // index 1
         book.make(Tick.wrap(0), 300); // index 2
@@ -251,14 +251,14 @@ contract BookTest is Test {
         book.setQueueIndex(Tick.wrap(0), Book.MAX_ORDER + 4);
 
         // @dev Book logic always considers as claimable.
-        assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)), 100);
-        assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)), 200);
-        assertEq(book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2)), 300);
+        assertEq(book.calculateClaimableUnit(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0)), 100);
+        assertEq(book.calculateClaimableUnit(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 1)), 200);
+        assertEq(book.calculateClaimableUnit(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 2)), 300);
     }
 
-    function testCalculateClaimableRawAmountNotOverflow() public opened {
+    function testCalculateClaimableUnitNotOverflow() public opened {
         book.make(Tick.wrap(0), type(uint64).max - 1);
         book.take(Tick.wrap(0), type(uint64).max - 1);
-        book.calculateClaimableRawAmount(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0));
+        book.calculateClaimableUnit(OrderIdLibrary.encode(BOOK_ID, Tick.wrap(0), 0));
     }
 }

@@ -78,7 +78,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         (BookId bookId, Tick tick, uint40 orderIndex) = id.decode();
         Book.State storage book = _books[bookId];
         Book.Order memory order = book.getOrder(tick, orderIndex);
-        uint64 claimable = book.calculateClaimableRawAmount(tick, orderIndex);
+        uint64 claimable = book.calculateClaimableUnit(tick, orderIndex);
         unchecked {
             return OrderInfo({provider: order.provider, open: order.pending - claimable, claimable: claimable});
         }
@@ -87,7 +87,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     function open(BookKey calldata key, bytes calldata hookData) external onlyByLocker {
         // @dev Also, the book opener should set unit size at least circulatingTotalSupply / type(uint64).max to avoid overflow.
         //      But it is not checked here because it is not possible to check it without knowing circulatingTotalSupply.
-        if (key.unitSize == 0) revert InvalidUnit();
+        if (key.unitSize == 0) revert InvalidUnitSize();
 
         FeePolicy makerPolicy = key.makerPolicy;
         FeePolicy takerPolicy = key.takerPolicy;
@@ -171,12 +171,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         params.key.hooks.beforeMake(params, hookData);
 
-        uint40 orderIndex = book.make(params.tick, params.amount, params.provider);
+        uint40 orderIndex = book.make(params.tick, params.unit, params.provider);
         id = OrderIdLibrary.encode(bookId, params.tick, orderIndex);
         int256 quoteDelta;
         unchecked {
             // @dev uint64 * uint64 < type(uint256).max
-            quoteAmount = uint256(params.amount) * params.key.unitSize;
+            quoteAmount = uint256(params.unit) * params.key.unitSize;
 
             // @dev 0 < uint64 * uint64 + rate * uint64 * uint64 < type(int256).max
             quoteDelta = int256(quoteAmount);
@@ -190,7 +190,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         _mint(msg.sender, OrderId.unwrap(id));
 
-        emit Make(bookId, msg.sender, params.tick, orderIndex, params.amount, params.provider);
+        emit Make(bookId, msg.sender, params.tick, orderIndex, params.unit, params.provider);
 
         params.key.hooks.afterMake(params, id, hookData);
     }
@@ -207,9 +207,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         params.key.hooks.beforeTake(params, hookData);
 
-        uint64 takenAmount = book.take(params.tick, params.maxAmount);
+        uint64 takenUnit = book.take(params.tick, params.maxUnit);
         unchecked {
-            quoteAmount = uint256(takenAmount) * params.key.unitSize;
+            quoteAmount = uint256(takenUnit) * params.key.unitSize;
         }
         baseAmount = params.tick.quoteToBase(quoteAmount, true);
 
@@ -225,9 +225,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         _accountDelta(params.key.quote, quoteDelta);
         _accountDelta(params.key.base, -baseDelta);
 
-        emit Take(bookId, msg.sender, params.tick, takenAmount);
+        emit Take(bookId, msg.sender, params.tick, takenUnit);
 
-        params.key.hooks.afterTake(params, takenAmount, hookData);
+        params.key.hooks.afterTake(params, takenUnit, hookData);
     }
 
     function cancel(CancelParams calldata params, bytes calldata hookData)
@@ -242,23 +242,23 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         key.hooks.beforeCancel(params, hookData);
 
-        (uint64 canceled, uint64 pending) = book.cancel(params.id, params.to);
+        (uint64 canceledUnit, uint64 pendingUnit) = book.cancel(params.id, params.toUnit);
 
         unchecked {
-            canceledAmount = uint256(canceled) * key.unitSize;
+            canceledAmount = uint256(canceledUnit) * key.unitSize;
             if (key.makerPolicy.usesQuote()) {
                 int256 quoteFee = key.makerPolicy.calculateFee(canceledAmount, true);
                 canceledAmount = uint256(int256(canceledAmount) + quoteFee);
             }
         }
 
-        if (pending == 0) _burn(OrderId.unwrap(params.id));
+        if (pendingUnit == 0) _burn(OrderId.unwrap(params.id));
 
         _accountDelta(key.quote, int256(canceledAmount));
 
-        emit Cancel(params.id, canceled);
+        emit Cancel(params.id, canceledUnit);
 
-        key.hooks.afterCancel(params, canceled, hookData);
+        key.hooks.afterCancel(params, canceledUnit, hookData);
     }
 
     function claim(OrderId id, bytes calldata hookData) external onlyByLocker returns (uint256 claimedAmount) {
@@ -276,14 +276,14 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         key.hooks.beforeClaim(id, hookData);
 
-        uint64 claimedRaw = book.claim(tick, orderIndex);
+        uint64 claimedUnit = book.claim(tick, orderIndex);
 
         int256 quoteFee;
         int256 baseFee;
         {
             uint256 claimedInQuote;
             unchecked {
-                claimedInQuote = uint256(claimedRaw) * key.unitSize;
+                claimedInQuote = uint256(claimedUnit) * key.unitSize;
             }
             claimedAmount = tick.quoteToBase(claimedInQuote, false);
 
@@ -314,9 +314,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         _accountDelta(key.base, claimedAmount.toInt256());
 
-        emit Claim(id, claimedRaw);
+        emit Claim(id, claimedUnit);
 
-        key.hooks.afterClaim(id, claimedRaw, hookData);
+        key.hooks.afterClaim(id, claimedUnit, hookData);
     }
 
     function collect(address recipient, Currency currency) external returns (uint256 amount) {

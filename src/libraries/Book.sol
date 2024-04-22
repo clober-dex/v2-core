@@ -20,13 +20,11 @@ library Book {
     using TickLibrary for Tick;
     using OrderIdLibrary for OrderId;
 
-    error ZeroAmount();
+    error ZeroUnit();
     error BookAlreadyOpened();
     error BookNotOpened();
-    error OrdersOutOfRange();
     error QueueReplaceFailed();
-    error TooLargeTakeAmount();
-    error CancelFailed(uint64 maxCancelableAmount);
+    error CancelFailed(uint64 maxCancelableUnit);
 
     // @dev Due to the segment tree implementation, the maximum order size is 2 ** 15.
     uint40 internal constant MAX_ORDER = 2 ** 15; // 32768
@@ -34,7 +32,7 @@ library Book {
 
     struct Order {
         address provider;
-        uint64 pending; // @dev unfilled amount + filled(claimable) amount
+        uint64 pending; // @dev unfilled unit + filled(claimable) unit
     }
 
     struct Queue {
@@ -87,11 +85,8 @@ library Book {
         return _getOrder(self, tick, index);
     }
 
-    function make(State storage self, Tick tick, uint64 amount, address provider)
-        external
-        returns (uint40 orderIndex)
-    {
-        if (amount == 0) revert ZeroAmount();
+    function make(State storage self, Tick tick, uint64 unit, address provider) external returns (uint40 orderIndex) {
+        if (unit == 0) revert ZeroUnit();
         if (!self.tickBitmap.has(tick)) self.tickBitmap.set(tick);
 
         Queue storage queue = self.queues[tick];
@@ -101,41 +96,41 @@ library Book {
         if (orderIndex >= MAX_ORDER) {
             unchecked {
                 uint40 staleOrderIndex = orderIndex - MAX_ORDER;
-                uint64 stalePendingAmount = queue.orders[staleOrderIndex].pending;
-                if (stalePendingAmount > 0) {
+                uint64 stalePendingUnit = queue.orders[staleOrderIndex].pending;
+                if (stalePendingUnit > 0) {
                     // If the order is not settled completely, we cannot replace it
-                    uint64 claimable = calculateClaimableRawAmount(self, tick, staleOrderIndex);
-                    if (claimable != stalePendingAmount) revert QueueReplaceFailed();
+                    uint64 claimable = calculateClaimableUnit(self, tick, staleOrderIndex);
+                    if (claimable != stalePendingUnit) revert QueueReplaceFailed();
                 }
             }
 
             // The stale order is settled completely, so remove it from the totalClaimableOf.
             // We can determine the stale order is claimable.
-            uint64 staleOrderedAmount = queue.tree.get(orderIndex & MAX_ORDER_M);
-            if (staleOrderedAmount > 0) self.totalClaimableOf.sub(tick, staleOrderedAmount);
+            uint64 staleOrderedUnit = queue.tree.get(orderIndex & MAX_ORDER_M);
+            if (staleOrderedUnit > 0) self.totalClaimableOf.sub(tick, staleOrderedUnit);
         }
 
-        queue.tree.update(orderIndex & MAX_ORDER_M, amount);
+        queue.tree.update(orderIndex & MAX_ORDER_M, unit);
 
-        queue.orders.push(Order({pending: amount, provider: provider}));
+        queue.orders.push(Order({pending: unit, provider: provider}));
     }
 
     /**
      * @notice Take orders from the book
      * @param self The book state
-     * @param maxTakeAmount The maximum amount to take
-     * @return takenAmount The actual amount to take
+     * @param maxTakeUnit The maximum unit to take
+     * @return takenUnit The actual unit to take
      */
-    function take(State storage self, Tick tick, uint64 maxTakeAmount) external returns (uint64 takenAmount) {
+    function take(State storage self, Tick tick, uint64 maxTakeUnit) external returns (uint64 takenUnit) {
         uint64 currentDepth = depth(self, tick);
-        if (currentDepth > maxTakeAmount) {
-            takenAmount = maxTakeAmount;
+        if (currentDepth > maxTakeUnit) {
+            takenUnit = maxTakeUnit;
         } else {
-            takenAmount = currentDepth;
+            takenUnit = currentDepth;
             self.tickBitmap.clear(tick);
         }
 
-        self.totalClaimableOf.add(tick, takenAmount);
+        self.totalClaimableOf.add(tick, takenUnit);
     }
 
     function cancel(State storage self, OrderId orderId, uint64 to)
@@ -144,12 +139,12 @@ library Book {
     {
         (, Tick tick, uint40 orderIndex) = orderId.decode();
         Queue storage queue = self.queues[tick];
-        uint64 pending = queue.orders[orderIndex].pending;
-        uint64 claimableRaw = calculateClaimableRawAmount(self, tick, orderIndex);
-        afterPending = to + claimableRaw;
+        uint64 pendingUnit = queue.orders[orderIndex].pending;
+        uint64 claimableUnit = calculateClaimableUnit(self, tick, orderIndex);
+        afterPending = to + claimableUnit;
         unchecked {
-            if (pending < afterPending) revert CancelFailed(pending - claimableRaw);
-            canceled = pending - afterPending;
+            if (pendingUnit < afterPending) revert CancelFailed(pendingUnit - claimableUnit);
+            canceled = pendingUnit - afterPending;
 
             self.queues[tick].tree.update(
                 orderIndex & MAX_ORDER_M, self.queues[tick].tree.get(orderIndex & MAX_ORDER_M) - canceled
@@ -164,34 +159,34 @@ library Book {
         }
     }
 
-    function claim(State storage self, Tick tick, uint40 index) external returns (uint64 claimedRaw) {
+    function claim(State storage self, Tick tick, uint40 index) external returns (uint64 claimedUnit) {
         Order storage order = _getOrder(self, tick, index);
 
-        claimedRaw = calculateClaimableRawAmount(self, tick, index);
+        claimedUnit = calculateClaimableUnit(self, tick, index);
         unchecked {
-            order.pending -= claimedRaw;
+            order.pending -= claimedUnit;
         }
     }
 
-    function calculateClaimableRawAmount(State storage self, Tick tick, uint40 index) public view returns (uint64) {
-        uint64 orderAmount = self.getOrder(tick, index).pending;
+    function calculateClaimableUnit(State storage self, Tick tick, uint40 index) public view returns (uint64) {
+        uint64 orderUnit = self.getOrder(tick, index).pending;
 
         Queue storage queue = self.queues[tick];
         // @dev Book logic always considers replaced orders as claimable.
         unchecked {
-            if (uint256(index) + MAX_ORDER < queue.orders.length) return orderAmount;
-            uint64 totalClaimable = self.totalClaimableOf.get(tick);
+            if (uint256(index) + MAX_ORDER < queue.orders.length) return orderUnit;
+            uint64 totalClaimableUnit = self.totalClaimableOf.get(tick);
             uint64 rangeRight = _getClaimRangeRight(queue, index);
-            if (rangeRight - orderAmount >= totalClaimable) return 0;
+            if (rangeRight - orderUnit >= totalClaimableUnit) return 0;
 
             // -------- totalClaimable ---------|---
-            // ------|---- orderAmount ----|--------
+            // ------|----  orderUnit  ----|--------
             //   rangeLeft           rangeRight
-            if (rangeRight <= totalClaimable) return orderAmount;
+            if (rangeRight <= totalClaimableUnit) return orderUnit;
             // -- totalClaimable --|----------------
-            // ------|---- orderAmount ----|--------
+            // ------|----  orderUnit  ----|--------
             //   rangeLeft           rangeRight
-            else return totalClaimable - (rangeRight - orderAmount);
+            else return totalClaimableUnit - (rangeRight - orderUnit);
         }
     }
 
