@@ -64,11 +64,11 @@ contract BookViewer is IBookViewer {
                 } else {
                     maxAmount = params.quoteAmount - takenQuoteAmount;
                 }
-                maxAmount = maxAmount.divide(key.unit, true);
+                maxAmount = maxAmount.divide(key.unitSize, true);
 
                 if (maxAmount == 0) break;
                 uint256 currentDepth = bookManager.getDepth(params.id, tick);
-                uint256 quoteAmount = (currentDepth > maxAmount ? maxAmount : currentDepth) * key.unit;
+                uint256 quoteAmount = (currentDepth > maxAmount ? maxAmount : currentDepth) * key.unitSize;
                 uint256 baseAmount = tick.quoteToBase(quoteAmount, true);
                 if (key.takerPolicy.usesQuote()) {
                     quoteAmount = uint256(int256(quoteAmount) - key.takerPolicy.calculateFee(quoteAmount, false));
@@ -105,11 +105,11 @@ contract BookViewer is IBookViewer {
                 } else {
                     maxAmount = key.takerPolicy.calculateOriginalAmount(params.baseAmount - spentBaseAmount, false);
                 }
-                maxAmount = tick.baseToQuote(maxAmount, false) / key.unit;
+                maxAmount = tick.baseToQuote(maxAmount, false) / key.unitSize;
 
                 if (maxAmount == 0) break;
                 uint256 currentDepth = bookManager.getDepth(params.id, tick);
-                uint256 quoteAmount = (currentDepth > maxAmount ? maxAmount : currentDepth) * key.unit;
+                uint256 quoteAmount = (currentDepth > maxAmount ? maxAmount : currentDepth) * key.unitSize;
                 uint256 baseAmount = tick.quoteToBase(quoteAmount, true);
                 if (key.takerPolicy.usesQuote()) {
                     quoteAmount = uint256(int256(quoteAmount) - key.takerPolicy.calculateFee(quoteAmount, false));

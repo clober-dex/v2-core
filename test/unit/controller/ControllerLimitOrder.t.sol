@@ -27,7 +27,7 @@ contract ControllerLimitOrderTest is ControllerTest {
 
         key = IBookManager.BookKey({
             base: Currency.wrap(address(mockErc20)),
-            unit: 1e12,
+            unitSize: 1e12,
             quote: CurrencyLibrary.NATIVE,
             makerPolicy: FeePolicyLibrary.encode(true, -100),
             takerPolicy: FeePolicyLibrary.encode(true, 100),
@@ -36,7 +36,7 @@ contract ControllerLimitOrderTest is ControllerTest {
 
         takeBookKey = IBookManager.BookKey({
             base: CurrencyLibrary.NATIVE,
-            unit: 1e12,
+            unitSize: 1e12,
             quote: Currency.wrap(address(mockErc20)),
             makerPolicy: FeePolicyLibrary.encode(true, -100),
             takerPolicy: FeePolicyLibrary.encode(true, 100),

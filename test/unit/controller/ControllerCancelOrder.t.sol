@@ -25,7 +25,7 @@ contract ControllerCancelOrderTest is ControllerTest {
 
         key = IBookManager.BookKey({
             base: Currency.wrap(address(mockErc20)),
-            unit: 1e12,
+            unitSize: 1e12,
             quote: CurrencyLibrary.NATIVE,
             makerPolicy: FeePolicyLibrary.encode(false, 0),
             takerPolicy: FeePolicyLibrary.encode(true, 0),

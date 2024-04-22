@@ -48,7 +48,7 @@ contract BookManagerNativeTest is Test {
 
         nativeQuoteKey = IBookManager.BookKey({
             base: Currency.wrap(address(mockErc20)),
-            unit: 1e12,
+            unitSize: 1e12,
             quote: CurrencyLibrary.NATIVE,
             makerPolicy: FeePolicyLibrary.encode(false, 0),
             takerPolicy: FeePolicyLibrary.encode(true, 0),
@@ -57,7 +57,7 @@ contract BookManagerNativeTest is Test {
 
         nativeBaseKey = IBookManager.BookKey({
             base: CurrencyLibrary.NATIVE,
-            unit: 1e14,
+            unitSize: 1e14,
             quote: Currency.wrap(address(mockErc20)),
             makerPolicy: FeePolicyLibrary.encode(false, 0),
             takerPolicy: FeePolicyLibrary.encode(true, 0),
@@ -66,7 +66,7 @@ contract BookManagerNativeTest is Test {
 
         unopenedKey = IBookManager.BookKey({
             base: CurrencyLibrary.NATIVE,
-            unit: 1e12,
+            unitSize: 1e12,
             quote: Currency.wrap(address(mockErc20)),
             makerPolicy: FeePolicyLibrary.encode(true, 0),
             takerPolicy: FeePolicyLibrary.encode(true, 0),
@@ -95,7 +95,7 @@ contract BookManagerNativeTest is Test {
             bookId,
             unopenedKey.base,
             unopenedKey.quote,
-            unopenedKey.unit,
+            unopenedKey.unitSize,
             unopenedKey.makerPolicy,
             unopenedKey.takerPolicy,
             unopenedKey.hooks
@@ -106,7 +106,7 @@ contract BookManagerNativeTest is Test {
 
         assertEq(Currency.unwrap(remoteBookKey.base), Currency.unwrap(unopenedKey.base));
         assertEq(Currency.unwrap(remoteBookKey.quote), Currency.unwrap(unopenedKey.quote));
-        assertEq(remoteBookKey.unit, unopenedKey.unit);
+        assertEq(remoteBookKey.unitSize, unopenedKey.unitSize);
         assertEq(remoteBookKey.makerPolicy.rate(), unopenedKey.makerPolicy.rate());
         assertEq(remoteBookKey.makerPolicy.usesQuote(), unopenedKey.makerPolicy.usesQuote());
         assertEq(remoteBookKey.takerPolicy.rate(), unopenedKey.takerPolicy.rate());
@@ -115,7 +115,7 @@ contract BookManagerNativeTest is Test {
     }
 
     function testOpenWithInvalidUnit() public {
-        unopenedKey.unit = 0;
+        unopenedKey.unitSize = 0;
 
         vm.expectRevert(abi.encodeWithSelector(IBookManager.InvalidUnit.selector));
         openRouter.open(unopenedKey, "");
@@ -209,7 +209,7 @@ contract BookManagerNativeTest is Test {
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
         assertEq(OrderId.unwrap(OrderIdLibrary.encode(nativeBaseKey.toId(), tick, 0)), OrderId.unwrap(id), "RETURN_ID");
-        assertEq(actualQuoteAmount, makeAmount * nativeBaseKey.unit, "RETURN_QUOTE_AMOUNT");
+        assertEq(actualQuoteAmount, makeAmount * nativeBaseKey.unitSize, "RETURN_QUOTE_AMOUNT");
         assertEq(mockErc20.balanceOf(address(this)), beforeQuoteAmount - actualQuoteAmount, "QUOTE_BALANCE");
         assertEq(bookManager.balanceOf(address(this)), 1, "BOOK_BALANCE");
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
@@ -236,7 +236,7 @@ contract BookManagerNativeTest is Test {
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
         assertEq(OrderId.unwrap(OrderIdLibrary.encode(nativeQuoteKey.toId(), tick, 0)), OrderId.unwrap(id), "RETURN_ID");
-        assertEq(actualQuoteAmount, makeAmount * nativeQuoteKey.unit, "RETURN_QUOTE_AMOUNT");
+        assertEq(actualQuoteAmount, makeAmount * nativeQuoteKey.unitSize, "RETURN_QUOTE_AMOUNT");
         assertEq(address(this).balance, beforeQuoteAmount - actualQuoteAmount, "QUOTE_BALANCE");
         assertEq(bookManager.balanceOf(address(this)), 1, "BOOK_BALANCE");
         assertEq(bookManager.ownerOf(OrderId.unwrap(id)), address(this), "ORDER_OWNER");
@@ -319,15 +319,17 @@ contract BookManagerNativeTest is Test {
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
-        assertEq(actualQuoteAmount, takeAmount * nativeQuoteKey.unit, "RETURN_QUOTE_AMOUNT");
+        assertEq(actualQuoteAmount, takeAmount * nativeQuoteKey.unitSize, "RETURN_QUOTE_AMOUNT");
         assertEq(
-            actualBaseAmount, tick.quoteToBase(uint256(takeAmount) * nativeQuoteKey.unit, true), "RETURN_BASE_AMOUNT"
+            actualBaseAmount,
+            tick.quoteToBase(uint256(takeAmount) * nativeQuoteKey.unitSize, true),
+            "RETURN_BASE_AMOUNT"
         );
         assertEq(address(this).balance, beforeQuoteAmount + actualQuoteAmount, "QUOTE_BALANCE");
         assertEq(mockErc20.balanceOf(address(this)), beforeBaseAmount - actualBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.quote),
-            makeAmount * nativeQuoteKey.unit - actualQuoteAmount,
+            makeAmount * nativeQuoteKey.unitSize - actualQuoteAmount,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), actualBaseAmount, "RESERVES_BASE");
@@ -360,15 +362,15 @@ contract BookManagerNativeTest is Test {
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
-        assertEq(actualQuoteAmount, takeAmount * nativeBaseKey.unit, "RETURN_QUOTE_AMOUNT");
+        assertEq(actualQuoteAmount, takeAmount * nativeBaseKey.unitSize, "RETURN_QUOTE_AMOUNT");
         assertEq(
-            actualBaseAmount, tick.quoteToBase(uint256(takeAmount) * nativeBaseKey.unit, true), "RETURN_BASE_AMOUNT"
+            actualBaseAmount, tick.quoteToBase(uint256(takeAmount) * nativeBaseKey.unitSize, true), "RETURN_BASE_AMOUNT"
         );
         assertEq(mockErc20.balanceOf(address(this)), beforeQuoteAmount + actualQuoteAmount, "QUOTE_BALANCE");
         assertEq(address(this).balance, beforeBaseAmount - actualBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeBaseKey.quote),
-            makeAmount * nativeBaseKey.unit - actualQuoteAmount,
+            makeAmount * nativeBaseKey.unitSize - actualQuoteAmount,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeBaseKey.base), actualBaseAmount, "RESERVES_BASE");
@@ -405,12 +407,14 @@ contract BookManagerNativeTest is Test {
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
         assertEq(
-            mockErc20.balanceOf(address(this)), beforeQuoteAmount + cancelAmount * nativeBaseKey.unit, "QUOTE_BALANCE"
+            mockErc20.balanceOf(address(this)),
+            beforeQuoteAmount + cancelAmount * nativeBaseKey.unitSize,
+            "QUOTE_BALANCE"
         );
         assertEq(address(this).balance, beforeBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeBaseKey.quote),
-            (makeAmount - cancelAmount) * nativeBaseKey.unit,
+            (makeAmount - cancelAmount) * nativeBaseKey.unitSize,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeBaseKey.base), 0, "RESERVES_BASE");
@@ -443,11 +447,11 @@ contract BookManagerNativeTest is Test {
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
-        assertEq(address(this).balance, beforeQuoteAmount + cancelAmount * nativeQuoteKey.unit, "QUOTE_BALANCE");
+        assertEq(address(this).balance, beforeQuoteAmount + cancelAmount * nativeQuoteKey.unitSize, "QUOTE_BALANCE");
         assertEq(mockErc20.balanceOf(address(this)), beforeBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.quote),
-            (makeAmount - cancelAmount) * nativeQuoteKey.unit,
+            (makeAmount - cancelAmount) * nativeQuoteKey.unitSize,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), 0, "RESERVES_BASE");
@@ -492,12 +496,14 @@ contract BookManagerNativeTest is Test {
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
         assertEq(
-            address(this).balance, beforeQuoteAmount + (makeAmount - takeAmount) * nativeQuoteKey.unit, "QUOTE_BALANCE"
+            address(this).balance,
+            beforeQuoteAmount + (makeAmount - takeAmount) * nativeQuoteKey.unitSize,
+            "QUOTE_BALANCE"
         );
         assertEq(mockErc20.balanceOf(address(this)), beforeBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.quote),
-            beforeQuoteReserve - (makeAmount - takeAmount) * nativeQuoteKey.unit,
+            beforeQuoteReserve - (makeAmount - takeAmount) * nativeQuoteKey.unitSize,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), beforeBaseReserve, "RESERVES_BASE");
@@ -532,11 +538,11 @@ contract BookManagerNativeTest is Test {
 
         IBookManager.OrderInfo memory orderInfo = bookManager.getOrder(id);
 
-        assertEq(address(this).balance, beforeQuoteAmount + makeAmount * nativeQuoteKey.unit, "QUOTE_BALANCE");
+        assertEq(address(this).balance, beforeQuoteAmount + makeAmount * nativeQuoteKey.unitSize, "QUOTE_BALANCE");
         assertEq(mockErc20.balanceOf(address(this)), beforeBaseAmount, "BASE_BALANCE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.quote),
-            beforeQuoteReserve - makeAmount * nativeQuoteKey.unit,
+            beforeQuoteReserve - makeAmount * nativeQuoteKey.unitSize,
             "RESERVES_QUOTE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.base), beforeBaseReserve, "RESERVES_BASE");
@@ -607,13 +613,13 @@ contract BookManagerNativeTest is Test {
         assertEq(address(this).balance, beforeQuoteAmount, "QUOTE_BALANCE");
         assertEq(
             mockErc20.balanceOf(address(this)),
-            beforeBaseAmount + tick.quoteToBase(uint256(takeAmount) * nativeQuoteKey.unit, false),
+            beforeBaseAmount + tick.quoteToBase(uint256(takeAmount) * nativeQuoteKey.unitSize, false),
             "BASE_BALANCE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.quote), beforeQuoteReserve, "RESERVES_QUOTE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.base),
-            beforeBaseReserve - tick.quoteToBase(uint256(takeAmount) * nativeQuoteKey.unit, false),
+            beforeBaseReserve - tick.quoteToBase(uint256(takeAmount) * nativeQuoteKey.unitSize, false),
             "RESERVES_BASE"
         );
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), makeAmount - takeAmount, "DEPTH");
@@ -654,13 +660,13 @@ contract BookManagerNativeTest is Test {
         assertEq(mockErc20.balanceOf(address(this)), beforeQuoteAmount, "QUOTE_BALANCE");
         assertEq(
             address(this).balance,
-            beforeBaseAmount + tick.quoteToBase(uint256(takeAmount) * nativeBaseKey.unit, false),
+            beforeBaseAmount + tick.quoteToBase(uint256(takeAmount) * nativeBaseKey.unitSize, false),
             "BASE_BALANCE"
         );
         assertEq(bookManager.reservesOf(nativeBaseKey.quote), beforeQuoteReserve, "RESERVES_QUOTE");
         assertEq(
             bookManager.reservesOf(nativeBaseKey.base),
-            beforeBaseReserve - tick.quoteToBase(uint256(takeAmount) * nativeBaseKey.unit, false),
+            beforeBaseReserve - tick.quoteToBase(uint256(takeAmount) * nativeBaseKey.unitSize, false),
             "RESERVES_BASE"
         );
         assertEq(bookManager.getDepth(nativeBaseKey.toId(), tick), makeAmount - takeAmount, "DEPTH");
@@ -704,13 +710,13 @@ contract BookManagerNativeTest is Test {
         assertEq(address(this).balance, beforeQuoteAmount, "QUOTE_BALANCE");
         assertEq(
             mockErc20.balanceOf(address(this)),
-            beforeBaseAmount + tick.quoteToBase(uint256(makeAmount) * nativeQuoteKey.unit, false),
+            beforeBaseAmount + tick.quoteToBase(uint256(makeAmount) * nativeQuoteKey.unitSize, false),
             "BASE_BALANCE"
         );
         assertEq(bookManager.reservesOf(nativeQuoteKey.quote), beforeQuoteReserve, "RESERVES_QUOTE");
         assertEq(
             bookManager.reservesOf(nativeQuoteKey.base),
-            beforeBaseReserve - tick.quoteToBase(uint256(makeAmount) * nativeQuoteKey.unit, false),
+            beforeBaseReserve - tick.quoteToBase(uint256(makeAmount) * nativeQuoteKey.unitSize, false),
             "RESERVES_BASE"
         );
         assertEq(bookManager.getDepth(nativeQuoteKey.toId(), tick), 0, "DEPTH");

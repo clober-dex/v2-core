@@ -85,9 +85,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function open(BookKey calldata key, bytes calldata hookData) external onlyByLocker {
-        // @dev Also, the book opener should set unit at least circulatingTotalSupply / type(uint64).max to avoid overflow.
+        // @dev Also, the book opener should set unit size at least circulatingTotalSupply / type(uint64).max to avoid overflow.
         //      But it is not checked here because it is not possible to check it without knowing circulatingTotalSupply.
-        if (key.unit == 0) revert InvalidUnit();
+        if (key.unitSize == 0) revert InvalidUnit();
 
         FeePolicy makerPolicy = key.makerPolicy;
         FeePolicy takerPolicy = key.takerPolicy;
@@ -106,7 +106,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         BookId id = key.toId();
         _books[id].open(key);
 
-        emit Open(id, key.base, key.quote, key.unit, makerPolicy, takerPolicy, hooks);
+        emit Open(id, key.base, key.quote, key.unitSize, makerPolicy, takerPolicy, hooks);
 
         hooks.afterOpen(key, hookData);
     }
@@ -176,7 +176,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         int256 quoteDelta;
         unchecked {
             // @dev uint64 * uint64 < type(uint256).max
-            quoteAmount = uint256(params.amount) * params.key.unit;
+            quoteAmount = uint256(params.amount) * params.key.unitSize;
 
             // @dev 0 < uint64 * uint64 + rate * uint64 * uint64 < type(int256).max
             quoteDelta = int256(quoteAmount);
@@ -209,7 +209,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         uint64 takenAmount = book.take(params.tick, params.maxAmount);
         unchecked {
-            quoteAmount = uint256(takenAmount) * params.key.unit;
+            quoteAmount = uint256(takenAmount) * params.key.unitSize;
         }
         baseAmount = params.tick.quoteToBase(quoteAmount, true);
 
@@ -245,7 +245,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         (uint64 canceled, uint64 pending) = book.cancel(params.id, params.to);
 
         unchecked {
-            canceledAmount = uint256(canceled) * key.unit;
+            canceledAmount = uint256(canceled) * key.unitSize;
             if (key.makerPolicy.usesQuote()) {
                 int256 quoteFee = key.makerPolicy.calculateFee(canceledAmount, true);
                 canceledAmount = uint256(int256(canceledAmount) + quoteFee);
@@ -283,7 +283,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         {
             uint256 claimedInQuote;
             unchecked {
-                claimedInQuote = uint256(claimedRaw) * key.unit;
+                claimedInQuote = uint256(claimedRaw) * key.unitSize;
             }
             claimedAmount = tick.quoteToBase(claimedInQuote, false);
 

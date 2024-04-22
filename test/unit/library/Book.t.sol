@@ -22,7 +22,7 @@ contract BookTest is Test {
 
         key = IBookManager.BookKey({
             base: CurrencyLibrary.NATIVE,
-            unit: 1e12,
+            unitSize: 1e12,
             quote: Currency.wrap(address(123)),
             makerPolicy: FeePolicyLibrary.encode(false, 0),
             takerPolicy: FeePolicyLibrary.encode(true, 0),
@@ -40,7 +40,7 @@ contract BookTest is Test {
         book.checkOpened();
         IBookManager.BookKey memory actualKey = book.getBookKey();
         assertEq(Currency.unwrap(actualKey.base), Currency.unwrap(key.base));
-        assertEq(actualKey.unit, key.unit);
+        assertEq(actualKey.unitSize, key.unitSize);
         assertEq(Currency.unwrap(actualKey.quote), Currency.unwrap(key.quote));
         assertEq(actualKey.makerPolicy.rate(), key.makerPolicy.rate());
         assertEq(actualKey.makerPolicy.usesQuote(), key.makerPolicy.usesQuote());

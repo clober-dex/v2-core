@@ -28,7 +28,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @param id The book id
      * @param base The base currency
      * @param quote The quote currency
-     * @param unit The unit of the book
+     * @param unitSize The unit size of the book
      * @param makerPolicy The maker fee policy
      * @param takerPolicy The taker fee policy
      * @param hooks The hooks contract
@@ -37,7 +37,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
         BookId indexed id,
         Currency indexed base,
         Currency indexed quote,
-        uint64 unit,
+        uint64 unitSize,
         FeePolicy makerPolicy,
         FeePolicy takerPolicy,
         IHooks hooks
@@ -109,7 +109,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     /**
      * @notice This structure represents a unique identifier for a book in the BookManager.
      * @param base The base currency of the book
-     * @param unit The unit of the book
+     * @param unitSize The unit size of the book
      * @param quote The quote currency of the book
      * @param makerPolicy The maker fee policy of the book
      * @param hooks The hooks contract of the book
@@ -117,7 +117,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      */
     struct BookKey {
         Currency base;
-        uint64 unit;
+        uint64 unitSize;
         Currency quote;
         FeePolicy makerPolicy;
         IHooks hooks;
@@ -299,7 +299,7 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @notice This structure represents the parameters for making an order.
      * @param key The book key for the order
      * @param tick The tick for the order
-     * @param amount The amount for the order. Times key.unit to get actual bid amount.
+     * @param amount The amount for the order. Times key.unitSize to get actual bid amount.
      * @param provider The provider for the order. The limit order service provider address to collect fees.
      */
     struct MakeParams {

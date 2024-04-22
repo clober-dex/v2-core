@@ -56,7 +56,7 @@ library Book {
     }
 
     function isOpened(State storage self) internal view returns (bool) {
-        return self.key.unit != 0;
+        return self.key.unitSize != 0;
     }
 
     function checkOpened(State storage self) internal view {

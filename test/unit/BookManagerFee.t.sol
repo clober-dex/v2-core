@@ -53,7 +53,7 @@ contract BookManagerFee is Test {
     function _openMarket(FeePolicy maker, FeePolicy taker) internal returns (IBookManager.BookKey memory key) {
         key = IBookManager.BookKey({
             base: Currency.wrap(address(base)),
-            unit: 1,
+            unitSize: 1,
             quote: Currency.wrap(address(quote)),
             makerPolicy: maker,
             takerPolicy: taker,
