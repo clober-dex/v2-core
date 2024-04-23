@@ -112,18 +112,18 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function lock(address locker, bytes calldata data) external returns (bytes memory result) {
+        // Add the locker to the stack
         Lockers.push(locker, msg.sender);
 
-        // the locker does everything in this callback, including paying what they owe via calls to settle
+        // The locker does everything in this callback, including paying what they owe via calls to settle
         result = ILocker(locker).lockAcquired(msg.sender, data);
 
+        // Remove the locker from the stack
+        Lockers.pop();
+
         (uint128 length, uint128 nonzeroDeltaCount) = Lockers.lockData();
-        if (length == 1) {
-            if (nonzeroDeltaCount != 0) revert CurrencyNotSettled();
-            Lockers.clear();
-        } else {
-            Lockers.pop();
-        }
+        // @dev The locker must settle all currency balances to zero.
+        if (length == 0 && nonzeroDeltaCount != 0) revert CurrencyNotSettled();
     }
 
     function getLock(uint256 i) external view returns (address, address) {

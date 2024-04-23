@@ -21,10 +21,6 @@ contract LockersWrapper {
         Lockers.pop();
     }
 
-    function clear() external {
-        Lockers.clear();
-    }
-
     function getLocker(uint256 index) external view returns (address) {
         return Lockers.getLocker(index);
     }

@@ -90,14 +90,8 @@ contract LockersTest is Test {
             lockers.pop();
             (uint128 length,) = lockers.lockData();
             assertEq(length, uint128(addresses.length - i - 1), "LENGTH");
-            assertEq(
-                lockers.getLocker(addresses.length - i - 1), addresses[addresses.length - i - 1][0], "LOCKER_DURING"
-            );
-            assertEq(
-                lockers.getLockCaller(addresses.length - i - 1),
-                addresses[addresses.length - i - 1][1],
-                "LOCK_CALLER_DURING"
-            );
+            assertEq(lockers.getLocker(addresses.length - i - 1), address(0), "LOCKER_DURING");
+            assertEq(lockers.getLockCaller(addresses.length - i - 1), address(0), "LOCK_CALLER_DURING");
             if (length > 0) {
                 assertEq(lockers.getCurrentLocker(), addresses[addresses.length - i - 2][0], "CURRENT_LOCKER_DURING");
                 assertEq(
@@ -108,35 +102,6 @@ contract LockersTest is Test {
                 assertEq(lockers.getCurrentLockCaller(), address(0), "CURRENT_LOCK_CALLER_DURING");
             }
         }
-    }
-
-    function testClear() public afterInit {
-        lockers.push(address(0x1), address(0x2));
-        lockers.push(address(0x3), address(0x4));
-        lockers.clear();
-        (uint128 length,) = lockers.lockData();
-        assertEq(length, 0, "LENGTH");
-        assertEq(lockers.getLocker(0), address(0x1), "REMAINED_LOCKER_0");
-        assertEq(lockers.getLockCaller(0), address(0x2), "REMAINED_LOCK_CALLER_0");
-        assertEq(lockers.getLocker(1), address(0x3), "REMAINED_LOCKER_1");
-        assertEq(lockers.getLockCaller(1), address(0x4), "REMAINED_LOCK_CALLER_1");
-        assertEq(lockers.getCurrentLocker(), address(0), "CURRENT_LOCKER");
-        assertEq(lockers.getCurrentLockCaller(), address(0), "CURRENT_LOCK_CALLER");
-    }
-
-    function testClearMultiple(address[2][] memory addresses) public afterInit {
-        for (uint256 i; i < addresses.length; ++i) {
-            lockers.push(addresses[i][0], addresses[i][1]);
-        }
-        lockers.clear();
-        (uint128 length,) = lockers.lockData();
-        assertEq(length, 0, "LENGTH");
-        for (uint256 i; i < addresses.length; ++i) {
-            assertEq(lockers.getLocker(i), addresses[i][0], "REMAINED_LOCKER");
-            assertEq(lockers.getLockCaller(i), addresses[i][1], "REMAINED_LOCK_CALLER");
-        }
-        assertEq(lockers.getCurrentLocker(), address(0), "CURRENT_LOCKER");
-        assertEq(lockers.getCurrentLockCaller(), address(0), "CURRENT_LOCK_CALLER");
     }
 
     function testIncrementNonzeroDeltaCount() public afterInit {

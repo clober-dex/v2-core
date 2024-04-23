@@ -35,10 +35,11 @@ library Lockers {
     uint256 internal constant EMPTY_ADDRESS_STORAGE = 1 << 255;
 
     function initialize() internal {
-        clear();
+        uint256 lockDataSlot = LOCK_DATA_SLOT;
         uint256 lockersSlot = LOCKERS_SLOT;
         // @dev To reduce lock sstore gas, we set 5 lockers storages dirty
         assembly {
+            sstore(lockDataSlot, 1)
             for { let i := 0 } lt(i, 5) { i := add(i, 1) } {
                 sstore(lockersSlot, EMPTY_ADDRESS_STORAGE)
                 sstore(add(lockersSlot, 1), EMPTY_ADDRESS_STORAGE)
@@ -52,7 +53,7 @@ library Lockers {
         // read current value from the sentinel storage slot
         uint128 l = length();
         unchecked {
-            // not in assembly because OFFSET is in the library scope
+            // not in assembly because of the constant in the library scope
             uint256 indexToWrite = LOCKERS_SLOT + (l * LOCKER_STRUCT_SIZE);
             uint256 lockDataSlot = LOCK_DATA_SLOT;
             /// @solidity memory-safe-assembly
@@ -85,22 +86,27 @@ library Lockers {
 
     /// @dev Pops a locker off the end of the queue. Note that no storage gets cleared.
     function pop() internal {
-        uint256 slot = LOCK_DATA_SLOT;
-        assembly {
-            sstore(slot, sub(sload(slot), 1))
-        }
-    }
+        // read current value from the sentinel storage slot
+        uint128 i = length() - 1;
+        unchecked {
+            // not in assembly because of the constant in the library scope
+            uint256 indexToWrite = LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE);
+            uint256 lockDataSlot = LOCK_DATA_SLOT;
+            /// @solidity memory-safe-assembly
+            assembly {
+                // in the next storage slot, delete the locker and lockCaller
+                sstore(indexToWrite, EMPTY_ADDRESS_STORAGE)
+                sstore(add(indexToWrite, 1), EMPTY_ADDRESS_STORAGE)
 
-    function clear() internal {
-        uint256 slot = LOCK_DATA_SLOT;
-        assembly {
-            sstore(slot, 1)
+                // decrease the length
+                sstore(lockDataSlot, sub(sload(lockDataSlot), 1))
+            }
         }
     }
 
     function getLocker(uint256 i) internal view returns (address locker) {
         unchecked {
-            // not in assembly because OFFSET is in the library scope
+            // not in assembly because of the constant in the library scope
             uint256 position = LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE);
             /// @solidity memory-safe-assembly
             assembly {
@@ -111,7 +117,7 @@ library Lockers {
 
     function getLockCaller(uint256 i) internal view returns (address locker) {
         unchecked {
-            // not in assembly because OFFSET is in the library scope
+            // not in assembly because of the constant in the library scope
             uint256 position = LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE + 1);
             /// @solidity memory-safe-assembly
             assembly {
