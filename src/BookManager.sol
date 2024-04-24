@@ -127,7 +127,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     }
 
     function getCurrencyDelta(address locker, Currency currency) external view returns (int256) {
-        return CurrencyDelta.getCurrencyDelta(locker, currency);
+        return CurrencyDelta.get(locker, currency);
     }
 
     function getLock(uint256 i) external view returns (address, address) {
@@ -374,7 +374,7 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         if (delta == 0) return;
 
         address locker = Lockers.getCurrentLocker();
-        int256 next = CurrencyDelta.addCurrencyDelta(locker, currency, delta);
+        int256 next = CurrencyDelta.add(locker, currency, delta);
 
         if (next == 0) Lockers.decrementNonzeroDeltaCount();
         else if (next == delta) Lockers.incrementNonzeroDeltaCount();
