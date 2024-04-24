@@ -11,7 +11,7 @@ library CurrencyDelta {
         assembly {
             mstore(0x14, currency)
             mstore(0x00, locker)
-            delta := tload(keccak256(0x0c,0x28))
+            delta := tload(keccak256(0x0c, 0x28))
         }
     }
 
@@ -19,7 +19,7 @@ library CurrencyDelta {
         assembly {
             mstore(0x14, currency)
             mstore(0x00, locker)
-            let slot := keccak256(0x0c,0x28)
+            let slot := keccak256(0x0c, 0x28)
             result := add(tload(slot), delta)
             tstore(slot, result)
         }
