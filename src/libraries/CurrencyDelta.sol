@@ -5,7 +5,7 @@ import {Currency, CurrencyLibrary} from "./Currency.sol";
 
 library CurrencyDelta {
     // uint256(keccak256("CurrencyDelta")) + 1
-    uint256 internal constant CURRENCY_DELTA_SLOT = 0x95b400a0305233758f18c75aa62cbbb5d6882951dd55f1407390ee7b6924e270;
+    uint256 internal constant CURRENCY_DELTA_SLOT = 0x95b400a0305233758f18c75aa62cbbb5d6882951dd55f1407390ee7b6924e26f;
 
     function get(address locker, Currency currency) internal view returns (int256 delta) {
         assembly {
