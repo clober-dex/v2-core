@@ -372,10 +372,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
-        unchecked {
-            if (next == 0) Lockers.decrementNonzeroDeltaCount();
-            else if (current == 0) Lockers.incrementNonzeroDeltaCount();
-        }
+        if (next == 0) Lockers.decrementNonzeroDeltaCount();
+        else if (current == 0) Lockers.incrementNonzeroDeltaCount();
 
         currencyDelta[locker][currency] = next;
     }
