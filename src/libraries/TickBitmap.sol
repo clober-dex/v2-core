@@ -12,7 +12,7 @@ library TickBitmap {
     error EmptyError();
     error AlreadyExistsError();
 
-    uint256 public constant B0_BITMAP_KEY = uint256(keccak256("TickBitmap"));
+    uint256 public constant B0_BITMAP_KEY = uint256(keccak256("TickBitmap")) + 1;
     uint256 public constant MAX_UINT_256_MINUS_1 = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe;
 
     function has(mapping(uint256 => uint256) storage self, Tick tick) internal view returns (bool) {
