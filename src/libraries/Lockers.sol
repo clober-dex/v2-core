@@ -21,14 +21,14 @@ library Lockers {
     ///     /// @notice The total number of nonzero deltas over all active + completed lockers
     ///     uint128 nonzeroDeltaCount;
     /// }
-    uint256 internal constant LOCK_DATA_SLOT = uint256(keccak256("LockData"));
+    uint256 internal constant LOCK_DATA_SLOT = uint256(keccak256("LockData")) + 1;
 
-    uint256 internal constant LOCKERS_SLOT = uint256(keccak256("Lockers"));
+    uint256 internal constant LOCKERS_SLOT = uint256(keccak256("Lockers")) + 1;
 
     // The number of slots per item in the lockers array
     uint256 internal constant LOCKER_STRUCT_SIZE = 2;
 
-    uint256 internal constant HOOK_ADDRESS_SLOT = uint256(keccak256("HookAddress"));
+    uint256 internal constant HOOK_ADDRESS_SLOT = uint256(keccak256("HookAddress")) + 1;
 
     uint256 internal constant NONZERO_DELTA_COUNT_OFFSET = 2 ** 128;
 
