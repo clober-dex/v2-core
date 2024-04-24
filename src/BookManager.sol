@@ -378,7 +378,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
 
         if (next == 0) Lockers.decrementNonzeroDeltaCount();
         else if (next == delta) Lockers.incrementNonzeroDeltaCount();
-
     }
 
     function load(bytes32 slot) external view returns (bytes32 value) {
