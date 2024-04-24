@@ -16,141 +16,117 @@ import {IHooks} from "../interfaces/IHooks.sol";
 library Lockers {
     /// struct LockData {
     ///     /// @notice The current number of active lockers
-    ///     /// @dev This value starts with 1 to make dirty slot
-    ///     uint128 nextLength;
+    ///     uint128 length;
     ///     /// @notice The total number of nonzero deltas over all active + completed lockers
     ///     uint128 nonzeroDeltaCount;
     /// }
-    uint256 internal constant LOCK_DATA_SLOT = uint256(keccak256("LockData")) + 1;
+    // uint256(keccak256("LockData")) + 1
+    uint256 internal constant LOCK_DATA_SLOT = 0x760a9a962ae3d184e99c0483cf5684fb3170f47116ca4f445c50209da4f4f907;
 
-    uint256 internal constant LOCKERS_SLOT = uint256(keccak256("Lockers")) + 1;
+    // uint256(keccak256("Lockers")) + 1
+    uint256 internal constant LOCKERS_SLOT = 0x722b431450ce53c44434ec138439e45a0639fe031b803ee019b776fae5cfa2b1;
 
     // The number of slots per item in the lockers array
     uint256 internal constant LOCKER_STRUCT_SIZE = 2;
 
-    uint256 internal constant HOOK_ADDRESS_SLOT = uint256(keccak256("HookAddress")) + 1;
+    // uint256(keccak256("HookAddress")) + 1
+    uint256 internal constant HOOK_ADDRESS_SLOT = 0xfcac7593714b88fec0c578a53e9f3f6e4b47eb26c9dcaa7eff23a3ac156be422;
 
     uint256 internal constant NONZERO_DELTA_COUNT_OFFSET = 2 ** 128;
 
-    uint256 internal constant EMPTY_ADDRESS_STORAGE = 1 << 255;
-
-    function initialize() internal {
-        uint256 lockDataSlot = LOCK_DATA_SLOT;
-        uint256 lockersSlot = LOCKERS_SLOT;
-        // @dev To reduce lock sstore gas, we set 5 lockers storages dirty
-        assembly {
-            sstore(lockDataSlot, 1)
-            for { let i := 0 } lt(i, 5) { i := add(i, 1) } {
-                sstore(lockersSlot, EMPTY_ADDRESS_STORAGE)
-                sstore(add(lockersSlot, 1), EMPTY_ADDRESS_STORAGE)
-                lockersSlot := add(lockersSlot, LOCKER_STRUCT_SIZE)
-            }
-        }
-    }
+    uint256 internal constant LENGTH_MASK = (1 << 128) - 1;
 
     /// @dev Pushes a locker onto the end of the queue, and updates the sentinel storage slot.
     function push(address locker, address lockCaller) internal {
-        // read current value from the sentinel storage slot
-        uint128 l = length();
-        unchecked {
-            // not in assembly because of the constant in the library scope
-            uint256 indexToWrite = LOCKERS_SLOT + (l * LOCKER_STRUCT_SIZE);
-            uint256 lockDataSlot = LOCK_DATA_SLOT;
-            /// @solidity memory-safe-assembly
-            assembly {
-                // in the next storage slot, write the locker and lockCaller
-                sstore(indexToWrite, locker)
-                sstore(add(indexToWrite, 1), lockCaller)
+        assembly {
+            let data := tload(LOCK_DATA_SLOT)
+            let l := and(data, LENGTH_MASK)
 
-                // increase the length
-                sstore(lockDataSlot, add(sload(lockDataSlot), 1))
-            }
+            // LOCKERS_SLOT + l * LOCKER_STRUCT_SIZE
+            let indexToWrite := add(LOCKERS_SLOT, mul(l, LOCKER_STRUCT_SIZE))
+
+            // in the next storage slot, write the locker and lockCaller
+            tstore(indexToWrite, locker)
+            tstore(add(indexToWrite, 1), lockCaller)
+
+            // increase the length
+            tstore(LOCK_DATA_SLOT, add(data, 1))
         }
     }
 
     function lockData() internal view returns (uint128 l, uint128 nonzeroDeltaCount) {
-        uint256 slot = LOCK_DATA_SLOT;
         assembly {
-            let data := sload(slot)
-            l := sub(data, 1)
+            let data := tload(LOCK_DATA_SLOT)
+            l := and(data, LENGTH_MASK)
             nonzeroDeltaCount := shr(128, data)
         }
     }
 
     function length() internal view returns (uint128 l) {
-        uint256 slot = LOCK_DATA_SLOT;
         assembly {
-            l := sub(sload(slot), 1)
+            l := and(tload(LOCK_DATA_SLOT), LENGTH_MASK)
         }
     }
 
     /// @dev Pops a locker off the end of the queue. Note that no storage gets cleared.
     function pop() internal {
-        // read current value from the sentinel storage slot
-        uint128 i = length() - 1;
-        unchecked {
-            // not in assembly because of the constant in the library scope
-            uint256 indexToWrite = LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE);
-            uint256 lockDataSlot = LOCK_DATA_SLOT;
-            /// @solidity memory-safe-assembly
-            assembly {
-                // in the next storage slot, delete the locker and lockCaller
-                sstore(indexToWrite, EMPTY_ADDRESS_STORAGE)
-                sstore(add(indexToWrite, 1), EMPTY_ADDRESS_STORAGE)
-
-                // decrease the length
-                sstore(lockDataSlot, sub(sload(lockDataSlot), 1))
+        assembly {
+            let data := tload(LOCK_DATA_SLOT)
+            let l := and(data, LENGTH_MASK)
+            if iszero(l) {
+                mstore(0x00, 0xf1c77ed0) // LockersPopFailed()
+                revert(0x1c, 0x04)
             }
+
+            // LOCKERS_SLOT + (l - 1) * LOCKER_STRUCT_SIZE
+            let indexToWrite := add(LOCKERS_SLOT, mul(sub(l, 1), LOCKER_STRUCT_SIZE))
+
+            // in the next storage slot, delete the locker and lockCaller
+            tstore(indexToWrite, 0)
+            tstore(add(indexToWrite, 1), 0)
+
+            // decrease the length
+            tstore(LOCK_DATA_SLOT, sub(data, 1))
         }
     }
 
     function getLocker(uint256 i) internal view returns (address locker) {
-        unchecked {
-            // not in assembly because of the constant in the library scope
-            uint256 position = LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE);
-            /// @solidity memory-safe-assembly
-            assembly {
-                locker := sload(position)
-            }
+        assembly {
+            // LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE)
+            locker := tload(add(LOCKERS_SLOT, mul(i, LOCKER_STRUCT_SIZE)))
         }
     }
 
     function getLockCaller(uint256 i) internal view returns (address locker) {
-        unchecked {
-            // not in assembly because of the constant in the library scope
-            uint256 position = LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE + 1);
-            /// @solidity memory-safe-assembly
-            assembly {
-                locker := sload(position)
-            }
+        assembly {
+            // LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE + 1)
+            locker := tload(add(LOCKERS_SLOT, add(mul(i, LOCKER_STRUCT_SIZE), 1)))
         }
     }
 
     function getCurrentLocker() internal view returns (address) {
-        uint128 l = length();
         unchecked {
+            uint256 l = length();
             return l > 0 ? getLocker(l - 1) : address(0);
         }
     }
 
     function getCurrentLockCaller() internal view returns (address) {
-        uint128 l = length();
         unchecked {
+            uint256 l = length();
             return l > 0 ? getLockCaller(l - 1) : address(0);
         }
     }
 
     function incrementNonzeroDeltaCount() internal {
-        uint256 slot = LOCK_DATA_SLOT;
         assembly {
-            sstore(slot, add(sload(slot), NONZERO_DELTA_COUNT_OFFSET))
+            tstore(LOCK_DATA_SLOT, add(tload(LOCK_DATA_SLOT), NONZERO_DELTA_COUNT_OFFSET))
         }
     }
 
     function decrementNonzeroDeltaCount() internal {
-        uint256 slot = LOCK_DATA_SLOT;
         assembly {
-            sstore(slot, sub(sload(slot), NONZERO_DELTA_COUNT_OFFSET))
+            tstore(LOCK_DATA_SLOT, sub(tload(LOCK_DATA_SLOT), NONZERO_DELTA_COUNT_OFFSET))
         }
     }
 
@@ -159,11 +135,8 @@ library Lockers {
     }
 
     function getHook(uint256 i) internal view returns (address hook) {
-        unchecked {
-            uint256 position = HOOK_ADDRESS_SLOT + i;
-            assembly {
-                hook := sload(position)
-            }
+        assembly {
+            hook := tload(add(HOOK_ADDRESS_SLOT, i))
         }
     }
 
@@ -171,22 +144,18 @@ library Lockers {
         // Set the hook address for the current locker if the address is 0.
         // If the address is nonzero, a hook has already been set for this lock, and is not allowed to be updated or cleared at the end of the call.
         if (address(getCurrentHook()) == address(0)) {
-            unchecked {
-                uint256 indexToWrite = HOOK_ADDRESS_SLOT + length();
-                assembly {
-                    sstore(indexToWrite, currentHook)
-                }
+            uint256 l = length();
+            assembly {
+                tstore(add(HOOK_ADDRESS_SLOT, l), currentHook)
             }
             return true;
         }
     }
 
     function clearCurrentHook() internal {
-        unchecked {
-            uint256 indexToWrite = HOOK_ADDRESS_SLOT + length();
-            assembly {
-                sstore(indexToWrite, EMPTY_ADDRESS_STORAGE)
-            }
+        uint256 l = length();
+        assembly {
+            tstore(add(HOOK_ADDRESS_SLOT, l), 0)
         }
     }
 }

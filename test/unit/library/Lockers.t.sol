@@ -13,21 +13,7 @@ contract LockersTest is Test {
         lockers = new LockersWrapper();
     }
 
-    modifier afterInit() {
-        lockers.initialize();
-        _;
-    }
-
-    function testInitialize() public {
-        lockers.initialize();
-        (uint128 length, uint128 nonzeroDeltaCount) = lockers.lockData();
-        assertEq(length, 0, "LENGTH");
-        assertEq(nonzeroDeltaCount, 0, "NONZERO_DELTA_COUNT");
-
-        assertEq(lockers.load(Lockers.LOCK_DATA_SLOT), bytes32(uint256(1)), "LOCK_DATA");
-    }
-
-    function testPush() public afterInit {
+    function testPush() public {
         lockers.push(address(0x1), address(0x2));
         (uint128 length, uint128 nonzeroDeltaCount) = lockers.lockData();
         assertEq(length, 1, "LENGTH");
@@ -42,7 +28,7 @@ contract LockersTest is Test {
         assertEq(lockers.getCurrentLockCaller(), address(0x2), "CURRENT_LOCK_CALLER");
     }
 
-    function testPushMultiple(address[2][] memory addresses) public afterInit {
+    function testPushMultiple(address[2][] memory addresses) public {
         for (uint256 i; i < addresses.length; ++i) {
             lockers.push(addresses[i][0], addresses[i][1]);
             (uint128 l, uint128 c) = lockers.lockData();
@@ -73,7 +59,7 @@ contract LockersTest is Test {
         }
     }
 
-    function testPop() public afterInit {
+    function testPop() public {
         lockers.push(address(0x1), address(0x2));
         (uint128 length,) = lockers.lockData();
         assertEq(length, 1);
@@ -82,7 +68,7 @@ contract LockersTest is Test {
         assertEq(length, 0, "LENGTH");
     }
 
-    function testPopMultiple(address[2][] memory addresses) public afterInit {
+    function testPopMultiple(address[2][] memory addresses) public {
         for (uint256 i; i < addresses.length; ++i) {
             lockers.push(addresses[i][0], addresses[i][1]);
         }
@@ -104,13 +90,13 @@ contract LockersTest is Test {
         }
     }
 
-    function testIncrementNonzeroDeltaCount() public afterInit {
+    function testIncrementNonzeroDeltaCount() public {
         lockers.incrementNonzeroDeltaCount();
         (, uint128 nonzeroDeltaCount) = lockers.lockData();
         assertEq(nonzeroDeltaCount, 1, "NONZERO_DELTA_COUNT");
     }
 
-    function testIncrementNonzeroDeltaCountMultiple(uint8 n) public afterInit {
+    function testIncrementNonzeroDeltaCountMultiple(uint8 n) public {
         for (uint256 i; i < n; ++i) {
             lockers.incrementNonzeroDeltaCount();
             (, uint128 nonzeroDeltaCount) = lockers.lockData();
@@ -118,14 +104,14 @@ contract LockersTest is Test {
         }
     }
 
-    function testDecrementNonzeroDeltaCount() public afterInit {
+    function testDecrementNonzeroDeltaCount() public {
         lockers.incrementNonzeroDeltaCount();
         lockers.decrementNonzeroDeltaCount();
         (, uint128 nonzeroDeltaCount) = lockers.lockData();
         assertEq(nonzeroDeltaCount, 0, "NONZERO_DELTA_COUNT");
     }
 
-    function testDecrementNonzeroDeltaCountMultiple(uint8 n) public afterInit {
+    function testDecrementNonzeroDeltaCountMultiple(uint8 n) public {
         for (uint256 i; i < n; ++i) {
             lockers.incrementNonzeroDeltaCount();
         }

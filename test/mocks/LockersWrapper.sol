@@ -5,10 +5,6 @@ pragma solidity ^0.8.23;
 import "../../src/libraries/Lockers.sol";
 
 contract LockersWrapper {
-    function initialize() external {
-        Lockers.initialize();
-    }
-
     function push(address locker, address lockCaller) external {
         Lockers.push(locker, lockCaller);
     }
