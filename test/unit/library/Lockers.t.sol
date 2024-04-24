@@ -90,6 +90,11 @@ contract LockersTest is Test {
         }
     }
 
+    function testPopFailedWhenLengthIsZero() public {
+        vm.expectRevert(abi.encodeWithSignature("LockersPopFailed()"));
+        lockers.pop();
+    }
+
     function testIncrementNonzeroDeltaCount() public {
         lockers.incrementNonzeroDeltaCount();
         (, uint128 nonzeroDeltaCount) = lockers.lockData();
