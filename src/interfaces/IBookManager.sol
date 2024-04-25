@@ -143,14 +143,6 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
     function defaultProvider() external view returns (address);
 
     /**
-     * @notice Calculates the currency balance changes for a given locker
-     * @param locker The address of the locker
-     * @param currency The currency in question
-     * @return The net change in currency balance
-     */
-    function currencyDelta(address locker, Currency currency) external view returns (int256);
-
-    /**
      * @notice Returns the total reserves of a given currency
      * @param currency The currency in question
      * @return The total reserves amount
@@ -179,6 +171,14 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      * @return The owed amount
      */
     function tokenOwed(address provider, Currency currency) external view returns (uint256);
+
+    /**
+     * @notice Calculates the currency balance changes for a given locker
+     * @param locker The address of the locker
+     * @param currency The currency in question
+     * @return The net change in currency balance
+     */
+    function getCurrencyDelta(address locker, Currency currency) external view returns (int256);
 
     /**
      * @notice Retrieves the book key for a given book ID

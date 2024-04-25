@@ -16,6 +16,7 @@ import {FeePolicy, FeePolicyLibrary} from "./libraries/FeePolicy.sol";
 import {Tick, TickLibrary} from "./libraries/Tick.sol";
 import {OrderId, OrderIdLibrary} from "./libraries/OrderId.sol";
 import {Lockers} from "./libraries/Lockers.sol";
+import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {ERC721Permit} from "./libraries/ERC721Permit.sol";
 import {Hooks} from "./libraries/Hooks.sol";
 
@@ -33,7 +34,6 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     string public override contractURI;
     address public override defaultProvider;
 
-    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public override currencyDelta;
     mapping(Currency currency => uint256) public override reservesOf;
     mapping(BookId id => Book.State) internal _books;
     mapping(address provider => bool) public override isWhitelisted;
@@ -123,6 +123,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         (uint128 length, uint128 nonzeroDeltaCount) = Lockers.lockData();
         // @dev The locker must settle all currency balances to zero.
         if (length == 0 && nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+    }
+
+    function getCurrencyDelta(address locker, Currency currency) external view returns (int256) {
+        return CurrencyDelta.get(locker, currency);
     }
 
     function getLock(uint256 i) external view returns (address, address) {
@@ -369,13 +373,10 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         if (delta == 0) return;
 
         address locker = Lockers.getCurrentLocker();
-        int256 current = currencyDelta[locker][currency];
-        int256 next = current + delta;
+        int256 next = CurrencyDelta.add(locker, currency, delta);
 
         if (next == 0) Lockers.decrementNonzeroDeltaCount();
-        else if (current == 0) Lockers.incrementNonzeroDeltaCount();
-
-        currencyDelta[locker][currency] = next;
+        else if (next == delta) Lockers.incrementNonzeroDeltaCount();
     }
 
     function load(bytes32 slot) external view returns (bytes32 value) {
