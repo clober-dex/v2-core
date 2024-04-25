@@ -207,7 +207,7 @@ contract HooksTest is Test {
     }
 
     // hook validation
-    function testValidateHookAddressNoHooks(uint160 addr) public {
+    function testValidateHookAddressNoHooks(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
 
         IHooks hookAddr = IHooks(address(preAddr));
@@ -238,7 +238,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeOpen(uint160 addr) public {
+    function testValidateHookAddressBeforeOpen(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
 
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_OPEN_FLAG)));
@@ -269,7 +269,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressAfterOpen(uint160 addr) public {
+    function testValidateHookAddressAfterOpen(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
 
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_OPEN_FLAG)));
@@ -300,7 +300,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeAndAfterOpen(uint160 addr) public {
+    function testValidateHookAddressBeforeAndAfterOpen(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_OPEN_FLAG | Hooks.AFTER_OPEN_FLAG)));
         Hooks.validateHookPermissions(
@@ -330,7 +330,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeMake(uint160 addr) public {
+    function testValidateHookAddressBeforeMake(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_MAKE_FLAG)));
         Hooks.validateHookPermissions(
@@ -360,7 +360,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressAfterMake(uint160 addr) public {
+    function testValidateHookAddressAfterMake(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_MAKE_FLAG)));
         Hooks.validateHookPermissions(
@@ -390,7 +390,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeAndAfterMake(uint160 addr) public {
+    function testValidateHookAddressBeforeAndAfterMake(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_MAKE_FLAG | Hooks.AFTER_MAKE_FLAG)));
         Hooks.validateHookPermissions(
@@ -420,7 +420,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeTake(uint160 addr) public {
+    function testValidateHookAddressBeforeTake(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_TAKE_FLAG)));
         Hooks.validateHookPermissions(
@@ -450,7 +450,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressAfterTake(uint160 addr) public {
+    function testValidateHookAddressAfterTake(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_TAKE_FLAG)));
         Hooks.validateHookPermissions(
@@ -480,7 +480,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeAfterTake(uint160 addr) public {
+    function testValidateHookAddressBeforeAfterTake(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_TAKE_FLAG | Hooks.AFTER_TAKE_FLAG)));
         Hooks.validateHookPermissions(
@@ -510,7 +510,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeOpenAfterMake(uint160 addr) public {
+    function testValidateHookAddressBeforeOpenAfterMake(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_OPEN_FLAG | Hooks.AFTER_MAKE_FLAG)));
         Hooks.validateHookPermissions(
@@ -540,7 +540,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeCancel(uint160 addr) public {
+    function testValidateHookAddressBeforeCancel(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_CANCEL_FLAG)));
         Hooks.validateHookPermissions(
@@ -570,7 +570,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressAfterCancel(uint160 addr) public {
+    function testValidateHookAddressAfterCancel(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_CANCEL_FLAG)));
         Hooks.validateHookPermissions(
@@ -600,7 +600,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeAndAfterCancel(uint160 addr) public {
+    function testValidateHookAddressBeforeAndAfterCancel(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_CANCEL_FLAG | Hooks.AFTER_CANCEL_FLAG)));
         Hooks.validateHookPermissions(
@@ -630,7 +630,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeClaim(uint160 addr) public {
+    function testValidateHookAddressBeforeClaim(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_CLAIM_FLAG)));
         Hooks.validateHookPermissions(
@@ -660,7 +660,7 @@ contract HooksTest is Test {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressAfterClaim(uint160 addr) public {
+    function testValidateHookAddressAfterClaim(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_CLAIM_FLAG)));
         Hooks.validateHookPermissions(
@@ -690,7 +690,7 @@ contract HooksTest is Test {
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressBeforeAndAfterClaim(uint160 addr) public {
+    function testValidateHookAddressBeforeAndAfterClaim(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_CLAIM_FLAG | Hooks.AFTER_CLAIM_FLAG)));
         Hooks.validateHookPermissions(
@@ -720,7 +720,7 @@ contract HooksTest is Test {
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_CLAIM_FLAG));
     }
 
-    function testValidateHookAddressAllHooks(uint160 addr) public {
+    function testValidateHookAddressAllHooks(uint160 addr) public view {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         uint160 allHookBitsFlipped = (~uint160(0)) << uint160((160 - hookPermissionCount));
         IHooks hookAddr = IHooks(address(uint160(preAddr) | allHookBitsFlipped));
@@ -796,7 +796,7 @@ contract HooksTest is Test {
         );
     }
 
-    function test_isValidHookAddressAnyFlags() public {
+    function testIsValidHookAddressAnyFlags() public pure {
         assertTrue(Hooks.isValidHookAddress(IHooks(0x8000000000000000000000000000000000000000)));
         assertTrue(Hooks.isValidHookAddress(IHooks(0x4000000000000000000000000000000000000000)));
         assertTrue(Hooks.isValidHookAddress(IHooks(0x2000000000000000000000000000000000000000)));
@@ -807,11 +807,11 @@ contract HooksTest is Test {
         assertTrue(Hooks.isValidHookAddress(IHooks(0xf09840a85d5Af5bF1d1762f925bdaDdC4201f984)));
     }
 
-    function testIsValidHookAddressZeroAddress() public {
+    function testIsValidHookAddressZeroAddress() public pure {
         assertTrue(Hooks.isValidHookAddress(IHooks(address(0))));
     }
 
-    function test_invalidIfNoFlags() public {
+    function testInvalidIfNoFlags() public pure {
         assertFalse(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001)));
         assertFalse(Hooks.isValidHookAddress(IHooks(0x0020000000000000000000000000000000000001)));
         assertFalse(Hooks.isValidHookAddress(IHooks(0x003840a85d5Af5Bf1d1762F925BDADDc4201f984)));

@@ -21,7 +21,16 @@ task('utils:gen-docs', 'Generate docs from contract interface').setAction(async 
     builds.map((b) => b.data),
     {
       templates: 'docgen-templates',
-      sourcesDir: 'contracts/interfaces',
+      sourcesDir: 'src/interfaces',
+      pages: 'files',
+    },
+  )
+
+  await docgen(
+    builds.map((b) => b.data),
+    {
+      templates: 'docgen-templates',
+      sourcesDir: 'src/libraries',
       pages: 'files',
     },
   )
