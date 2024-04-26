@@ -29,7 +29,13 @@ export const verify = async (contractAddress: string, args: any[]) => {
   }
 }
 
-export const deployWithVerify = async (hre: HardhatRuntimeEnvironment, name: string, args?: any[], libraries?: any) => {
+export const deployWithVerify = async (
+  hre: HardhatRuntimeEnvironment,
+  name: string,
+  args?: any[],
+  libraries?: any,
+  proxy?: boolean,
+) => {
   const { deployer } = await hre.getNamedAccounts()
   const deployedAddress = (
     await hre.deployments.deploy(name, {
@@ -37,6 +43,7 @@ export const deployWithVerify = async (hre: HardhatRuntimeEnvironment, name: str
       args: args,
       log: true,
       libraries: libraries,
+      proxy: proxy,
     })
   ).address
 
