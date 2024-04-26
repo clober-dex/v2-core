@@ -1,31 +1,32 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { DeployFunction } from 'hardhat-deploy/types'
+import { getChain, isDevelopmentNetwork } from '@nomicfoundation/hardhat-viem/internal/chains'
+import { deployWithVerify } from '../utils'
 import { base } from 'viem/chains'
 
 const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts } = hre
-  const { deploy } = deployments
-
+  const { deployments, getNamedAccounts, network } = hre
   const { deployer } = await getNamedAccounts()
-  const Book = await deploy('Book', {
-    from: deployer,
-    args: [],
-    log: true,
-  })
-  const chainId = await hre.getChainId()
+  const chain = await getChain(network.provider)
 
-  const baseURI = `https://clober.io/api/nft/chains/${chainId}/orders/`
-  const contractURI = `https://clober.io/api/contract/chains/${chainId}`
+  let bookLibraryAddress = (await deployments.getOrNull('Book'))?.address
+  if (!bookLibraryAddress) {
+    bookLibraryAddress = await deployWithVerify(hre, 'Book')
+  }
+
+  if (await deployments.getOrNull('BookManager')) {
+    return
+  }
+
   let args: any[] = []
-  if (deployer == '0x5F79EE8f8fA862E98201120d83c4eC39D9468D49') {
-    // Testnet
+  if (chain.testnet || isDevelopmentNetwork(chain.id)) {
     args = [deployer, deployer, 'baseURI', 'contractURI', 'Clober Orderbook Maker Order', 'CLOB-ORDER']
-  } else if (chainId == base.id.toString()) {
+  } else if (chain === base) {
     args = [
       '0xfb976Bae0b3Ef71843F1c6c63da7Df2e44B3836d', // Safe
       '0xfc5899d93df81ca11583bee03865b7b13ce093a7', // Treasury
-      baseURI,
-      contractURI,
+      `https://clober.io/api/nft/chains/${chain.id}/orders/`,
+      `https://clober.io/api/contract/chains/${chain.id}`,
       'Clober Orderbook Maker Order',
       'CLOB-ORDER',
     ]
@@ -33,13 +34,8 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
     throw new Error('Unknown chain')
   }
 
-  await deploy('BookManager', {
-    from: deployer,
-    args: args,
-    log: true,
-    libraries: {
-      Book: Book.address,
-    },
+  await deployWithVerify(hre, 'BookManager', args, {
+    Book: bookLibraryAddress,
   })
 }
 
