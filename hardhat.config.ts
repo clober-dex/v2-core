@@ -82,7 +82,7 @@ const config: HardhatConfig = {
     settings: {
       libraries: {
         'src/libraries/Book.sol': {
-          Book: '0xFc2F7995b2c2A0Eb288c3d16D7aeD6615C2A98c7',
+          Book: '0xfD72b988863046d99C20Fa74d598A41D93DDE5D5',
         },
       },
     },
