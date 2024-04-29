@@ -2,6 +2,7 @@ import { Address, encodePacked, Hex, keccak256 } from 'viem'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 
 import { getHRE, liveLog } from './misc'
+import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 
 export const getDeployedAddress = async (name: string): Promise<Address> => {
   const hre = getHRE()
@@ -29,20 +30,34 @@ export const verify = async (contractAddress: string, args: any[]) => {
   }
 }
 
-export const deployWithVerify = async (hre: HardhatRuntimeEnvironment, name: string, args?: any[]) => {
+export const deployWithVerify = async (
+    hre: HardhatRuntimeEnvironment,
+    name: string,
+    args?: any[],
+    libraries?: any,
+    proxy?: boolean,
+) => {
   const { deployer } = await hre.getNamedAccounts()
   const deployedAddress = (
-    await hre.deployments.deploy(name, {
-      from: deployer,
-      args: args,
-      log: true,
-    })
+      await hre.deployments.deploy(name, {
+        from: deployer,
+        args: args,
+        log: true,
+        libraries: libraries,
+        proxy: proxy,
+      })
   ).address
 
-  await hre.run('verify:verify', {
-    address: deployedAddress,
-    constructorArguments: args,
-  })
+  try {
+    await hre.run('verify:verify', {
+      address: proxy ? await getImplementationAddress(hre.network.provider, deployedAddress) : deployedAddress,
+      constructorArguments: args,
+    })
+  } catch (e) {
+    console.log(e)
+  }
+
+  return deployedAddress
 }
 
 export const computeCreate1Address = (origin: `0x${string}`, nonce: bigint): string => {
