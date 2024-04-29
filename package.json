@@ -29,6 +29,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-foundry": "^1.1.1",
     "@nomicfoundation/hardhat-viem": "^2.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.6",
     "@openzeppelin/upgrades-core": "^1.33.1",
     "@types/chai": "^4.3.11",
     "@types/mocha": "^10.0.6",
