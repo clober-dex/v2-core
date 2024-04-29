@@ -219,6 +219,8 @@ const config: HardhatConfig = {
       arbitrumSepolia: process.env.ARBISCAN_API_KEY ?? '',
       berachainArtio: 'berachainArtio',
     },
+    customChains: [],
+    enabled: true,
   },
   sourcify: {
     // Disabled by default
