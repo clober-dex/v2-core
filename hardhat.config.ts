@@ -217,8 +217,19 @@ const config: HardhatConfig = {
       base: process.env.BASESCAN_API_KEY ?? '',
       sepolia: process.env.ARBISCAN_API_KEY ?? '',
       arbitrumSepolia: process.env.ARBISCAN_API_KEY ?? '',
-      berachainArtio: 'berachainArtio',
+      [networkInfos.berachainTestnet.id]: 'berachainArtio',
     },
+    customChains: [
+      {
+        network: networkInfos.berachainTestnet.id.toString(),
+        chainId: networkInfos.berachainTestnet.id,
+        urls: {
+          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80085/etherscan',
+          browserURL: 'https://artio.beratrail.io/',
+        },
+      },
+    ],
+    enabled: true,
   },
   sourcify: {
     // Disabled by default
