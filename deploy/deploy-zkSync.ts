@@ -24,7 +24,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const artifact = await deployer.loadArtifact('BookManager')
 
   // Estimate contract deployment fee
-  const args = [
+  const constructorArguments = [
     deployer.zkWallet.address,
     deployer.zkWallet.address,
     'baseURI',
@@ -32,28 +32,22 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     'Clober Orderbook Maker Order',
     'CLOB-ORDER',
   ]
-  const deploymentFee = await deployer.estimateDeployFee(artifact, args)
-
-  // ⚠️ OPTIONAL: You can skip this block if your account already has funds in L2
-  // const depositHandle = await deployer.zkWallet.deposit({
-  //   to: deployer.zkWallet.address,
-  //   token: utils.ETH_ADDRESS,
-  //   amount: deploymentFee.mul(2),
-  // });
-  // // Wait until the deposit is processed on zkSync
-  // await depositHandle.wait();
-
-  // Deploy this contract. The returned object will be of a `Contract` type, similar to ones in `ethers`.
-  // `greeting` is an argument for contract constructor.
+  const deploymentFee = await deployer.estimateDeployFee(artifact, constructorArguments)
   const parsedFee = ethers.formatEther(deploymentFee)
   console.log(`The deployment is estimated to cost ${parsedFee} ETH`)
 
-  const greeterContract = await deployer.deploy(artifact, args)
+  const contract = await deployer.deploy(artifact, constructorArguments)
 
   //obtain the Constructor Arguments
-  console.log('constructor args:' + greeterContract.interface.encodeDeploy(args))
+  console.log('constructor args:' + contract.interface.encodeDeploy(constructorArguments))
 
   // Show the contract info.
-  const contractAddress = await greeterContract.getAddress()
+  const contractAddress = await contract.getAddress()
   console.log(`${artifact.contractName} was deployed to ${contractAddress}`)
+
+  await hre.run('verify:verify', {
+    address: contractAddress,
+    constructorArguments,
+    contract: 'src/BookManager.sol:BookManager',
+  })
 }

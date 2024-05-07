@@ -7,6 +7,7 @@ import readlineSync from 'readline-sync'
 import 'hardhat-deploy'
 import '@matterlabs/hardhat-zksync-deploy'
 import '@matterlabs/hardhat-zksync-solc'
+import '@matterlabs/hardhat-zksync-verify'
 import '@nomicfoundation/hardhat-viem'
 import '@nomicfoundation/hardhat-foundry'
 import '@nomicfoundation/hardhat-verify'
@@ -132,6 +133,7 @@ const config: HardhatConfig = {
       tags: ['testnet', 'test'],
       companionNetworks: {},
       ethNetwork: 'sepolia', // The Ethereum Web3 RPC URL, or the identifier of the network (e.g. `mainnet` or `sepolia`)
+      verifyURL: 'https://explorer.sepolia.era.zksync.dev/contract_verification',
       zksync: true,
     },
     [networkInfos.berachainTestnet.id]: {
