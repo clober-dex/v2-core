@@ -48,7 +48,7 @@ library Book {
         mapping(uint24 groupIndex => uint256) totalClaimableOf;
     }
 
-    function open(State storage self, IBookManager.BookKey calldata key) external {
+    function open(State storage self, IBookManager.BookKey calldata key) internal {
         if (self.isOpened()) revert BookAlreadyOpened();
         self.key = key;
     }
@@ -85,7 +85,7 @@ library Book {
         return _getOrder(self, tick, index);
     }
 
-    function make(State storage self, Tick tick, uint64 unit, address provider) external returns (uint40 orderIndex) {
+    function make(State storage self, Tick tick, uint64 unit, address provider) internal returns (uint40 orderIndex) {
         if (unit == 0) revert ZeroUnit();
         if (!self.tickBitmap.has(tick)) self.tickBitmap.set(tick);
 
@@ -121,7 +121,7 @@ library Book {
      * @param maxTakeUnit The maximum unit to take
      * @return takenUnit The actual unit to take
      */
-    function take(State storage self, Tick tick, uint64 maxTakeUnit) external returns (uint64 takenUnit) {
+    function take(State storage self, Tick tick, uint64 maxTakeUnit) internal returns (uint64 takenUnit) {
         uint64 currentDepth = depth(self, tick);
         if (currentDepth > maxTakeUnit) {
             takenUnit = maxTakeUnit;
@@ -134,7 +134,7 @@ library Book {
     }
 
     function cancel(State storage self, OrderId orderId, uint64 to)
-        external
+        internal
         returns (uint64 canceled, uint64 afterPending)
     {
         (, Tick tick, uint40 orderIndex) = orderId.decode();
@@ -159,7 +159,7 @@ library Book {
         }
     }
 
-    function claim(State storage self, Tick tick, uint40 index) external returns (uint64 claimedUnit) {
+    function claim(State storage self, Tick tick, uint40 index) internal returns (uint64 claimedUnit) {
         Order storage order = _getOrder(self, tick, index);
 
         claimedUnit = calculateClaimableUnit(self, tick, index);
@@ -168,7 +168,7 @@ library Book {
         }
     }
 
-    function calculateClaimableUnit(State storage self, Tick tick, uint40 index) public view returns (uint64) {
+    function calculateClaimableUnit(State storage self, Tick tick, uint40 index) internal view returns (uint64) {
         uint64 orderUnit = self.getOrder(tick, index).pending;
 
         Queue storage queue = self.queues[tick];

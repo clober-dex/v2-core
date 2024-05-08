@@ -78,7 +78,7 @@ const config: HardhatConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.25',
+        version: '0.8.24',
         settings: {
           evmVersion: 'cancun',
           optimizer: {
@@ -217,11 +217,11 @@ const config: HardhatConfig = {
       base: process.env.BASESCAN_API_KEY ?? '',
       sepolia: process.env.ARBISCAN_API_KEY ?? '',
       arbitrumSepolia: process.env.ARBISCAN_API_KEY ?? '',
-      [networkInfos.berachainTestnet.id]: 'berachainArtio',
+      berachainArtio: "berachainArtio",
     },
     customChains: [
       {
-        network: networkInfos.berachainTestnet.id.toString(),
+        network: 'berachainArtio',
         chainId: networkInfos.berachainTestnet.id,
         urls: {
           apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80085/etherscan',
