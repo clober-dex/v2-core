@@ -22,9 +22,8 @@ library SignificantBit {
         return uint8(DEBRUIJN_INDEX[index]); // can optimize with CODECOPY opcode
     }
 
-    function mostSignificantBit(uint256 x) internal pure returns (uint8) {
+    function mostSignificantBit(uint256 x) internal pure returns (uint8 msb) {
         require(x > 0);
-        uint256 msb;
         assembly {
             let f := shl(7, gt(x, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
             msb := or(msb, f)
@@ -50,6 +49,5 @@ library SignificantBit {
             f := gt(x, 0x1)
             msb := or(msb, f)
         }
-        return uint8(msb);
     }
 }

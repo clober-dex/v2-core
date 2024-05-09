@@ -29,8 +29,8 @@ library OrderIdLibrary {
     function decode(OrderId id) internal pure returns (BookId bookId, Tick tick, uint40 index) {
         assembly {
             bookId := shr(64, id)
-            tick := shr(40, id)
-            index := id
+            tick := and(shr(40, id), 0xffffff)
+            index := and(id, 0xffffffffff)
         }
     }
 
@@ -42,13 +42,13 @@ library OrderIdLibrary {
 
     function getTick(OrderId id) internal pure returns (Tick tick) {
         assembly {
-            tick := shr(40, id)
+            tick := and(shr(40, id), 0xffffff)
         }
     }
 
     function getIndex(OrderId id) internal pure returns (uint40 index) {
         assembly {
-            index := id
+            index := and(id, 0xffffffffff)
         }
     }
 }
