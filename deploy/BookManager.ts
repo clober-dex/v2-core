@@ -9,11 +9,6 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
   const { deployer } = await getNamedAccounts()
   const chain = await getChain(network.provider)
 
-  let bookLibraryAddress = (await deployments.getOrNull('Book'))?.address
-  if (!bookLibraryAddress) {
-    bookLibraryAddress = await deployWithVerify(hre, 'Book')
-  }
-
   if (await deployments.getOrNull('BookManager')) {
     return
   }
@@ -34,9 +29,7 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
     throw new Error('Unknown chain')
   }
 
-  await deployWithVerify(hre, 'BookManager', args, {
-    Book: bookLibraryAddress,
-  })
+  await deployWithVerify(hre, 'BookManager', args)
 }
 
 deployFunction.tags = ['BookManager']
