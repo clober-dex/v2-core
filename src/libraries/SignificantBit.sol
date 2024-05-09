@@ -19,7 +19,7 @@ library SignificantBit {
         assembly {
             index := shr(248, mul(and(x, add(not(x), 1)), DEBRUIJN_SEQ))
         }
-        return uint8(DEBRUIJN_INDEX[index] & 0xff); // can optimize with CODECOPY opcode
+        return uint8(DEBRUIJN_INDEX[index]); // can optimize with CODECOPY opcode
     }
 
     function mostSignificantBit(uint256 x) internal pure returns (uint8 msb) {
@@ -48,8 +48,6 @@ library SignificantBit {
             x := shr(f, x)
             f := gt(x, 0x1)
             msb := or(msb, f)
-
-            msb := and(msb, 0xff)
         }
     }
 }
