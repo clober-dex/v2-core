@@ -39,7 +39,7 @@ library TickBitmap {
         uint256 b0 = self[B0_BITMAP_KEY].leastSignificantBit();
         uint256 b0b1 = (b0 << 8) | (self[~b0].leastSignificantBit());
         uint256 b2 = self[b0b1].leastSignificantBit();
-        return _toTick(uint24((b0b1 << 8) | b2));
+        return _toTick((b0b1 << 8) | b2);
     }
 
     function set(mapping(uint256 => uint256) storage self, Tick tick) internal {
@@ -94,12 +94,12 @@ library TickBitmap {
             b2Bitmap = self[b0b1];
         }
         b2 = b2Bitmap.leastSignificantBit();
-        return _toTick(uint24((b0b1 << 8) | b2));
+        return _toTick((b0b1 << 8) | b2);
     }
 
-    function _toTick(uint24 raw) private pure returns (Tick t) {
+    function _toTick(uint256 raw) private pure returns (Tick t) {
         assembly {
-            t := not(sub(raw, 0x800000))
+            t := and(not(sub(raw, 0x800000)), 0xffffff)
         }
     }
 }

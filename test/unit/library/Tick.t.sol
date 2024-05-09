@@ -15,7 +15,7 @@ contract TickUnitTest is Test {
         tickWrapper = new TickWrapper();
     }
 
-    function testTickToPrice(int24 index) public {
+    function testTickToPrice(int24 index) public view {
         vm.assume(index > TickLibrary.MIN_TICK && index < TickLibrary.MAX_TICK);
 
         uint256 price = tickWrapper.toPrice(index);
@@ -65,7 +65,7 @@ contract TickUnitTest is Test {
         }
     }
 
-    function testMiddleTickToPrice() public {
+    function testMiddleTickToPrice() public view {
         uint256 lastPrice = tickWrapper.toPrice(-100001);
 
         for (int24 index = -100000; index < 100000; index++) {
