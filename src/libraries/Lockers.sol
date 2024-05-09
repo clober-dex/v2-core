@@ -56,14 +56,15 @@ library Lockers {
 
     function lockData() internal view returns (uint128 l, uint128 nonzeroDeltaCount) {
         assembly {
-            l := tload(LOCK_DATA_SLOT)
-            nonzeroDeltaCount := shr(128, l)
+            let data := tload(LOCK_DATA_SLOT)
+            l := and(data, LENGTH_MASK)
+            nonzeroDeltaCount := shr(128, data)
         }
     }
 
     function length() internal view returns (uint128 l) {
         assembly {
-            l := tload(LOCK_DATA_SLOT)
+            l := and(tload(LOCK_DATA_SLOT), LENGTH_MASK)
         }
     }
 
