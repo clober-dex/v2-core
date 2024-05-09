@@ -80,13 +80,7 @@ const loadPrivateKeyFromKeyfile = () => {
 const config: HardhatConfig = {
   zksolc: {
     version: 'latest', // Uses latest available in https://github.com/matter-labs/zksolc-bin/
-    settings: {
-      libraries: {
-        'src/libraries/Book.sol': {
-          Book: '0xfD72b988863046d99C20Fa74d598A41D93DDE5D5',
-        },
-      },
-    },
+    settings: {},
   },
   solidity: {
     compilers: [
