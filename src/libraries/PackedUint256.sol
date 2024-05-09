@@ -18,7 +18,7 @@ library PackedUint256 {
 
     function get8Unsafe(uint256 packed, uint256 index) internal pure returns (uint8 ret) {
         assembly {
-            ret := shr(shl(3, index), packed)
+            ret := and(shr(shl(3, index), packed), 0xff)
         }
     }
 
@@ -27,13 +27,13 @@ library PackedUint256 {
             revert PackedUint256Error(_UINT8_INDEX_ERROR);
         }
         assembly {
-            ret := shr(shl(3, index), packed)
+            ret := and(shr(shl(3, index), packed), 0xff)
         }
     }
 
     function get16Unsafe(uint256 packed, uint256 index) internal pure returns (uint16 ret) {
         assembly {
-            ret := shr(shl(4, index), packed)
+            ret := and(shr(shl(4, index), packed), 0xffff)
         }
     }
 
@@ -42,13 +42,13 @@ library PackedUint256 {
             revert PackedUint256Error(_UINT16_INDEX_ERROR);
         }
         assembly {
-            ret := shr(shl(4, index), packed)
+            ret := and(shr(shl(4, index), packed), 0xffff)
         }
     }
 
     function get32Unsafe(uint256 packed, uint256 index) internal pure returns (uint32 ret) {
         assembly {
-            ret := shr(shl(5, index), packed)
+            ret := and(shr(shl(5, index), packed), 0xffffffff)
         }
     }
 
@@ -57,13 +57,13 @@ library PackedUint256 {
             revert PackedUint256Error(_UINT32_INDEX_ERROR);
         }
         assembly {
-            ret := shr(shl(5, index), packed)
+            ret := and(shr(shl(5, index), packed), 0xffffffff)
         }
     }
 
     function get64Unsafe(uint256 packed, uint256 index) internal pure returns (uint64 ret) {
         assembly {
-            ret := shr(shl(6, index), packed)
+            ret := and(shr(shl(6, index), packed), 0xffffffffffffffff)
         }
     }
 
@@ -72,14 +72,13 @@ library PackedUint256 {
             revert PackedUint256Error(_UINT64_INDEX_ERROR);
         }
         assembly {
-            ret := shr(shl(6, index), packed)
+            ret := and(shr(shl(6, index), packed), 0xffffffffffffffff)
         }
     }
 
     function add8Unsafe(uint256 packed, uint256 index, uint8 value) internal pure returns (uint256 ret) {
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(shl(3, index), casted))
+            ret := add(packed, shl(shl(3, index), and(value, 0xff)))
         }
     }
 
@@ -93,9 +92,8 @@ library PackedUint256 {
     }
 
     function add16Unsafe(uint256 packed, uint256 index, uint16 value) internal pure returns (uint256 ret) {
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(shl(4, index), casted))
+            ret := add(packed, shl(shl(4, index), and(value, 0xffff)))
         }
     }
 
@@ -109,9 +107,8 @@ library PackedUint256 {
     }
 
     function add32Unsafe(uint256 packed, uint256 index, uint32 value) internal pure returns (uint256 ret) {
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(shl(5, index), casted))
+            ret := add(packed, shl(shl(5, index), and(value, 0xffffffff)))
         }
     }
 
@@ -125,9 +122,8 @@ library PackedUint256 {
     }
 
     function add64Unsafe(uint256 packed, uint256 index, uint64 value) internal pure returns (uint256 ret) {
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(shl(6, index), casted))
+            ret := add(packed, shl(shl(6, index), and(value, 0xffffffffffffffff)))
         }
     }
 
@@ -141,9 +137,8 @@ library PackedUint256 {
     }
 
     function sub8Unsafe(uint256 packed, uint256 index, uint8 value) internal pure returns (uint256 ret) {
-        uint256 casted = value;
         assembly {
-            ret := sub(packed, shl(shl(3, index), casted))
+            ret := sub(packed, shl(shl(3, index), and(value, 0xff)))
         }
     }
 
@@ -157,9 +152,8 @@ library PackedUint256 {
     }
 
     function sub16Unsafe(uint256 packed, uint256 index, uint16 value) internal pure returns (uint256 ret) {
-        uint256 casted = value;
         assembly {
-            ret := sub(packed, shl(shl(4, index), casted))
+            ret := sub(packed, shl(shl(4, index), and(value, 0xffff)))
         }
     }
 
@@ -173,9 +167,8 @@ library PackedUint256 {
     }
 
     function sub32Unsafe(uint256 packed, uint256 index, uint32 value) internal pure returns (uint256 ret) {
-        uint256 casted = value;
         assembly {
-            ret := sub(packed, shl(shl(5, index), casted))
+            ret := sub(packed, shl(shl(5, index), and(value, 0xffffffff)))
         }
     }
 
@@ -189,9 +182,8 @@ library PackedUint256 {
     }
 
     function sub64Unsafe(uint256 packed, uint256 index, uint64 value) internal pure returns (uint256 ret) {
-        uint256 casted = value;
         assembly {
-            ret := sub(packed, shl(shl(6, index), casted))
+            ret := sub(packed, shl(shl(6, index), and(value, 0xffffffffffffffff)))
         }
     }
 
@@ -209,9 +201,8 @@ library PackedUint256 {
             index = index << 3;
             packed = packed - (packed & (_MAX_UINT8 << index));
         }
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(index, casted))
+            ret := add(packed, shl(index, and(value, 0xff)))
         }
     }
 
@@ -223,9 +214,8 @@ library PackedUint256 {
             index = index << 3;
             packed = packed - (packed & (_MAX_UINT8 << index));
         }
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(index, casted))
+            ret := add(packed, shl(index, and(value, 0xff)))
         }
     }
 
@@ -234,9 +224,8 @@ library PackedUint256 {
             index = index << 4;
             packed = packed - (packed & (_MAX_UINT16 << index));
         }
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(index, casted))
+            ret := add(packed, shl(index, and(value, 0xffff)))
         }
     }
 
@@ -248,9 +237,8 @@ library PackedUint256 {
             index = index << 4;
             packed = packed - (packed & (_MAX_UINT16 << index));
         }
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(index, casted))
+            ret := add(packed, shl(index, and(value, 0xffff)))
         }
     }
 
@@ -259,9 +247,8 @@ library PackedUint256 {
             index = index << 5;
             packed = packed - (packed & (_MAX_UINT32 << index));
         }
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(index, casted))
+            ret := add(packed, shl(index, and(value, 0xffffffff)))
         }
     }
 
@@ -273,9 +260,8 @@ library PackedUint256 {
             index = index << 5;
             packed = packed - (packed & (_MAX_UINT32 << index));
         }
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(index, casted))
+            ret := add(packed, shl(index, and(value, 0xffffffff)))
         }
     }
 
@@ -284,9 +270,8 @@ library PackedUint256 {
             index = index << 6;
             packed = packed - (packed & (_MAX_UINT64 << index));
         }
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(index, casted))
+            ret := add(packed, shl(index, and(value, 0xffffffffffffffff)))
         }
     }
 
@@ -298,9 +283,8 @@ library PackedUint256 {
             index = index << 6;
             packed = packed - (packed & (_MAX_UINT64 << index));
         }
-        uint256 casted = value;
         assembly {
-            ret := add(packed, shl(index, casted))
+            ret := add(packed, shl(index, and(value, 0xffffffffffffffff)))
         }
     }
 

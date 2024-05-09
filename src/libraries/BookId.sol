@@ -10,7 +10,7 @@ library BookIdLibrary {
     function toId(IBookManager.BookKey memory bookKey) internal pure returns (BookId id) {
         bytes32 hash = keccak256(abi.encode(bookKey));
         assembly {
-            id := hash
+            id := and(hash, 0xffffffffffffffffffffffffffffffffffffffffffffffff)
         }
     }
 }

@@ -22,7 +22,7 @@ library FeePolicyLibrary {
 
         uint256 mask = usesQuote_ ? 1 << 23 : 0;
         assembly {
-            feePolicy := or(mask, add(rate_, MAX_FEE_RATE))
+            feePolicy := or(mask, add(and(rate_, 0xffffff), MAX_FEE_RATE))
         }
     }
 
