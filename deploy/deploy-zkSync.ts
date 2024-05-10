@@ -5,30 +5,45 @@ import { Deployer } from '@matterlabs/hardhat-zksync-deploy'
 
 // load env file
 import dotenv from 'dotenv'
+import { getChain } from '@nomicfoundation/hardhat-viem/internal/chains'
+import { zkSync, zkSyncSepoliaTestnet } from 'viem/chains'
 dotenv.config()
-
-// load wallet private key from env file
-const PRIVATE_KEY = process.env.DEV_PRIVATE_KEY || ''
-
-if (!PRIVATE_KEY) throw '⛔️ Private key not detected! Add it to the .env file!'
 
 // An example of a deploy script that will deploy and call a simple contract.
 export default async function (hre: HardhatRuntimeEnvironment) {
   console.log(`Running deploy script for the BookManager contract`)
+  const chain = await getChain(hre.network.provider)
+  if (chain.id !== zkSyncSepoliaTestnet.id && chain.id !== zkSync.id) {
+    throw new Error('Unsupported chain')
+  }
 
   // Initialize the wallet.
-  const wallet = new Wallet(PRIVATE_KEY)
+  const accounts = hre.config.networks[chain.id].accounts
+  if (!Array.isArray(accounts)) throw new Error('Invalid accounts')
+  const privateKey = accounts[0]
+  if (!privateKey) throw new Error('Private key not found')
+  if (typeof privateKey !== 'string') throw new Error('Invalid private key')
+  const wallet = new Wallet(privateKey)
 
   // Create deployer object and load the artifact of the contract you want to deploy.
   const deployer = new Deployer(hre, wallet)
   const artifact = await deployer.loadArtifact('BookManager')
 
   // Estimate contract deployment fee
+  let owner = ''
+  let treasury = ''
+  if (chain.id === zkSyncSepoliaTestnet.id) {
+    owner = deployer.zkWallet.address
+    treasury = deployer.zkWallet.address
+  } else if (chain.id === zkSync.id) {
+    owner = '0xc0f2c32E7FF56318291c6bfA4C998A2F7213D2e0'
+    treasury = '0xfc5899d93df81ca11583bee03865b7b13ce093a7'
+  }
   const constructorArguments = [
-    deployer.zkWallet.address,
-    deployer.zkWallet.address,
-    'baseURI',
-    'contractURI',
+    owner,
+    treasury,
+    `https://clober.io/api/nft/chains/${chain.id}/orders/`,
+    `https://clober.io/api/contract/chains/${chain.id}`,
     'Clober Orderbook Maker Order',
     'CLOB-ORDER',
   ]
