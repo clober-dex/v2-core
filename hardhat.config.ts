@@ -55,7 +55,12 @@ const loadPrivateKeyFromKeyfile = () => {
     }
   }
 
-  const prodNetworks = new Set<number>([networkInfos.mainnet.id, networkInfos.arbitrum.id, networkInfos.base.id])
+  const prodNetworks = new Set<number>([
+    networkInfos.mainnet.id,
+    networkInfos.arbitrum.id,
+    networkInfos.base.id,
+    networkInfos.zkSync.id,
+  ])
   if (network && prodNetworks.has(network)) {
     if (privateKey) {
       return privateKey
@@ -128,6 +133,23 @@ const config: HardhatConfig = {
       companionNetworks: {},
       ethNetwork: 'sepolia', // The Ethereum Web3 RPC URL, or the identifier of the network (e.g. `mainnet` or `sepolia`)
       verifyURL: 'https://explorer.sepolia.era.zksync.dev/contract_verification',
+      zksync: true,
+    },
+    [networkInfos.zkSync.id]: {
+      url: networkInfos.zkSync.rpcUrls.default.http[0],
+      chainId: networkInfos.zkSync.id,
+      accounts: [loadPrivateKeyFromKeyfile()],
+      gas: 'auto',
+      gasPrice: 'auto',
+      gasMultiplier: 1,
+      timeout: 3000000,
+      httpHeaders: {},
+      live: true,
+      saveDeployments: true,
+      tags: ['mainnet', 'prod'],
+      companionNetworks: {},
+      ethNetwork: 'mainnet', // The Ethereum Web3 RPC URL, or the identifier of the network (e.g. `mainnet` or `sepolia`)
+      verifyURL: 'https://zksync2-mainnet-explorer.zksync.io/contract_verification',
       zksync: true,
     },
     [networkInfos.berachainTestnet.id]: {
