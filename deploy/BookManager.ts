@@ -3,7 +3,7 @@ import { DeployFunction } from 'hardhat-deploy/types'
 import { getChain, isDevelopmentNetwork } from '@nomicfoundation/hardhat-viem/internal/chains'
 import { deployWithVerify } from '../utils'
 import { base } from 'viem/chains'
-// 8453, 80085, 421614
+
 const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, network } = hre
   const { deployer } = await getNamedAccounts()
