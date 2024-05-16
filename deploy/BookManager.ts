@@ -30,7 +30,7 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
     throw new Error('Unknown chain')
   }
 
-  const entropy = 10n
+  const entropy = 256n
 
   await deployCreate3WithVerify(
     deployer,
