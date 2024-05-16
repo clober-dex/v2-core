@@ -7,7 +7,6 @@
     "outDir": "dist",
     "declaration": true,
     "typeRoots": ["./node_modules/@types"],
-    "types": ["@nomiclabs/hardhat-ethers", "@nomiclabs/hardhat-waffle", "hardhat-deploy"],
-    "resolveJsonModule": true
+    "types": ["@nomiclabs/hardhat-ethers", "@nomiclabs/hardhat-waffle", "hardhat-deploy"]
   }
 }
