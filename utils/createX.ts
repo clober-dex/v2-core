@@ -1,4 +1,14 @@
-import { Address, decodeEventLog, encodeDeployData, getContract, Hex, keccak256, parseAbi, toHex } from 'viem'
+import {
+  Address,
+  decodeEventLog,
+  encodeAbiParameters,
+  encodeDeployData,
+  getContract,
+  Hex,
+  keccak256,
+  parseAbi,
+  toHex,
+} from 'viem'
 import { getHRE, liveLog, sleep } from './misc'
 import { artifacts } from 'hardhat'
 import { Libraries } from 'hardhat-deploy/dist/types'
@@ -77,36 +87,35 @@ export const deployCreate3WithVerify = async (
   })
   const publicClient = await hre.viem.getPublicClient()
 
-  const computedAddress = await createXFactory.read.computeCreate3Address([salt])
-  liveLog('Computed address', computedAddress)
+  const guardedSalt = keccak256(encodeAbiParameters([{ type: 'address' }, { type: 'bytes32' }], [deployer, salt]))
+  let address: Address = await createXFactory.read.computeCreate3Address([guardedSalt])
+  liveLog('Computed address', address)
 
-  const remoteBytecode = await publicClient.getBytecode({ address: computedAddress })
+  const remoteBytecode = await publicClient.getBytecode({ address })
+  let txHash: Hex = '0x'
   if (remoteBytecode && remoteBytecode.length > 0) {
-    liveLog('Contract already deployed at', computedAddress)
-    return computedAddress
-  }
-
-  const txHash = await createXFactory.write.deployCreate3([salt, initcode])
-  const receipt = await publicClient.getTransactionReceipt({ hash: txHash }).catch((e) => {
-    if (e.shortMessage && e.shortMessage.includes('The Transaction may not be processed on a block yet.')) {
-      return sleep(500).then(() => publicClient.getTransactionReceipt({ hash: txHash }))
+    liveLog('Contract already deployed at', address)
+  } else {
+    txHash = await createXFactory.write.deployCreate3([salt, initcode])
+    const receipt = await publicClient.getTransactionReceipt({ hash: txHash }).catch(async () => {
+      await sleep(500)
+      return publicClient.getTransactionReceipt({ hash: txHash })
+    })
+    const event = receipt.logs
+      .filter((log) => log.address.toLowerCase() === CreateXFactoryAddress.toLowerCase())
+      .map((log) => decodeEventLog({ abi: createXFactory.abi, data: log.data, topics: log.topics }))
+      .find((log) => log.eventName === 'ContractCreation')
+    if (!event) {
+      throw new Error('Contract creation event not found')
     }
-    throw e
-  })
-  const event = receipt.logs
-    .filter((log) => log.address.toLowerCase() === CreateXFactoryAddress.toLowerCase())
-    .map((log) => decodeEventLog({ abi: createXFactory.abi, data: log.data, topics: log.topics }))
-    .find((log) => log.eventName === 'ContractCreation')
-  if (!event) {
-    throw new Error('Contract creation event not found')
-  }
-  const deployedAddress = event.args[0]
+    address = event.args[0]
 
-  liveLog('Contract created at', deployedAddress)
+    liveLog('Contract created at', address)
+  }
 
   try {
     await hre.run('verify:verify', {
-      address: deployedAddress,
+      address: address,
       constructorArguments: args,
     })
   } catch (e) {
@@ -114,12 +123,12 @@ export const deployCreate3WithVerify = async (
   }
 
   await hre.deployments.save(contractNameOrFullyQualifiedName, {
-    address: deployedAddress,
+    address: address,
     abi: artifact.abi,
     transactionHash: txHash,
     args,
     bytecode,
   })
 
-  return deployedAddress
+  return address
 }
