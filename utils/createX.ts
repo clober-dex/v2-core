@@ -10,7 +10,6 @@ import {
   toHex,
 } from 'viem'
 import { getHRE, liveLog, sleep } from './misc'
-import { artifacts } from 'hardhat'
 import { Libraries } from 'hardhat-deploy/dist/types'
 
 export const CreateXFactoryAddress = '0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed'
@@ -53,23 +52,28 @@ export const CreateXFactoryAbi = parseAbi([
 export const deployCreate3WithVerify = async (
   deployer: Address,
   entropy: bigint,
-  contractNameOrFullyQualifiedName: string,
+  name: string,
   args: any[],
   options?: {
     libraries?: Libraries
+    contract?: string
   },
 ): Promise<Address> => {
   if (entropy >= 2n ** 88n) {
     throw new Error('Entropy too large')
   }
+  liveLog('Create3 deploying', name, 'with entropy', entropy.toString(16))
+  if (!options) {
+    options = {}
+  }
   const hre = getHRE()
 
-  const artifact = await artifacts.readArtifact(contractNameOrFullyQualifiedName)
+  const artifact = await hre.artifacts.readArtifact(options.contract ? options.contract : name)
 
   let bytecode = artifact.bytecode as Hex
   if (options?.libraries) {
     for (const [libraryName, libraryAddress] of Object.entries(options.libraries)) {
-      const libArtifact = await artifacts.readArtifact(libraryName)
+      const libArtifact = await hre.artifacts.readArtifact(libraryName)
       const key =
         '__\\$' + keccak256(toHex(libArtifact.sourceName + ':' + libArtifact.contractName)).slice(2, 36) + '\\$__'
       bytecode = bytecode.replace(new RegExp(key, 'g'), libraryAddress.slice(2)) as Hex
@@ -94,7 +98,7 @@ export const deployCreate3WithVerify = async (
   const remoteBytecode = await publicClient.getBytecode({ address })
   let txHash: Hex = '0x'
   if (remoteBytecode && remoteBytecode.length > 0) {
-    liveLog('Contract already deployed at', address)
+    liveLog('Contract already deployed at', address, '\n')
   } else {
     txHash = await createXFactory.write.deployCreate3([salt, initcode])
     const receipt = await publicClient.getTransactionReceipt({ hash: txHash }).catch(async () => {
@@ -110,7 +114,7 @@ export const deployCreate3WithVerify = async (
     }
     address = event.args[0]
 
-    liveLog('Contract created at', address)
+    liveLog('Contract created at', address, '\n')
   }
 
   try {
@@ -122,7 +126,7 @@ export const deployCreate3WithVerify = async (
     console.log(e)
   }
 
-  await hre.deployments.save(contractNameOrFullyQualifiedName, {
+  await hre.deployments.save(name, {
     address: address,
     abi: artifact.abi,
     transactionHash: txHash,

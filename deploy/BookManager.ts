@@ -12,7 +12,7 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
 
   let bookLibraryAddress = (await deployments.getOrNull('Book'))?.address
   if (!bookLibraryAddress) {
-    bookLibraryAddress = await deployWithVerify(hre, 'Book')
+    bookLibraryAddress = await deployWithVerify(hre, 'Book', [])
   }
 
   if (await deployments.getOrNull('BookManager')) {
