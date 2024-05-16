@@ -1,12 +1,13 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { DeployFunction } from 'hardhat-deploy/types'
 import { getChain, isDevelopmentNetwork } from '@nomicfoundation/hardhat-viem/internal/chains'
-import { deployWithVerify } from '../utils'
+import { deployCreate3WithVerify, deployWithVerify } from '../utils'
 import { base } from 'viem/chains'
+import { Address } from 'viem'
 
 const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, network } = hre
-  const { deployer } = await getNamedAccounts()
+  const deployer = (await getNamedAccounts())['deployer'] as Address
   const chain = await getChain(network.provider)
 
   let bookLibraryAddress = (await deployments.getOrNull('Book'))?.address
@@ -18,8 +19,8 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
     return
   }
 
-  let owner = ''
-  let defaultProvider = ''
+  let owner: Address = '0x'
+  let defaultProvider: Address = '0x'
   if (chain.testnet || isDevelopmentNetwork(chain.id)) {
     owner = defaultProvider = deployer
   } else if (chain.id === base.id) {
@@ -29,8 +30,11 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
     throw new Error('Unknown chain')
   }
 
-  await deployWithVerify(
-    hre,
+  const entropy = 10n
+
+  await deployCreate3WithVerify(
+    deployer,
+    entropy,
     'BookManager',
     [
       owner,
@@ -41,7 +45,9 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
       'CLOB-ORDER',
     ],
     {
-      Book: bookLibraryAddress,
+      libraries: {
+        Book: bookLibraryAddress,
+      },
     },
   )
 }
