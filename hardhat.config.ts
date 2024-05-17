@@ -25,7 +25,7 @@ for (const [networkName, networkInfo] of Object.entries(networkInfos)) {
 
 const SKIP_LOAD = process.env.SKIP_LOAD === 'true'
 
-// Prevent to load scripts before compilation and typechain
+// Prevent to load scripts before compilation
 if (!SKIP_LOAD) {
   const tasksPath = path.join(__dirname, 'task')
   fs.readdirSync(tasksPath)
