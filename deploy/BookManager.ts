@@ -10,6 +10,11 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
   const deployer = (await getNamedAccounts())['deployer'] as Address
   const chain = await getChain(network.provider)
 
+  let bookLibraryAddress = (await deployments.getOrNull('Book'))?.address
+  if (!bookLibraryAddress) {
+    bookLibraryAddress = await deployWithVerify(hre, 'Book', [])
+  }
+
   if (await deployments.getOrNull('BookManager')) {
     return
   }
@@ -26,15 +31,24 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
   }
 
   const entropy = 256n
-
-  await deployCreate3WithVerify(deployer, entropy, 'BookManager', [
-    owner,
-    defaultProvider,
-    `https://clober.io/api/nft/chains/${chain.id}/orders/`,
-    `https://clober.io/api/contract/chains/${chain.id}`,
-    'Clober Orderbook Maker Order',
-    'CLOB-ORDER',
-  ])
+  await deployCreate3WithVerify(
+    deployer,
+    entropy,
+    'BookManager',
+    [
+      owner,
+      defaultProvider,
+      `https://clober.io/api/nft/chains/${chain.id}/orders/`,
+      `https://clober.io/api/contract/chains/${chain.id}`,
+      'Clober Orderbook Maker Order',
+      'CLOB-ORDER',
+    ],
+    {
+      libraries: {
+        Book: bookLibraryAddress,
+      },
+    },
+  )
 }
 
 deployFunction.tags = ['BookManager']

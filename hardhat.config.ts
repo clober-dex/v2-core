@@ -217,7 +217,7 @@ const config: HardhatConfig = {
       base: process.env.BASESCAN_API_KEY ?? '',
       sepolia: process.env.ARBISCAN_API_KEY ?? '',
       arbitrumSepolia: process.env.ARBISCAN_API_KEY ?? '',
-      berachainTestnetbArtio: 'verifyContract',
+      [networkInfos.berachainTestnetbArtio.id]: 'verifyContract',
     },
     customChains: [
       {
