@@ -86,7 +86,11 @@ const config: HardhatConfig = {
   zksolc: {
     version: 'latest', // Uses latest available in https://github.com/matter-labs/zksolc-bin/
     settings: {
-      forceEvmla: true,
+        libraries: {
+              "src/libraries/Book.sol": {
+                "Book": "0xAc742Cf41d12fA3835f2c658897D5D64a02eCEF8"
+              }
+            }
     },
   },
   solidity: {
