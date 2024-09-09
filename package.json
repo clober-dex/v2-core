@@ -7,7 +7,6 @@
     "compile": "TS_NODE_TRANSPILE_ONLY=1 SKIP_LOAD=true npx hardhat compile",
     "coverage:forge": "forge coverage --report lcov",
     "coverage:local": "rm -rf coverage && forge coverage --report lcov && genhtml lcov.info -o coverage --branch-coverage && open coverage/index.html",
-    "deploy:test": "yarn hardhat deploy-zksync --network 300 --script deploy-zkSync.ts",
     "test": "forge test",
     "precommit": "pre-commit install",
     "prettier:ts": "prettier --list-different \"{,!(node_modules)/**/}*.ts\"",
@@ -41,10 +40,11 @@
     "@types/readline-sync": "^1.4.8",
     "chai": "^4.3.10",
     "dotenv": "^16.3.1",
+    "ethereum-waffle": "^4.0.10",
     "hardhat": "^2.22.2",
     "hardhat-abi-exporter": "^2.10.1",
     "hardhat-contract-sizer": "^2.10.0",
-    "hardhat-deploy": "^0.12.2",
+    "hardhat-deploy": "^0.12.4",
     "hardhat-gas-reporter": "^1.0.9",
     "hardhat-log-remover": "^2.0.2",
     "keythereum": "^2.0.0",
@@ -54,6 +54,6 @@
     "readline-sync": "^1.4.10",
     "solidity-docgen": "^0.6.0-beta.36",
     "ts-node": "^10.9.2",
-    "viem": "^2.9.27"
+    "viem": "^2.15.0"
   }
 }

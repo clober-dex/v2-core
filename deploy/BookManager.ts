@@ -31,7 +31,6 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
   }
 
   const entropy = 256n
-
   await deployCreate3WithVerify(
     deployer,
     entropy,
