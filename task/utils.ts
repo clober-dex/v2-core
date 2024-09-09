@@ -1,6 +1,4 @@
 import { task } from 'hardhat/config'
-import { utils, Provider, Contract, Wallet } from 'zksync-ethers'
-import { encodeAbiParameters, encodeFunctionData, Hex, keccak256, zeroAddress } from 'viem'
 
 task('utils:accounts', 'Prints the list of accounts').setAction(async (taskArgs, hre) => {
   console.log(await hre.getNamedAccounts())
