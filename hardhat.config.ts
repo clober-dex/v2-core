@@ -92,9 +92,9 @@ const config: HardhatConfig = {
   },
   defaultNetwork: 'hardhat',
   networks: {
-    [networkInfos.berachainTestnet.id]: {
-      url: networkInfos.berachainTestnet.rpcUrls.default.http[0],
-      chainId: networkInfos.berachainTestnet.id,
+    [networkInfos.berachainTestnetbArtio.id]: {
+      url: networkInfos.berachainTestnetbArtio.rpcUrls.default.http[0],
+      chainId: networkInfos.berachainTestnetbArtio.id,
       accounts: process.env.DEV_PRIVATE_KEY ? [process.env.DEV_PRIVATE_KEY] : [],
       gas: 'auto',
       gasPrice: 'auto',
@@ -217,24 +217,25 @@ const config: HardhatConfig = {
       base: process.env.BASESCAN_API_KEY ?? '',
       sepolia: process.env.ARBISCAN_API_KEY ?? '',
       arbitrumSepolia: process.env.ARBISCAN_API_KEY ?? '',
-      [networkInfos.berachainTestnet.id]: 'berachainArtio',
+      [networkInfos.berachainTestnetbArtio.id]: 'verifyContract',
     },
     customChains: [
       {
-        network: networkInfos.berachainTestnet.id.toString(),
-        chainId: networkInfos.berachainTestnet.id,
+        network: networkInfos.berachainTestnetbArtio.id.toString(),
+        chainId: networkInfos.berachainTestnetbArtio.id,
         urls: {
-          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80085/etherscan',
-          browserURL: 'https://artio.beratrail.io/',
+          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80084/etherscan/api/',
+          browserURL: 'https://bartio.beratrail.io',
         },
       },
     ],
     enabled: true,
   },
   sourcify: {
-    // Disabled by default
-    // Doesn't need an API key
+    // Enable Sourcify verification by default
     enabled: true,
+    apiUrl: 'https://sourcify.dev/server',
+    browserUrl: 'https://repo.sourcify.dev',
   },
 }
 
