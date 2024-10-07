@@ -29,9 +29,13 @@ contract FeePolicyTest is Test {
         _testCalculateFee(-1500, 1000, -2, true);
     }
 
-    function _testCalculateFee(int24 rate, uint256 amount, int256 fee, bool reverse) private pure {
+    function _testCalculateFee(int24 rate, int256 amount, int256 fee, bool reverse) private pure {
         FeePolicy feePolicy = FeePolicyLibrary.encode(true, rate);
-        int256 actualFee = feePolicy.calculateFee(amount, reverse);
+        int256 actualFee = feePolicy.calculateFee(uint256(amount), reverse);
         assertEq(actualFee, fee);
+        if (!reverse) {
+            assertEq(feePolicy.calculateOriginalAmount(uint256(amount + actualFee), false), uint256(amount));
+            assertEq(feePolicy.calculateOriginalAmount(uint256(amount - actualFee), true), uint256(amount));
+        }
     }
 }

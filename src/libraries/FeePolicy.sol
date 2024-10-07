@@ -69,6 +69,6 @@ library FeePolicyLibrary {
             if reverseFee { r := sub(0, r) }
             divider := add(RATE_PRECISION, r)
         }
-        originalAmount = Math.divide(amount * RATE_PRECISION, divider, false);
+        originalAmount = Math.divide(amount * RATE_PRECISION, divider, reverseFee);
     }
 }
