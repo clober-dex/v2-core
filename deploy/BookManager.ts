@@ -10,13 +10,13 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
   const deployer = (await getNamedAccounts())['deployer'] as Address
   const chain = await getChain(network.provider)
 
+  if (await deployments.getOrNull('BookManager')) {
+    return
+  }
+
   let bookLibraryAddress = (await deployments.getOrNull('Book'))?.address
   if (!bookLibraryAddress) {
     bookLibraryAddress = await deployWithVerify(hre, 'Book', [])
-  }
-
-  if (await deployments.getOrNull('BookManager')) {
-    return
   }
 
   let owner: Address = '0x'
@@ -30,7 +30,7 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
     throw new Error('Unknown chain')
   }
 
-  const entropy = 256n
+  const entropy = 1000n
   await deployCreate3WithVerify(
     deployer,
     entropy,
