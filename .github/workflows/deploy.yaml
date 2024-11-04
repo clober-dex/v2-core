@@ -1,0 +1,28 @@
+name: Clober Contract Registry Deployment
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  REPOSITORY: v2-core
+
+jobs:
+  sync:
+    name: Contract Registry Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ${{ env.REPOSITORY }}
+      - run: git config --global user.email "dev@clober.io"
+      - run: git config --global user.name "Contract Registry CI/CD"
+      - run: git config --global credential.helper cache
+      - run: git clone https://${{secrets.ACCESS_TOKEN}}@github.com/clober-dex/clober-contract-registry.git
+      - run: cp -r -f ./${{ env.REPOSITORY }}/deployments/* clober-contract-registry/deployments/${{ env.REPOSITORY }}/
+      - run: |
+          cd clober-contract-registry
+          git add .
+          git commit -m "Deploy $REPOSITORY:$GITHUB_SHA to clober contract registry"
+          git push
