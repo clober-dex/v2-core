@@ -214,6 +214,20 @@ const config: HardhatConfig = {
       tags: ['mainnet', 'prod'],
       companionNetworks: {},
     },
+    [124832]: {
+      url: 'https://rpc.testnet.mitosis.org',
+      chainId: 124832,
+      accounts: process.env.DEV_PRIVATE_KEY ? [process.env.DEV_PRIVATE_KEY] : [],
+      gas: 'auto',
+      gasPrice: 'auto',
+      gasMultiplier: 1,
+      timeout: 3000000,
+      httpHeaders: {},
+      live: true,
+      saveDeployments: true,
+      tags: ['testnet', 'test'],
+      companionNetworks: {},
+    },
     hardhat: {
       chainId: networkInfos.hardhat.id,
       gas: 20000000,
@@ -284,6 +298,7 @@ const config: HardhatConfig = {
       sepolia: process.env.ARBISCAN_API_KEY ?? '',
       arbitrumSepolia: process.env.ARBISCAN_API_KEY ?? '',
       [networkInfos.berachainTestnetbArtio.id]: 'verifyContract',
+      124832: 'api-key',
     },
     customChains: [
       {
@@ -292,6 +307,14 @@ const config: HardhatConfig = {
         urls: {
           apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80084/etherscan/api/',
           browserURL: 'https://bartio.beratrail.io',
+        },
+      },
+      {
+        network: '124832',
+        chainId: 124832,
+        urls: {
+          apiURL: 'https://blockscout-internal.testnet.mitosis.org/api/',
+          browserURL: 'https://blockscout-internal.testnet.mitosis.org/',
         },
       },
     ],

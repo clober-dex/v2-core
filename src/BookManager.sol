@@ -34,6 +34,9 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
     string public override contractURI;
     address public override defaultProvider;
 
+    address public mitosis;
+    address public eolDelegate;
+
     mapping(Currency currency => uint256) public override reservesOf;
     mapping(BookId id => Book.State) internal _books;
     mapping(address provider => bool) public override isWhitelisted;
@@ -45,8 +48,12 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         string memory baseURI_,
         string memory contractURI_,
         string memory name_,
-        string memory symbol_
+        string memory symbol_,
+        address mitosis_,
+        address eolDelegate_
     ) Ownable(owner_) ERC721Permit(name_, symbol_, "2") {
+        mitosis = mitosis_;
+        eolDelegate = eolDelegate_;
         _setDefaultProvider(defaultProvider_);
         baseURI = baseURI_;
         contractURI = contractURI_;

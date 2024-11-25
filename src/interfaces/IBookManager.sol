@@ -136,6 +136,10 @@ interface IBookManager is IERC721Metadata, IERC721Permit {
      */
     function contractURI() external view returns (string memory);
 
+    function mitosis() external view returns (address);
+
+    function eolDelegate() external view returns (address);
+
     /**
      * @notice Returns the default provider
      * @return The default provider
