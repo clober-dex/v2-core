@@ -7,6 +7,7 @@ import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import {IBookManager} from "./interfaces/IBookManager.sol";
+import {IMitosis} from "./interfaces/mitosis/IMitosis.sol";
 import {ILocker} from "./interfaces/ILocker.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
 import {BookId, BookIdLibrary} from "./libraries/BookId.sol";
@@ -57,6 +58,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         _setDefaultProvider(defaultProvider_);
         baseURI = baseURI_;
         contractURI = contractURI_;
+        IMitosis(mitosis).setDefaultDelegatee(address(this), eolDelegate_);
+        IMitosis(mitosis).setDelegationManager(address(this), eolDelegate_);
     }
 
     modifier onlyByLocker() {
