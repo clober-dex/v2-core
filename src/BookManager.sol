@@ -58,8 +58,8 @@ contract BookManager is IBookManager, Ownable2Step, ERC721Permit {
         _setDefaultProvider(defaultProvider_);
         baseURI = baseURI_;
         contractURI = contractURI_;
-        IMitosis(mitosis).setDefaultDelegatee(address(this), eolDelegate_);
-        IMitosis(mitosis).setDelegationManager(address(this), eolDelegate_);
+        IMitosis(mitosis_).setDefaultDelegatee(address(this), eolDelegate_);
+        IMitosis(mitosis_).setDelegationManager(address(this), eolDelegate_);
     }
 
     modifier onlyByLocker() {
