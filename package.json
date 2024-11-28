@@ -44,6 +44,6 @@
     "prettier": "^3.3.3",
     "readline-sync": "^1.4.10",
     "solidity-docgen": "^0.6.0-beta.36",
-    "viem": "2.18.8"
+    "viem": "2.21.52"
   }
 }

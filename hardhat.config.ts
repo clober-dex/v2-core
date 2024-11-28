@@ -98,7 +98,7 @@ const config: HardhatConfig = {
       {
         version: '0.8.25',
         settings: {
-          evmVersion: 'cancun',
+          evmVersion: 'paris',
           optimizer: {
             enabled: true,
             runs: 1000,
@@ -161,6 +161,20 @@ const config: HardhatConfig = {
     [networkInfos.berachainTestnetbArtio.id]: {
       url: networkInfos.berachainTestnetbArtio.rpcUrls.default.http[0],
       chainId: networkInfos.berachainTestnetbArtio.id,
+      accounts: process.env.DEV_PRIVATE_KEY ? [process.env.DEV_PRIVATE_KEY] : [],
+      gas: 'auto',
+      gasPrice: 'auto',
+      gasMultiplier: 1,
+      timeout: 3000000,
+      httpHeaders: {},
+      live: true,
+      saveDeployments: true,
+      tags: ['testnet', 'test'],
+      companionNetworks: {},
+    },
+    [networkInfos.sonicTestnet.id]: {
+      url: networkInfos.sonicTestnet.rpcUrls.default.http[0],
+      chainId: networkInfos.sonicTestnet.id,
       accounts: process.env.DEV_PRIVATE_KEY ? [process.env.DEV_PRIVATE_KEY] : [],
       gas: 'auto',
       gasPrice: 'auto',

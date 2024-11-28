@@ -31,9 +31,8 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
   }
 
   const entropy = 1000n
-  await deployCreate3WithVerify(
-    deployer,
-    entropy,
+  await deployWithVerify(
+    hre,
     'BookManager',
     [
       owner,
