@@ -755,8 +755,8 @@ contract HooksTest is Test {
         uint160 preAddr = uint160(uint256(addr));
         vm.assume(mask != 0xff8);
         IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 151)));
-        vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
-        Hooks.validateHookPermissions(
+        vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(hookAddr)));
+        this.callValidateHookAddress(
             hookAddr,
             Hooks.Permissions({
                 beforeOpen: true,
@@ -778,8 +778,8 @@ contract HooksTest is Test {
         mask = mask & 0xff80; // the last 7 bits are all 0, we just want a 9 bit mask
         vm.assume(mask != 0); // we want any combination except no hooks
         IHooks hookAddr = IHooks(address(preAddr | (uint160(mask) << 144)));
-        vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
-        Hooks.validateHookPermissions(
+        vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(hookAddr)));
+        this.callValidateHookAddress(
             hookAddr,
             Hooks.Permissions({
                 beforeOpen: false,
@@ -794,6 +794,10 @@ contract HooksTest is Test {
                 afterClaim: false
             })
         );
+    }
+
+    function callValidateHookAddress(IHooks hookAddr, Hooks.Permissions calldata permissions) external pure {
+        Hooks.validateHookPermissions(IHooks(hookAddr), permissions);
     }
 
     function testIsValidHookAddressAnyFlags() public pure {
