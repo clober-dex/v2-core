@@ -15,15 +15,14 @@ jobs:
       matrix:
         node-version: [ '20.9' ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
+
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v3
@@ -46,4 +45,4 @@ jobs:
       - name: Check Ts Style
         run: npm run prettier:ts
       - name: Check Solidity Style
-        run: npm run lint:sol
+        run: forge fmt --check
