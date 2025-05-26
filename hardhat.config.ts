@@ -110,7 +110,7 @@ const config: HardhatConfig = {
   },
   defaultNetwork: 'hardhat',
   networks: {
-    sepolia: {
+    [networkInfos.sepolia.id]: {
       url: networkInfos.sepolia.rpcUrls.default.http[0],
       chainId: networkInfos.sepolia.id,
       accounts: process.env.DEV_PRIVATE_KEY ? [process.env.DEV_PRIVATE_KEY] : [],
@@ -161,6 +161,20 @@ const config: HardhatConfig = {
     [networkInfos.berachainTestnetbArtio.id]: {
       url: networkInfos.berachainTestnetbArtio.rpcUrls.default.http[0],
       chainId: networkInfos.berachainTestnetbArtio.id,
+      accounts: process.env.DEV_PRIVATE_KEY ? [process.env.DEV_PRIVATE_KEY] : [],
+      gas: 'auto',
+      gasPrice: 'auto',
+      gasMultiplier: 1,
+      timeout: 3000000,
+      httpHeaders: {},
+      live: true,
+      saveDeployments: true,
+      tags: ['testnet', 'test'],
+      companionNetworks: {},
+    },
+    [networkInfos.monadTestnet.id]: {
+      url: 'https://testnet-rpc.monad.xyz',
+      chainId: networkInfos.monadTestnet.id,
       accounts: process.env.DEV_PRIVATE_KEY ? [process.env.DEV_PRIVATE_KEY] : [],
       gas: 'auto',
       gasPrice: 'auto',
@@ -281,17 +295,26 @@ const config: HardhatConfig = {
   etherscan: {
     apiKey: {
       base: process.env.BASESCAN_API_KEY ?? '',
-      sepolia: process.env.ARBISCAN_API_KEY ?? '',
+      sepolia: process.env.ETHERSCAN_API_KEY ?? '',
       arbitrumSepolia: process.env.ARBISCAN_API_KEY ?? '',
       [networkInfos.berachainTestnetbArtio.id]: 'verifyContract',
+      [networkInfos.monadTestnet.id]: 'DUMMY_VALUE',
     },
     customChains: [
       {
         network: networkInfos.berachainTestnetbArtio.id.toString(),
         chainId: networkInfos.berachainTestnetbArtio.id,
         urls: {
-          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80084/etherscan/api/',
+          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80084/etherscan',
           browserURL: 'https://bartio.beratrail.io',
+        },
+      },
+      {
+        network: networkInfos.monadTestnet.id.toString(),
+        chainId: networkInfos.monadTestnet.id,
+        urls: {
+          apiURL: 'https://explorer.monad-testnet.category.xyz/api',
+          browserURL: 'https://explorer.monad-testnet.category.xyz',
         },
       },
     ],
