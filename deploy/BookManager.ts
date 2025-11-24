@@ -4,6 +4,7 @@ import { getChain, isDevelopmentNetwork } from '@nomicfoundation/hardhat-viem/in
 import { deployCreate3WithVerify, deployWithVerify } from '../utils'
 import { base } from 'viem/chains'
 import { Address } from 'viem'
+import { monadPrivateMainnet } from '../utils/chains'
 
 const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, network } = hre
@@ -26,6 +27,8 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
   } else if (chain.id === base.id) {
     owner = '0xfb976Bae0b3Ef71843F1c6c63da7Df2e44B3836d' // Safe
     defaultProvider = '0xfc5899d93df81ca11583bee03865b7b13ce093a7' // Treasury
+  } else if (chain.id === monadPrivateMainnet.id) {
+    owner = defaultProvider = deployer
   } else {
     throw new Error('Unknown chain')
   }
