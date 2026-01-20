@@ -23,38 +23,42 @@ Core Contract of Clober DEX V2
 
 All deployments can be found in the [deployments](./deployments) directory.
 
+### Recent `BookManager` deployments
+
+- **Base (chainId 8453)**: `0x8ca3a6f4a6260661fcb9a25584c796a1fa380112`
+- **Arbitrum One (chainId 42161)**: `0x74ffe45757db60b24a7574b3b5948dad368c2fdf`
+- **Monad (chainId 143)**: `0x6657d192273731c3cac646cc82d5f28d0cbe8ccc`
+
 ## Install
 
-
 ### Prerequisites
-- We use [Forge Foundry](https://github.com/foundry-rs/foundry) for test. Follow the [guide](https://github.com/foundry-rs/foundry#installation) to install Foundry.
+- We use [Foundry](https://github.com/foundry-rs/foundry). Follow the [installation guide](https://github.com/foundry-rs/foundry#installation).
 
 ### Installing From Source
 
 ```bash
 git clone https://github.com/clober-dex/v2-core && cd v2-core
-npm install
+forge install
 ```
 
 ## Usage
 
+### Build
+
+```bash
+forge build
+```
+
 ### Tests
+
 ```bash
-npm run test
+forge test
 ```
 
-### Linting
+### Formatting
 
-To run lint checks:
 ```bash
-npm run prettier:ts
-npm run lint:sol
-```
-
-To run lint fixes:
-```bash
-npm run prettier:fix:ts
-npm run lint:fix:sol
+forge fmt
 ```
 
 ### Library
